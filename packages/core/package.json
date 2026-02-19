@@ -1,0 +1,32 @@
+{
+    "name": "@goaldigger/core",
+    "version": "0.1.0",
+    "private": true,
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": "./src/index.ts",
+        "./types": "./src/types/index.ts",
+        "./lib/supabase/client": "./src/lib/supabase/client.ts",
+        "./lib/supabase/server": "./src/lib/supabase/server.ts",
+        "./lib/teamBalancer": "./src/lib/teamBalancer.ts",
+        "./hooks/*": "./src/hooks/*.ts",
+        "./services/*": "./src/services/*.ts",
+        "./store/*": "./src/store/*.ts"
+    },
+    "dependencies": {
+        "@supabase/supabase-js": "^2.49.1",
+        "@supabase/ssr": "^0.6.1",
+        "@tanstack/react-query": "^5.69.0",
+        "zustand": "^5.0.3",
+        "react-hook-form": "^7.54.2"
+    },
+    "devDependencies": {
+        "typescript": "^5.7.3",
+        "react": "^19.2.3",
+        "@types/react": "^19"
+    },
+    "peerDependencies": {
+        "react": ">=18"
+    }
+}

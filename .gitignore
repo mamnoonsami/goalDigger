@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+dist/
+.turbo/
+
+# Env files - NEVER commit these
+.env
+.env.local
+.env*.local
+
+# Supabase local
+supabase/.temp/
+supabase/.branches/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
