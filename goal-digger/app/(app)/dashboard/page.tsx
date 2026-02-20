@@ -5,6 +5,8 @@ import { Badge, roleVariant, statusVariant } from '../../../components/ui/Badge'
 import Link from 'next/link'
 import { UpcomingMatches } from '../../../components/dashboard/UpcomingMatches'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -12,21 +14,26 @@ export default async function DashboardPage() {
     const [{ data: profile }, { data: matches }, { data: players }] = await Promise.all([
         supabase
             .from('profiles')
-            .select('first_name, last_name, role, base_score, goals, matches_played, player_position')
+            .select('first_name, last_name, role, is_admin, is_manager, base_score, goals, matches_played, player_position')
             .eq('id', user!.id)
             .single(),
         supabase
             .from('matches')
-            .select('id, title, status, scheduled_at, location')
+            .select('id, title, status, scheduled_at, location, max_players, notes')
             .order('scheduled_at', { ascending: true })
             .limit(5),
         supabase
             .from('profiles')
             .select('id, first_name, last_name, base_score, goals, role')
-            .eq('role', 'player')
+            .eq('is_player', true)
             .order('base_score', { ascending: false })
-            .limit(5),
+            .limit(20),
     ])
+
+    // Sort by effective score and take top 5
+    const topPlayers = (players ?? [])
+        .sort((a, b) => (b.base_score + b.goals * 2) - (a.base_score + a.goals * 2))
+        .slice(0, 5)
 
     const effectiveScore = profile
         ? profile.base_score + profile.goals * 2
@@ -73,7 +80,7 @@ export default async function DashboardPage() {
                 {/* Upcoming matches */}
                 <UpcomingMatches
                     matches={matches}
-                    isAdmin={profile?.role === 'admin' || profile?.role === 'manager'}
+                    isAdmin={profile?.is_admin || false}
                 />
 
                 {/* Top players */}
@@ -82,9 +89,9 @@ export default async function DashboardPage() {
                         <h2 className="font-semibold text-text-primary">Top Players</h2>
                         <Link href="/players" className="text-xs text-accent hover:underline">View all →</Link>
                     </div>
-                    {players && players.length > 0 ? (
+                    {topPlayers.length > 0 ? (
                         <ul className="divide-y divide-border">
-                            {players.map((p, i) => (
+                            {topPlayers.map((p, i) => (
                                 <li key={p.id} className="flex items-center gap-3 px-5 py-3.5">
                                     <span className="font-mono text-sm font-bold text-text-muted w-5">
                                         {i + 1}

@@ -13,6 +13,8 @@ interface MatchSnippet {
     status: MatchStatus | string
     scheduled_at: string
     location: string | null
+    max_players: number
+    notes: string | null
 }
 
 interface UpcomingMatchesProps {
@@ -37,24 +39,25 @@ export function UpcomingMatches({ matches, isAdmin }: UpcomingMatchesProps) {
                         {matches.map((m) => (
                             <li key={m.id} className="flex items-center justify-between gap-3 px-5 py-3.5 group">
                                 <div>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-sm font-medium text-text-primary">{m.title}</p>
-                                        {isAdmin && (
-                                            <button
-                                                onClick={() => setEditingMatch(m)}
-                                                className="hidden text-[10px] font-medium text-accent hover:underline group-hover:inline-block"
-                                            >
-                                                Edit
-                                            </button>
-                                        )}
-                                    </div>
+                                    <Link href={`/matches/${m.id}`} className="text-sm font-medium text-text-primary hover:text-accent transition-colors">{m.title}</Link>
                                     <p className="text-xs text-text-muted">
-                                        {m.location ?? 'TBD'} · {new Date(m.scheduled_at).toLocaleDateString()}
+                                        {m.location ?? 'TBD'} · {new Date(m.scheduled_at).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
                                     </p>
                                 </div>
-                                <Badge variant={statusVariant[m.status as MatchStatus] ?? 'slate'}>
-                                    {m.status}
-                                </Badge>
+                                <div className="flex items-center gap-3">
+                                    <Badge variant={statusVariant[m.status as MatchStatus] ?? 'slate'}>
+                                        {m.status}
+                                    </Badge>
+                                    {isAdmin && (
+                                        <button
+                                            onClick={() => setEditingMatch(m)}
+                                            className="p-1 px-2 text-xs font-semibold text-accent border border-accent/20 rounded hover:bg-accent/10 transition-colors"
+                                            title="Edit Match"
+                                        >
+                                            Edit
+                                        </button>
+                                    )}
+                                </div>
                             </li>
                         ))}
                     </ul>
