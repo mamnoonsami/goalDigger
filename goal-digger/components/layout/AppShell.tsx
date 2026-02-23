@@ -13,10 +13,16 @@ interface AppShellProps {
 
 export function AppShell({ children, profile }: AppShellProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false)
+    const [isSidebarMinimized, setIsSidebarMinimized] = useState(false)
 
     return (
         <div className="flex min-h-screen bg-surface-1">
-            <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+            <Sidebar
+                open={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+                isMinimized={isSidebarMinimized}
+                onToggleMinimize={() => setIsSidebarMinimized(!isSidebarMinimized)}
+            />
 
             {/* Main content area */}
             <div className="flex flex-1 flex-col">
