@@ -22,13 +22,19 @@ const GOALS_TO_UNLOCK = 15
 
 const AVATAR_STYLES = [
     // Free styles (shown first)
-    { style: 'avataaars', label: 'Classic', premium: false },
-    { style: 'bottts', label: 'Robot', premium: false },
-    { style: 'fun-emoji', label: 'Emoji', premium: false },
+    { style: 'avataaars-neutral', label: 'Avatars', premium: false },
+    { style: 'big-smile', label: 'Big Smile', premium: false },
+    { style: 'bottts', label: 'Bots', premium: false },
+    { style: 'fun-emoji', label: 'Fun Emoji', premium: false },
+    { style: 'micah', label: 'Micah', premium: false },
+    { style: 'open-peeps', label: 'Open Peeps', premium: false },
+    { style: 'toon-head', label: 'Toon Head', premium: false },
     // Premium styles — require 15+ goals (shown last)
-    { style: 'adventurer', label: 'Adventurer', premium: true },
+    { style: 'croodles', label: 'Croodles', premium: true },
+    { style: 'croodles-neutral', label: 'Croodles Neutral', premium: true },
+    { style: 'notionists', label: 'Notionists', premium: true },
     { style: 'lorelei', label: 'Lorelei', premium: true },
-    { style: 'pixel-art', label: 'Pixel', premium: true },
+    { style: 'pixel-art', label: 'Pixel Art', premium: true },
 ]
 
 const AVATAR_SEEDS = [
@@ -58,6 +64,7 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
     const activeStyleInfo = AVATAR_STYLES.find(s => s.style === activeStyle)
     const isActiveLocked = activeStyleInfo?.premium && !canUsePremium
 
+
     async function handleSave() {
         setSaving(true)
         setError(null)
@@ -80,73 +87,32 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
 
     return (
         <div className="flex flex-col gap-6">
-            {/* Top row: avatar (left) + form fields (right) — stacked on mobile */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Avatar section */}
-                <div className="flex flex-col items-center gap-4">
-                    <div className="relative">
-                        {avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                src={avatarUrl}
-                                alt="Avatar"
-                                className="h-24 w-24 rounded-full border-4 border-accent/30 object-cover bg-surface-3"
-                            />
-                        ) : (
-                            <div className="h-24 w-24 rounded-full border-4 border-accent/30 bg-accent/20 flex items-center justify-center text-3xl font-bold text-accent">
-                                {firstName?.[0]?.toUpperCase()}{lastName?.[0]?.toUpperCase()}
-                            </div>
-                        )}
-                    </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowPicker(!showPicker)}
-                    >
-                        {showPicker ? '✕ Close' : '🎨 Choose Avatar'}
-                    </Button>
+            {/* Avatar section */}
+            <div className="flex flex-col items-center gap-4">
+                <div className="relative">
+                    {avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src={avatarUrl}
+                            alt="Avatar"
+                            className="h-24 w-24 rounded-full border-4 border-accent/30 object-cover bg-surface-3"
+                        />
+                    ) : (
+                        <div className="h-24 w-24 rounded-full border-4 border-accent/30 bg-accent/20 flex items-center justify-center text-3xl font-bold text-accent">
+                            {firstName?.[0]?.toUpperCase()}{lastName?.[0]?.toUpperCase()}
+                        </div>
+                    )}
                 </div>
-
-                {/* Form fields */}
-                <div className="flex flex-col gap-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <label className="flex flex-col gap-1.5">
-                            <span className="text-xs font-medium text-text-muted">First Name</span>
-                            <input
-                                type="text"
-                                value={firstName}
-                                onChange={(e) => setFirstName(e.target.value)}
-                                className="rounded-lg border border-border bg-surface-1 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
-                            />
-                        </label>
-                        <label className="flex flex-col gap-1.5">
-                            <span className="text-xs font-medium text-text-muted">Last Name</span>
-                            <input
-                                type="text"
-                                value={lastName}
-                                onChange={(e) => setLastName(e.target.value)}
-                                className="rounded-lg border border-border bg-surface-1 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
-                            />
-                        </label>
-                    </div>
-
-                    <label className="flex flex-col gap-1.5">
-                        <span className="text-xs font-medium text-text-muted">Position</span>
-                        <select
-                            value={position}
-                            onChange={(e) => setPosition(e.target.value)}
-                            className="rounded-lg border border-border bg-surface-1 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
-                        >
-                            <option value="">Not set</option>
-                            {POSITIONS.map((pos) => (
-                                <option key={pos} value={pos}>{pos.charAt(0).toUpperCase() + pos.slice(1)}</option>
-                            ))}
-                        </select>
-                    </label>
-                </div>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowPicker(!showPicker)}
+                >
+                    {showPicker ? '✕ Close' : '🎨 Choose Avatar'}
+                </Button>
             </div>
 
-            {/* Avatar Picker — full width below */}
+            {/* Avatar Picker */}
             {showPicker && (
                 <div className="rounded-xl border border-border bg-surface-1 p-4">
                     {/* Style tabs */}
@@ -216,6 +182,43 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
                     </button>
                 </div>
             )}
+
+
+            {/* Form fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="flex flex-col gap-1.5">
+                    <span className="text-xs font-medium text-text-muted">First Name</span>
+                    <input
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="rounded-lg border border-border bg-surface-1 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                    <span className="text-xs font-medium text-text-muted">Last Name</span>
+                    <input
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="rounded-lg border border-border bg-surface-1 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
+                    />
+                </label>
+            </div>
+
+            <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-text-muted">Position</span>
+                <select
+                    value={position}
+                    onChange={(e) => setPosition(e.target.value)}
+                    className="rounded-lg border border-border bg-surface-1 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50 max-w-xs"
+                >
+                    <option value="">Not set</option>
+                    {POSITIONS.map((pos) => (
+                        <option key={pos} value={pos}>{pos.charAt(0).toUpperCase() + pos.slice(1)}</option>
+                    ))}
+                </select>
+            </label>
 
             {/* Save */}
             <div className="flex items-center gap-3">

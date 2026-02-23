@@ -9,6 +9,7 @@ const navItems = [
     { href: '/matches', label: 'Matches', icon: '⚽' },
     { href: '/players', label: 'Players', icon: '👥' },
     { href: '/tournaments', label: 'Tournaments', icon: '🏆' },
+    { href: '/auctions', label: 'Auctions', icon: '🔨' },
     { href: '/profile', label: 'My Profile', icon: '👤' },
 ]
 
