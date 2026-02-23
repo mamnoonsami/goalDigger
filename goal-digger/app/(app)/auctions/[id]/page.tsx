@@ -120,6 +120,7 @@ export default async function AuctionDetailPage({ params }: PageProps) {
                 auctionPlayers={auctionPlayers ?? []}
                 managers={managers}
                 budgetPerManager={auction.budget_per_manager}
+                maxPlayersPerTeam={auction.max_players_per_team}
             />
         </div>
     )

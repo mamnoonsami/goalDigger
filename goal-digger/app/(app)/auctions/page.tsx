@@ -21,7 +21,7 @@ export default async function AuctionsPage() {
     // Fetch all auctions with player count
     const { data: auctions } = await supabase
         .from('auctions')
-        .select('id, title, description, scheduled_at, bid_timer_seconds, budget_per_manager, status, created_at')
+        .select('id, title, description, scheduled_at, bid_timer_seconds, budget_per_manager, max_players_per_team, status, created_at')
         .order('scheduled_at', { ascending: false })
 
     return (

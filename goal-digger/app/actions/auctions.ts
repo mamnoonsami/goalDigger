@@ -10,6 +10,7 @@ export async function createAuction(data: {
     scheduled_at: string
     bid_timer_seconds: number
     budget_per_manager: number
+    max_players_per_team: number
     players: { player_id: string; base_price: number }[]
     managerIds?: string[]
 }) {
@@ -34,6 +35,7 @@ export async function createAuction(data: {
             scheduled_at: data.scheduled_at,
             bid_timer_seconds: data.bid_timer_seconds,
             budget_per_manager: data.budget_per_manager,
+            max_players_per_team: data.max_players_per_team,
             status: 'draft',
             created_by: user.id,
         })
@@ -93,6 +95,7 @@ export async function updateAuction(
         scheduled_at?: string
         bid_timer_seconds?: number
         budget_per_manager?: number
+        max_players_per_team?: number
         status?: string
     }
 ) {

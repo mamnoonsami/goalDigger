@@ -14,6 +14,7 @@ interface AuctionHeaderProps {
         scheduled_at: string
         bid_timer_seconds: number
         budget_per_manager: number
+        max_players_per_team: number
         description: string | null
     }
     isAdmin: boolean
@@ -115,10 +116,10 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
 
                     {!isMinimized && (
                         <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-text-muted pl-1 sm:pl-10">
-                            <span className="flex items-center gap-1.5">📅 {new Date(auction.scheduled_at).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                            <span className="flex items-center gap-1.5" suppressHydrationWarning>📅 {new Date(auction.scheduled_at).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
                             <span className="flex items-center gap-1.5">⏱️ {auction.bid_timer_seconds}s bid timer</span>
                             <span className="flex items-center gap-1.5">💰 {auction.budget_per_manager} max budget</span>
-                            <span className="flex items-center gap-1.5">👥 {playerCount} players</span>
+                            <span className="flex items-center gap-1.5">👥 {playerCount} / {auction.max_players_per_team} players per team</span>
                         </div>
                     )}
                 </div>

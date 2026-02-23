@@ -31,6 +31,7 @@ export function CreateAuctionForm({ players, managers }: CreateAuctionFormProps)
     const [scheduledAt, setScheduledAt] = useState('')
     const [bidTimer, setBidTimer] = useState(15)
     const [budget, setBudget] = useState(1000)
+    const [maxPlayers, setMaxPlayers] = useState(8)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -110,6 +111,7 @@ export function CreateAuctionForm({ players, managers }: CreateAuctionFormProps)
                 scheduled_at: new Date(scheduledAt).toISOString(),
                 bid_timer_seconds: bidTimer,
                 budget_per_manager: budget,
+                max_players_per_team: maxPlayers,
                 players: Array.from(selectedPlayers.values()),
                 managerIds: Array.from(selectedManagers),
             })
@@ -171,6 +173,19 @@ export function CreateAuctionForm({ players, managers }: CreateAuctionFormProps)
                             min={100}
                             value={budget}
                             onChange={e => setBudget(Number(e.target.value))}
+                            className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
+                        />
+                    </label>
+
+                    <label className="flex flex-col gap-1.5">
+                        <span className="text-sm font-medium text-text-muted">Max Players per Team</span>
+                        <input
+                            type="number"
+                            required
+                            min={1}
+                            max={50}
+                            value={maxPlayers}
+                            onChange={e => setMaxPlayers(Number(e.target.value))}
                             className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
                         />
                     </label>

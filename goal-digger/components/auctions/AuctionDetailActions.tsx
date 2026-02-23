@@ -31,6 +31,7 @@ export function AuctionDetailActions({ auctionId }: AuctionDetailActionsProps) {
             setIsResetting(true)
             try {
                 await resetAuctionPlayers(auctionId)
+                router.refresh()
             } catch (error) {
                 console.error(error)
                 alert('Failed to reset auction.')
