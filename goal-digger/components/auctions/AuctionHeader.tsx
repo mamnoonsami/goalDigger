@@ -7,6 +7,7 @@ import { AuctionDetailActions } from './AuctionDetailActions'
 import { EditAuctionDetailsModal } from './EditAuctionDetailsModal'
 import { AuctionStatusBadge } from './AuctionStatusBadge'
 import { joinAuction, leaveAuction } from '../../app/actions/auctions'
+import { createClient } from '../../lib/supabase/client'
 
 interface AuctionHeaderProps {
     auction: {
@@ -30,10 +31,41 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
     const [isProcessing, setIsProcessing] = useState(false)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
+    // Track live auction details so statuses (like 'completed' or title changes) update instantly for everyone
+    const [liveAuction, setLiveAuction] = useState(auction)
+
+    useEffect(() => {
+        const supabase = createClient()
+
+        const channel = supabase
+            .channel(`auction_header_${auction.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'auctions',
+                    filter: `id=eq.${auction.id}`
+                },
+                (payload) => {
+                    const newRow = payload.new as any
+                    setLiveAuction((current) => ({
+                        ...current,
+                        ...newRow
+                    }))
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [auction.id])
+
     async function handleJoin() {
         setIsProcessing(true)
         try {
-            await joinAuction(auction.id)
+            await joinAuction(liveAuction.id)
         } catch (error) {
             console.error(error)
             alert('Failed to join auction')
@@ -45,7 +77,7 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
     async function handleLeave() {
         setIsProcessing(true)
         try {
-            await leaveAuction(auction.id)
+            await leaveAuction(liveAuction.id)
         } catch (error) {
             console.error(error)
             alert('Failed to leave auction')
@@ -72,16 +104,16 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
                                 )}
                             </button>
                             <div className="flex items-center gap-2">
-                                <h1 className="text-xl sm:text-2xl font-bold text-text-primary truncate">{auction.title}</h1>
+                                <h1 className="text-xl sm:text-2xl font-bold text-text-primary truncate">{liveAuction.title}</h1>
                             </div>
                             <div className="hidden sm:block">
-                                <AuctionStatusBadge status={auction.status} scheduledAt={auction.scheduled_at} />
+                                <AuctionStatusBadge status={liveAuction.status} scheduledAt={liveAuction.scheduled_at} />
                             </div>
                         </div>
 
                         {/* Actions on top right */}
                         <div className="flex items-center gap-2">
-                            {isManager && auction.status !== 'completed' && (
+                            {isManager && liveAuction.status !== 'completed' && (
                                 <>
                                     {hasJoined ? (
                                         <Button
@@ -107,7 +139,7 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
                                 </>
                             )}
 
-                            {isAdmin && auction.status === 'draft' && (
+                            {isAdmin && liveAuction.status === 'draft' && (
                                 <>
                                     <Button
                                         variant="ghost"
@@ -118,7 +150,7 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
                                     </Button>
-                                    <AuctionDetailActions auctionId={auction.id} />
+                                    <AuctionDetailActions auctionId={liveAuction.id} />
                                 </>
                             )}
                         </div>
@@ -126,33 +158,33 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
 
                     {!isMinimized && (
                         <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-text-muted pl-1 sm:pl-10">
-                            <span className="flex items-center gap-1.5" suppressHydrationWarning>📅 {new Date(auction.scheduled_at).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
-                            <span className="flex items-center gap-1.5">⏱️ {auction.bid_timer_seconds}s bid timer</span>
-                            <span className="flex items-center gap-1.5">💰 {auction.budget_per_manager} max budget</span>
-                            <span className="flex items-center gap-1.5">👥 {playerCount} / {auction.max_players_per_team} players per team</span>
+                            <span className="flex items-center gap-1.5" suppressHydrationWarning>📅 {new Date(liveAuction.scheduled_at).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                            <span className="flex items-center gap-1.5">⏱️ {liveAuction.bid_timer_seconds}s bid timer</span>
+                            <span className="flex items-center gap-1.5">💰 {liveAuction.budget_per_manager} max budget</span>
+                            <span className="flex items-center gap-1.5">👥 {playerCount} / {liveAuction.max_players_per_team} players per team</span>
                         </div>
                     )}
                 </div>
             </div>
 
             {/* Rules */}
-            {!isMinimized && auction.description && (
+            {!isMinimized && liveAuction.description && (
                 <div className="mt-4 text-sm text-text-muted pl-1 sm:pl-10">
-                    <p className="whitespace-pre-wrap"><span className="text-text-primary mr-1">📋</span>{auction.description}</p>
+                    <p className="whitespace-pre-wrap"><span className="text-text-primary mr-1">📋</span>{liveAuction.description}</p>
                 </div>
             )}
 
             {isEditModalOpen && (
                 <EditAuctionDetailsModal
                     auction={{
-                        id: auction.id,
-                        title: auction.title,
-                        status: auction.status,
-                        description: auction.description || '',
-                        scheduled_at: auction.scheduled_at,
-                        bid_timer_seconds: auction.bid_timer_seconds,
-                        budget_per_manager: auction.budget_per_manager,
-                        max_players_per_team: auction.max_players_per_team
+                        id: liveAuction.id,
+                        title: liveAuction.title,
+                        status: liveAuction.status,
+                        description: liveAuction.description || '',
+                        scheduled_at: liveAuction.scheduled_at,
+                        bid_timer_seconds: liveAuction.bid_timer_seconds,
+                        budget_per_manager: liveAuction.budget_per_manager,
+                        max_players_per_team: liveAuction.max_players_per_team
                     }}
                     onClose={() => setIsEditModalOpen(false)}
                 />

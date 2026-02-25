@@ -31,6 +31,7 @@ export default async function AuctionDetailPage({ params }: PageProps) {
             .order('display_order', { ascending: true }),
         supabase.from('auction_managers')
             .select(`
+                    id,
                     manager_id,
                     profiles!manager_id(first_name, last_name, avatar_url)
                 `)
@@ -48,23 +49,24 @@ export default async function AuctionDetailPage({ params }: PageProps) {
     const isAdmin = profile?.is_admin ?? false
     const isManager = profile?.is_manager ?? false
 
-    // Conditionally fetch "ALL" players and managers only if Admin, to populate the manage Modals
+    // Conditionally fetch "ALL" players to populate Modals only if Admin, 
+    // but ALWAYS fetch ALL managers so viewers can reconcile names from WebSocket INSERT payloads
     let allDbPlayers: any[] = []
     let allDbManagers: any[] = []
-    if (isAdmin) {
-        const [playersRes, managersRes] = await Promise.all([
-            supabase.from('profiles')
-                .select('id, first_name, last_name, player_position, base_score')
-                .eq('is_player', true)
-                .order('base_score', { ascending: false }),
-            supabase.from('profiles')
-                .select('id, first_name, last_name')
-                .eq('is_manager', true)
-                .order('first_name', { ascending: true })
-        ])
-        allDbPlayers = playersRes.data || []
-        allDbManagers = managersRes.data || []
-    }
+
+    const [playersRes, managersRes] = await Promise.all([
+        isAdmin ? supabase.from('profiles')
+            .select('id, first_name, last_name, player_position, base_score')
+            .eq('is_player', true)
+            .order('base_score', { ascending: false }) : Promise.resolve({ data: [] }),
+        supabase.from('profiles')
+            .select('id, first_name, last_name, avatar_url')
+            .eq('is_manager', true)
+            .order('first_name', { ascending: true })
+    ])
+
+    allDbPlayers = playersRes.data || []
+    allDbManagers = managersRes.data || []
 
     // Check if current user has joined this auction as manager
     let hasJoined = false
@@ -80,6 +82,7 @@ export default async function AuctionDetailPage({ params }: PageProps) {
     const managers = (auctionManagers ?? []).map(am => {
         const profileData = Array.isArray(am.profiles) ? am.profiles[0] : am.profiles;
         return {
+            row_id: am.id,
             id: am.manager_id,
             first_name: profileData?.first_name ?? 'Unknown',
             last_name: profileData?.last_name ?? '',
@@ -92,18 +95,6 @@ export default async function AuctionDetailPage({ params }: PageProps) {
         live: 'bg-emerald-500/15 text-emerald-400',
         completed: 'bg-blue-500/15 text-blue-400',
     }
-
-    // Prepare players for spin wheel (pending or unsold)
-    const pendingForSpin = (auctionPlayers ?? [])
-        .filter((p: any) => p.status === 'pending' || p.status === 'unsold')
-        .map((p: any) => {
-            const profileData = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
-            return {
-                id: p.player_id,
-                name: `${profileData?.first_name} ${profileData?.last_name}`,
-                position: profileData?.player_position ?? null,
-            };
-        })
 
     return (
         <div className="flex flex-col gap-6">
@@ -126,7 +117,6 @@ export default async function AuctionDetailPage({ params }: PageProps) {
             <AuctionWorkspace
                 auctionId={id}
                 isAdmin={isAdmin}
-                pendingForSpin={pendingForSpin}
                 auctionPlayers={auctionPlayers ?? []}
                 allDbPlayers={allDbPlayers}
                 allDbManagers={allDbManagers}

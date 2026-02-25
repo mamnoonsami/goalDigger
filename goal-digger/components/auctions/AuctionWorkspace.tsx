@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '../../lib/supabase/client'
 import { Card } from '../ui/Card'
 import { PlayerSpinWheel } from './PlayerSpinWheel'
 import { AuctionPlayerList } from './AuctionPlayerList'
@@ -10,23 +11,134 @@ import { ManageAuctionManagersModal } from './ManageAuctionManagersModal'
 interface AuctionWorkspaceProps {
     auctionId: string
     isAdmin: boolean
-    pendingForSpin: any[]
     auctionPlayers: any[]
     allDbPlayers?: any[]
     allDbManagers?: any[]
-    managers: { id: string; first_name: string; last_name: string; avatar_url: string | null }[]
+    managers: { row_id: string; id: string; first_name: string; last_name: string; avatar_url: string | null }[]
     budgetPerManager: number
     maxPlayersPerTeam: number
 }
 
-export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPlayers, allDbPlayers = [], allDbManagers = [], managers, budgetPerManager, maxPlayersPerTeam }: AuctionWorkspaceProps) {
+export function AuctionWorkspace({ auctionId, isAdmin, auctionPlayers, allDbPlayers = [], allDbManagers = [], managers, budgetPerManager, maxPlayersPerTeam }: AuctionWorkspaceProps) {
     const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
     const [isManagePlayersOpen, setIsManagePlayersOpen] = useState(false)
     const [isManageManagersOpen, setIsManageManagersOpen] = useState(false)
 
+    // Store players in local state to allow realtime updates
+    const [liveAuctionPlayers, setLiveAuctionPlayers] = useState(auctionPlayers)
+
+    // Store managers in local state to allow realtime updates
+    const [liveManagers, setLiveManagers] = useState(managers)
+
+    // Store array of player IDs that were updated in the last 3 seconds
+    const [recentlyUpdated, setRecentlyUpdated] = useState<string[]>([])
+
+    // Subscribe to realtime updates for this auction's players and managers
+    useEffect(() => {
+        const supabase = createClient()
+
+        const playersChannel = supabase
+            .channel(`auction_players_${auctionId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'auction_players',
+                    filter: `auction_id=eq.${auctionId}`
+                },
+                (payload) => {
+                    const newRow = payload.new as any
+
+                    // Track the visual animation state
+                    setRecentlyUpdated((prev) => [...prev, newRow.player_id])
+                    setTimeout(() => {
+                        setRecentlyUpdated((prev) => prev.filter(id => id !== newRow.player_id))
+                    }, 3000)
+
+                    // Update the actual data
+                    setLiveAuctionPlayers((current) =>
+                        current.map((player) =>
+                            player.player_id === newRow.player_id
+                                ? { ...player, status: newRow.status, sold_to: newRow.sold_to, sold_price: newRow.sold_price }
+                                : player
+                        )
+                    )
+                }
+            )
+            .subscribe()
+
+        const managersChannel = supabase
+            .channel(`auction_managers_${auctionId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'auction_managers',
+                    filter: `auction_id=eq.${auctionId}`
+                },
+                (payload) => {
+                    const newRow = payload.new as any
+
+                    // Find the full manager profile from our pre-fetched db list based solely on the incoming manager_id
+                    const fullProfile = allDbManagers.find(m => m.id === newRow.manager_id)
+                    if (fullProfile) {
+                        setLiveManagers(current => {
+                            // avoid duplicates if already rendered
+                            if (current.some(m => m.id === newRow.manager_id)) return current
+                            return [...current, {
+                                row_id: newRow.id,
+                                id: fullProfile.id,
+                                first_name: fullProfile.first_name,
+                                last_name: fullProfile.last_name,
+                                avatar_url: fullProfile.avatar_url
+                            }]
+                        })
+                    }
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'auction_managers'
+                    // Notice: intentionally omitting the `auction_id=eq` filter!
+                    // Supabase DELETE payloads only contain the Primary Key if REPLICA_IDENTITY is default.
+                    // Because `auction_id` is not the PK, it's missing from `payload.old` which causes the filter to drop the message.
+                    // We must catch ALL DELETES globally and filter locally using `row_id === oldRow.id`.
+                },
+                (payload) => {
+                    const oldRow = payload.old as any
+                    if (oldRow && oldRow.id) {
+                        setLiveManagers(current => current.filter(m => m.row_id !== oldRow.id))
+                    }
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(playersChannel)
+            supabase.removeChannel(managersChannel)
+        }
+    }, [auctionId, allDbManagers])
+
+    // Compute dynamic lists from the *live* state
+    const pendingForSpin = liveAuctionPlayers
+        .filter((p: any) => p.status === 'pending' || p.status === 'unsold')
+        .map((p: any) => {
+            const profileData = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+            return {
+                id: p.player_id,
+                name: `${profileData?.first_name} ${profileData?.last_name}`,
+                position: profileData?.player_position ?? null,
+            };
+        })
+
     const hasPending = isAdmin && pendingForSpin.length > 0
-    const hasManagers = managers.length > 0
-    const numManagers = managers.length
+    const hasManagers = liveManagers.length > 0
+    const numManagers = liveManagers.length
 
     let gridClass = "grid gap-3 w-full min-h-full "
     if (numManagers === 1) {
@@ -76,9 +188,10 @@ export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPl
                         <AuctionPlayerList
                             auctionId={auctionId}
                             isAdmin={isAdmin}
-                            players={auctionPlayers}
-                            managers={managers}
+                            players={liveAuctionPlayers}
+                            managers={liveManagers}
                             selectedPlayerId={selectedPlayerId}
+                            recentlyUpdated={recentlyUpdated}
                         />
                     </div>
                 </Card>
@@ -101,11 +214,11 @@ export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPl
                         </div>
                         <div className="flex-1 overflow-x-hidden overflow-y-auto min-h-0 pr-2 pb-2">
                             <div className={gridClass}>
-                                {managers.map((manager, idx) => {
+                                {liveManagers.map((manager, idx) => {
                                     const isOdd = numManagers % 2 !== 0;
                                     const isLast = idx === numManagers - 1;
                                     const spanClass = (numManagers >= 5 && isOdd && isLast) ? "col-span-2" : "col-span-1";
-                                    const boughtPlayers = auctionPlayers.filter(p => p.status === 'sold' && p.sold_to === manager.id)
+                                    const boughtPlayers = liveAuctionPlayers.filter(p => p.status === 'sold' && p.sold_to === manager.id)
                                     const spent = boughtPlayers.reduce((sum, p) => sum + (p.sold_price || 0), 0)
                                     const remaining = budgetPerManager - spent
 
@@ -113,7 +226,7 @@ export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPl
                                     const spotsLeft = Math.max(0, maxPlayersPerTeam - boughtPlayers.length)
 
                                     // Find the lowest base price among remaining available players
-                                    const availablePlayers = auctionPlayers.filter(p => p.status === 'pending' || p.status === 'unsold')
+                                    const availablePlayers = liveAuctionPlayers.filter(p => p.status === 'pending' || p.status === 'unsold')
 
                                     // Calculate minimum base price needed to reserve
                                     let minBasePrice = 0
@@ -131,15 +244,32 @@ export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPl
                                     const isWarning = !isCritical && remaining <= (budgetPerManager * 0.50)
 
                                     let cardBorderClass = ""
-                                    if (isCritical) {
-                                        cardBorderClass = "ring-2 ring-red-500 transition-shadow animate-[pulse_1.5s_ease-in-out_infinite]"
-                                    } else if (isWarning) {
-                                        cardBorderClass = "ring-2 ring-yellow-500 transition-shadow animate-[pulse_1.5s_ease-in-out_infinite]"
+                                    // If any player this manager bought was *just* updated, flash the card green
+                                    const hasRecentPurchase = boughtPlayers.some(p => recentlyUpdated.includes(p.player_id))
+
+                                    if (hasRecentPurchase) {
+                                        cardBorderClass = "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10 transition-colors duration-300"
                                     }
 
                                     return (
-                                        <Card key={manager.id} className={`flex flex-col justify-center gap-1.5 p-2.5 h-full ${cardBorderClass} ${spanClass}`}>
-                                            <div className="flex items-center gap-2">
+                                        <Card key={manager.id} className={`relative flex flex-col justify-center gap-1.5 p-2.5 h-full ${cardBorderClass} ${spanClass}`}>
+                                            {/* Low Balance Warning Badges */}
+                                            {(isCritical || isWarning) && (
+                                                <div className={`absolute top-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full border shadow-sm backdrop-blur-md z-10 ${isCritical
+                                                    ? 'bg-red-500/10 border-red-500/20 text-red-400'
+                                                    : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
+                                                    }`}>
+                                                    <span className="relative flex h-2 w-2">
+                                                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCritical ? 'bg-red-400' : 'bg-yellow-400'}`}></span>
+                                                        <span className={`relative inline-flex rounded-full h-2 w-2 ${isCritical ? 'bg-red-500' : 'bg-yellow-500'}`}></span>
+                                                    </span>
+                                                    <span className="text-[9px] font-semibold tracking-wide uppercase">
+                                                        {isCritical ? 'Low Balance' : 'Balance Warning'}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-center gap-2 mt-1">
                                                 <div className="h-7 w-7 min-w-[28px] rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold text-xs border-2 border-accent/30 overflow-hidden">
                                                     {manager.avatar_url ? (
                                                         <img src={manager.avatar_url} alt="" className="h-full w-full object-cover" />
@@ -147,7 +277,7 @@ export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPl
                                                         `${manager.first_name[0]}${manager.last_name[0]}`
                                                     )}
                                                 </div>
-                                                <div className="min-w-0">
+                                                <div className="min-w-0 pr-16 lg:pr-24">
                                                     <p className="text-xs font-semibold text-text-primary truncate">{manager.first_name} {manager.last_name}</p>
                                                     <p className="text-[9px] text-text-muted">{boughtPlayers.length} / {maxPlayersPerTeam} players</p>
                                                 </div>
@@ -199,8 +329,8 @@ export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPl
                 <ManageAuctionPlayersModal
                     auctionId={auctionId}
                     allPlayers={allDbPlayers}
-                    initialAssignedIds={auctionPlayers.map(p => p.player_id)}
-                    soldPlayerIds={auctionPlayers.filter(p => p.status === 'sold').map(p => p.player_id)}
+                    initialAssignedIds={liveAuctionPlayers.map(p => p.player_id)}
+                    soldPlayerIds={liveAuctionPlayers.filter(p => p.status === 'sold').map(p => p.player_id)}
                     onClose={() => setIsManagePlayersOpen(false)}
                 />
             )}
@@ -209,7 +339,7 @@ export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPl
                 <ManageAuctionManagersModal
                     auctionId={auctionId}
                     allManagers={allDbManagers}
-                    initialAssignedIds={managers.map(m => m.id)}
+                    initialAssignedIds={liveManagers.map(m => m.id)}
                     onClose={() => setIsManageManagersOpen(false)}
                 />
             )}

@@ -38,10 +38,12 @@ interface AuctionPlayerListProps {
     players: AuctionPlayer[]
     managers?: { id: string; first_name: string; last_name: string; avatar_url: string | null }[]
     selectedPlayerId?: string | null
+    recentlyUpdated?: string[]
 }
 
-export function AuctionPlayerList({ auctionId, isAdmin, players, managers = [], selectedPlayerId }: AuctionPlayerListProps) {
+export function AuctionPlayerList({ auctionId, isAdmin, players, managers = [], selectedPlayerId, recentlyUpdated = [] }: AuctionPlayerListProps) {
     const selectedRef = useRef<HTMLDivElement>(null)
+    const updatedRef = useRef<HTMLDivElement>(null)
 
     const [sellingPlayerId, setSellingPlayerId] = useState<string | null>(null)
     const [soldPrice, setSoldPrice] = useState('')
@@ -56,6 +58,15 @@ export function AuctionPlayerList({ auctionId, isAdmin, players, managers = [], 
             }, 100)
         }
     }, [selectedPlayerId])
+
+    useEffect(() => {
+        // Auto-scroll logic for recently updated players so viewers can see the animation
+        if (recentlyUpdated.length > 0 && updatedRef.current) {
+            setTimeout(() => {
+                updatedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }, 100)
+        }
+    }, [recentlyUpdated])
 
     const handleUnsold = async (playerId: string) => {
         setIsProcessing(true)
@@ -107,18 +118,21 @@ export function AuctionPlayerList({ auctionId, isAdmin, players, managers = [], 
                         const isSold = player.status === 'sold'
                         const isUnsold = player.status === 'unsold'
                         const isPending = player.status === 'pending'
+                        const isRecentlyUpdated = recentlyUpdated.includes(player.player_id)
 
                         return (
                             <div
                                 key={player.id}
-                                ref={isSelected ? selectedRef : null}
-                                className={`flex items-center gap-3 px-3 py-2 sm:px-4 sm:py-2 transition-colors ${isSelected && !isSold
-                                    ? 'bg-accent/20 border-l-4 border-l-accent'
-                                    : isSold
-                                        ? 'bg-surface-0/50 opacity-60 grayscale hover:grayscale-0 transition-all cursor-default'
-                                        : isPending
-                                            ? 'bg-emerald-500/5 hover:bg-emerald-500/10'
-                                            : 'bg-surface-1'
+                                ref={isRecentlyUpdated ? updatedRef : (isSelected ? selectedRef : null)}
+                                className={`flex items-center gap-3 px-3 py-2 sm:px-4 sm:py-2 transition-colors duration-500 ${isRecentlyUpdated
+                                    ? 'bg-emerald-500/20 ring-1 ring-inset ring-emerald-500' // Target visual state
+                                    : isSelected && !isSold
+                                        ? 'bg-accent/20 border-l-4 border-l-accent'
+                                        : isSold
+                                            ? 'bg-surface-0/50 opacity-60 grayscale hover:grayscale-0 transition-all cursor-default'
+                                            : isPending
+                                                ? 'bg-emerald-500/5 hover:bg-emerald-500/10'
+                                                : 'bg-surface-1'
                                     }`}
                             >
                                 <div className={`flex-shrink-0 rounded-full ${isSold ? 'opacity-60 grayscale' :
