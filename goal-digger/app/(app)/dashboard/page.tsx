@@ -5,6 +5,7 @@ import { Badge, roleVariant, statusVariant } from '../../../components/ui/Badge'
 import Link from 'next/link'
 import { UpcomingMatches } from '../../../components/dashboard/UpcomingMatches'
 import { OngoingAuctions } from '../../../components/dashboard/OngoingAuctions'
+import { TopPlayersList } from '../../../components/dashboard/TopPlayersList'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +26,7 @@ export default async function DashboardPage() {
             .limit(5),
         supabase
             .from('profiles')
-            .select('id, first_name, last_name, base_score, goals, role')
+            .select('id, first_name, last_name, base_score, goals, role, matches_played, player_position, avatar_url')
             .eq('is_player', true)
             .order('base_score', { ascending: false })
             .limit(20),
@@ -100,29 +101,7 @@ export default async function DashboardPage() {
                         <h2 className="font-semibold text-text-primary">Top Players</h2>
                         <Link href="/players" className="text-xs text-accent hover:underline">View all →</Link>
                     </div>
-                    {topPlayers.length > 0 ? (
-                        <ul className="divide-y divide-border">
-                            {topPlayers.map((p, i) => (
-                                <li key={p.id} className="flex items-center gap-3 px-5 py-3.5">
-                                    <span className="font-mono text-sm font-bold text-text-muted w-5">
-                                        {i + 1}
-                                    </span>
-                                    <div className="flex-1">
-                                        <p className="text-sm font-medium text-text-primary">
-                                            {p.first_name} {p.last_name}
-                                        </p>
-                                        <p className="text-xs text-text-muted">{p.goals} goals</p>
-                                    </div>
-                                    <Badge variant={roleVariant[p.role] ?? 'slate'}>{p.role}</Badge>
-                                    <span className="font-mono text-sm font-bold text-accent">
-                                        {p.base_score + p.goals * 2}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="px-5 py-8 text-center text-sm text-text-muted">No players yet.</p>
-                    )}
+                    <TopPlayersList players={topPlayers} />
                 </Card>
             </div>
         </div>
