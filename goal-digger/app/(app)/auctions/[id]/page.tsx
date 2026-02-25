@@ -19,61 +19,71 @@ export default async function AuctionDetailPage({ params }: PageProps) {
     const [
         { data: { user } },
         { data: auction },
+        { data: auctionPlayers },
+        { data: auctionManagers },
+        { data: profile }
     ] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from('auctions').select('*').eq('id', id).single(),
+        supabase.from('auction_players')
+            .select('id, player_id, base_price, sold_to, sold_price, status, display_order, profiles!player_id(first_name, last_name, player_position, base_score, avatar_url)')
+            .eq('auction_id', id)
+            .order('display_order', { ascending: true }),
+        supabase.from('auction_managers')
+            .select(`
+                    manager_id,
+                    profiles!manager_id(first_name, last_name, avatar_url)
+                `)
+            .eq('auction_id', id),
+        // Look up the profile specifically for the context user to check roles
+        (async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return { data: null }
+            return supabase.from('profiles').select('is_admin, is_manager').eq('id', user.id).single()
+        })()
     ])
 
     if (!auction) notFound()
 
-    // Check role details
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_admin, is_manager')
-        .eq('id', user!.id)
-        .single()
-
     const isAdmin = profile?.is_admin ?? false
     const isManager = profile?.is_manager ?? false
 
+    // Conditionally fetch "ALL" players and managers only if Admin, to populate the manage Modals
+    let allDbPlayers: any[] = []
+    let allDbManagers: any[] = []
+    if (isAdmin) {
+        const [playersRes, managersRes] = await Promise.all([
+            supabase.from('profiles')
+                .select('id, first_name, last_name, player_position, base_score')
+                .eq('is_player', true)
+                .order('base_score', { ascending: false }),
+            supabase.from('profiles')
+                .select('id, first_name, last_name')
+                .eq('is_manager', true)
+                .order('first_name', { ascending: true })
+        ])
+        allDbPlayers = playersRes.data || []
+        allDbManagers = managersRes.data || []
+    }
+
     // Check if current user has joined this auction as manager
     let hasJoined = false
-    if (isManager) {
+    if (isManager && user) {
         const { count } = await supabase
             .from('auction_managers')
             .select('*', { count: 'exact', head: true })
             .eq('auction_id', id)
-            .eq('manager_id', user!.id)
+            .eq('manager_id', user.id)
         hasJoined = (count ?? 0) > 0
     }
 
-    // Fetch auction players with profile data
-    const { data: auctionPlayers, error: apError } = await supabase
-        .from('auction_players')
-        .select('id, player_id, base_price, sold_to, sold_price, status, display_order, profiles!player_id(first_name, last_name, player_position, base_score, avatar_url)')
-        .eq('auction_id', id)
-        .order('display_order', { ascending: true })
-
-    console.log('--- FETCH AUCTION PLAYERS ---')
-    console.log('Error:', apError)
-    console.log('Data:', JSON.stringify(auctionPlayers, null, 2))
-
-    // Fetch managers who joined the auction
-    const { data: auctionManagers, error: amError } = await supabase
-        .from('auction_managers')
-        .select(`
-            manager_id,
-            profiles!manager_id(first_name, last_name, avatar_url)
-        `)
-        .eq('auction_id', id)
-
     const managers = (auctionManagers ?? []).map(am => {
-        const profile = Array.isArray(am.profiles) ? am.profiles[0] : am.profiles;
+        const profileData = Array.isArray(am.profiles) ? am.profiles[0] : am.profiles;
         return {
             id: am.manager_id,
-            first_name: profile?.first_name ?? 'Unknown',
-            last_name: profile?.last_name ?? '',
-            avatar_url: profile?.avatar_url ?? null,
+            first_name: profileData?.first_name ?? 'Unknown',
+            last_name: profileData?.last_name ?? '',
+            avatar_url: profileData?.avatar_url ?? null,
         }
     })
 
@@ -87,11 +97,11 @@ export default async function AuctionDetailPage({ params }: PageProps) {
     const pendingForSpin = (auctionPlayers ?? [])
         .filter((p: any) => p.status === 'pending' || p.status === 'unsold')
         .map((p: any) => {
-            const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+            const profileData = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
             return {
                 id: p.player_id,
-                name: `${profile?.first_name} ${profile?.last_name}`,
-                position: profile?.player_position ?? null,
+                name: `${profileData?.first_name} ${profileData?.last_name}`,
+                position: profileData?.player_position ?? null,
             };
         })
 
@@ -118,6 +128,8 @@ export default async function AuctionDetailPage({ params }: PageProps) {
                 isAdmin={isAdmin}
                 pendingForSpin={pendingForSpin}
                 auctionPlayers={auctionPlayers ?? []}
+                allDbPlayers={allDbPlayers}
+                allDbManagers={allDbManagers}
                 managers={managers}
                 budgetPerManager={auction.budget_per_manager}
                 maxPlayersPerTeam={auction.max_players_per_team}

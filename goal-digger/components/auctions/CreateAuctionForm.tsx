@@ -32,6 +32,7 @@ export function CreateAuctionForm({ players, managers }: CreateAuctionFormProps)
     const [bidTimer, setBidTimer] = useState(15)
     const [budget, setBudget] = useState(1000)
     const [maxPlayers, setMaxPlayers] = useState(8)
+    const [status, setStatus] = useState('draft')
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -112,6 +113,7 @@ export function CreateAuctionForm({ players, managers }: CreateAuctionFormProps)
                 bid_timer_seconds: bidTimer,
                 budget_per_manager: budget,
                 max_players_per_team: maxPlayers,
+                status,
                 players: Array.from(selectedPlayers.values()),
                 managerIds: Array.from(selectedManagers),
             })
@@ -188,6 +190,18 @@ export function CreateAuctionForm({ players, managers }: CreateAuctionFormProps)
                             onChange={e => setMaxPlayers(Number(e.target.value))}
                             className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
                         />
+                    </label>
+
+                    <label className="flex flex-col gap-1.5">
+                        <span className="text-sm font-medium text-text-muted">Status</span>
+                        <select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
+                        >
+                            <option value="draft">Draft</option>
+                            <option value="completed">Completed</option>
+                        </select>
                     </label>
 
                     <label className="flex flex-col gap-1.5 sm:col-span-2">

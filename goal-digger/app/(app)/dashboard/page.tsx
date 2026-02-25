@@ -4,6 +4,7 @@ import { Card } from '../../../components/ui/Card'
 import { Badge, roleVariant, statusVariant } from '../../../components/ui/Badge'
 import Link from 'next/link'
 import { UpcomingMatches } from '../../../components/dashboard/UpcomingMatches'
+import { OngoingAuctions } from '../../../components/dashboard/OngoingAuctions'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +12,7 @@ export default async function DashboardPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    const [{ data: profile }, { data: matches }, { data: players }] = await Promise.all([
+    const [{ data: profile }, { data: matches }, { data: players }, { data: auctions }] = await Promise.all([
         supabase
             .from('profiles')
             .select('first_name, last_name, role, is_admin, is_manager, base_score, goals, matches_played, player_position')
@@ -28,6 +29,11 @@ export default async function DashboardPage() {
             .eq('is_player', true)
             .order('base_score', { ascending: false })
             .limit(20),
+        supabase
+            .from('auctions')
+            .select('id, title, status, scheduled_at')
+            .order('scheduled_at', { ascending: false })
+            .limit(5),
     ])
 
     // Sort by effective score and take top 5
@@ -76,11 +82,16 @@ export default async function DashboardPage() {
             </div>
 
             {/* 2-column grid on md+ */}
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {/* Upcoming matches */}
                 <UpcomingMatches
                     matches={matches}
                     isAdmin={profile?.is_admin || false}
+                />
+
+                {/* Ongoing auctions */}
+                <OngoingAuctions
+                    auctions={auctions}
                 />
 
                 {/* Top players */}

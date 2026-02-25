@@ -206,7 +206,7 @@ export function TeamRoster({ matchId, signups: initialSignups, isAdmin, matchSta
                 </>
             ) : (
                 /* Pre-balance: just list the players */
-                <div className="rounded-xl border border-border">
+                <div className="bg-surface-2 overflow-hidden rounded-xl border border-border">
                     <div className="border-b border-border px-5 py-4">
                         <h2 className="font-semibold text-text-primary">
                             Signed-Up Players ({signups.length})

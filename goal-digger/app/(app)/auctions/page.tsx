@@ -1,5 +1,6 @@
 import { createClient } from '../../../lib/supabase/server'
 import { Card } from '../../../components/ui/Card'
+import { AuctionStatusBadge } from '../../../components/auctions/AuctionStatusBadge'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -44,19 +45,12 @@ export default async function AuctionsPage() {
             {auctions && auctions.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {auctions.map((a) => {
-                        const statusColors: Record<string, string> = {
-                            draft: 'bg-surface-3 text-text-muted',
-                            live: 'bg-emerald-500/15 text-emerald-400',
-                            completed: 'bg-blue-500/15 text-blue-400',
-                        }
                         return (
                             <Link key={a.id} href={`/auctions/${a.id}`}>
                                 <Card hoverable>
                                     <div className="flex items-start justify-between gap-2 mb-3">
                                         <h2 className="font-semibold text-text-primary">{a.title}</h2>
-                                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${statusColors[a.status] ?? 'bg-surface-3 text-text-muted'}`}>
-                                            {a.status}
-                                        </span>
+                                        <AuctionStatusBadge status={a.status} scheduledAt={a.scheduled_at} />
                                     </div>
                                     <div className="flex flex-col gap-1 text-sm text-text-muted">
                                         <span>📅 {new Date(a.scheduled_at).toLocaleString(undefined, { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
@@ -70,7 +64,7 @@ export default async function AuctionsPage() {
                             </Link>
                         )
                     })}
-                </div>
+                </div >
             ) : (
                 <Card>
                     <p className="py-10 text-center text-sm text-text-muted">
@@ -79,6 +73,6 @@ export default async function AuctionsPage() {
                     </p>
                 </Card>
             )}
-        </div>
+        </div >
     )
 }

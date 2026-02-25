@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { AuctionDetailActions } from './AuctionDetailActions'
+import { EditAuctionDetailsModal } from './EditAuctionDetailsModal'
+import { AuctionStatusBadge } from './AuctionStatusBadge'
 import { joinAuction, leaveAuction } from '../../app/actions/auctions'
 
 interface AuctionHeaderProps {
@@ -26,6 +28,7 @@ interface AuctionHeaderProps {
 export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined = false, playerCount }: AuctionHeaderProps) {
     const [isMinimized, setIsMinimized] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
     async function handleJoin() {
         setIsProcessing(true)
@@ -51,12 +54,6 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
         }
     }
 
-    const statusColors: Record<string, string> = {
-        draft: 'bg-surface-3 text-text-muted',
-        live: 'bg-emerald-500/15 text-emerald-400',
-        completed: 'bg-blue-500/15 text-blue-400',
-    }
-
     return (
         <Card>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -74,10 +71,12 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                                 )}
                             </button>
-                            <h1 className="text-xl sm:text-2xl font-bold text-text-primary truncate">{auction.title}</h1>
-                            <span className={`hidden sm:inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${statusColors[auction.status] ?? 'bg-surface-3 text-text-muted'}`}>
-                                {auction.status}
-                            </span>
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-xl sm:text-2xl font-bold text-text-primary truncate">{auction.title}</h1>
+                            </div>
+                            <div className="hidden sm:block">
+                                <AuctionStatusBadge status={auction.status} scheduledAt={auction.scheduled_at} />
+                            </div>
                         </div>
 
                         {/* Actions on top right */}
@@ -109,7 +108,18 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
                             )}
 
                             {isAdmin && auction.status === 'draft' && (
-                                <AuctionDetailActions auctionId={auction.id} />
+                                <>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setIsEditModalOpen(true)}
+                                        className="text-accent hover:text-accent-hover hover:bg-accent/10"
+                                        title="Edit Auction"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                                    </Button>
+                                    <AuctionDetailActions auctionId={auction.id} />
+                                </>
                             )}
                         </div>
                     </div>
@@ -127,9 +137,25 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
 
             {/* Rules */}
             {!isMinimized && auction.description && (
-                <div className="mt-4 text-sm text-text-muted pl-1 sm:pl-10 border-t border-border pt-4">
+                <div className="mt-4 text-sm text-text-muted pl-1 sm:pl-10">
                     <p className="whitespace-pre-wrap"><span className="text-text-primary mr-1">📋</span>{auction.description}</p>
                 </div>
+            )}
+
+            {isEditModalOpen && (
+                <EditAuctionDetailsModal
+                    auction={{
+                        id: auction.id,
+                        title: auction.title,
+                        status: auction.status,
+                        description: auction.description || '',
+                        scheduled_at: auction.scheduled_at,
+                        bid_timer_seconds: auction.bid_timer_seconds,
+                        budget_per_manager: auction.budget_per_manager,
+                        max_players_per_team: auction.max_players_per_team
+                    }}
+                    onClose={() => setIsEditModalOpen(false)}
+                />
             )}
         </Card>
     )

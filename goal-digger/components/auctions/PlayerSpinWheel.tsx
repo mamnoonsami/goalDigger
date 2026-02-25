@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '../ui/Button'
 import dynamic from 'next/dynamic'
 
@@ -27,6 +27,13 @@ export function PlayerSpinWheel({ players, onPlayerSelected, disabled }: PlayerS
     const [mustSpin, setMustSpin] = useState(false)
     const [prizeNumber, setPrizeNumber] = useState(0)
     const [hasSpun, setHasSpun] = useState(false)
+
+    // Reset wheel if player count changes to prevent OOB index
+    useEffect(() => {
+        setMustSpin(false)
+        setHasSpun(false)
+        setPrizeNumber(0)
+    }, [players.length])
 
     const handleSpinClick = () => {
         if (!mustSpin && players.length > 0) {

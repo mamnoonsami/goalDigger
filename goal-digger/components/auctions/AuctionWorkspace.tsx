@@ -4,19 +4,25 @@ import { useState } from 'react'
 import { Card } from '../ui/Card'
 import { PlayerSpinWheel } from './PlayerSpinWheel'
 import { AuctionPlayerList } from './AuctionPlayerList'
+import { ManageAuctionPlayersModal } from './ManageAuctionPlayersModal'
+import { ManageAuctionManagersModal } from './ManageAuctionManagersModal'
 
 interface AuctionWorkspaceProps {
     auctionId: string
     isAdmin: boolean
     pendingForSpin: any[]
     auctionPlayers: any[]
+    allDbPlayers?: any[]
+    allDbManagers?: any[]
     managers: { id: string; first_name: string; last_name: string; avatar_url: string | null }[]
     budgetPerManager: number
     maxPlayersPerTeam: number
 }
 
-export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPlayers, managers, budgetPerManager, maxPlayersPerTeam }: AuctionWorkspaceProps) {
+export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPlayers, allDbPlayers = [], allDbManagers = [], managers, budgetPerManager, maxPlayersPerTeam }: AuctionWorkspaceProps) {
     const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
+    const [isManagePlayersOpen, setIsManagePlayersOpen] = useState(false)
+    const [isManageManagersOpen, setIsManageManagersOpen] = useState(false)
 
     const hasPending = isAdmin && pendingForSpin.length > 0
     const hasManagers = managers.length > 0
@@ -54,8 +60,18 @@ export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPl
 
             <div className="flex flex-col h-full min-h-[400px]">
                 {/* Player List */}
-                <Card className="h-full flex flex-col">
-                    <h2 className="text-lg font-semibold text-text-primary mb-4 flex-none">Auction Players</h2>
+                <Card className="h-full flex flex-col pt-4">
+                    <div className="flex items-center justify-between mb-4 flex-none px-1">
+                        <h2 className="text-lg font-semibold text-text-primary">Auction Players</h2>
+                        {isAdmin && (
+                            <button
+                                onClick={() => setIsManagePlayersOpen(true)}
+                                className="text-xs font-medium text-accent hover:text-accent-hover bg-accent/10 hover:bg-accent/20 px-3 py-1.5 rounded transition-colors"
+                            >
+                                Manage Players
+                            </button>
+                        )}
+                    </div>
                     <div className="flex-1 overflow-y-auto min-h-0">
                         <AuctionPlayerList
                             auctionId={auctionId}
@@ -71,8 +87,18 @@ export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPl
             {/* Manager Dashboard */}
             {hasManagers && (
                 <div className="flex flex-col h-full min-h-[400px]">
-                    <Card className="h-full flex flex-col">
-                        <h2 className="text-lg font-semibold text-text-primary mb-4 flex-none">Manager Dashboard</h2>
+                    <Card className="h-full flex flex-col pt-4">
+                        <div className="flex items-center justify-between mb-4 flex-none px-1">
+                            <h2 className="text-lg font-semibold text-text-primary">Manager Dashboard</h2>
+                            {isAdmin && (
+                                <button
+                                    onClick={() => setIsManageManagersOpen(true)}
+                                    className="text-xs font-medium text-accent hover:text-accent-hover bg-accent/10 hover:bg-accent/20 px-3 py-1.5 rounded transition-colors"
+                                >
+                                    Manage Managers
+                                </button>
+                            )}
+                        </div>
                         <div className="flex-1 overflow-x-hidden overflow-y-auto min-h-0 pr-2 pb-2">
                             <div className={gridClass}>
                                 {managers.map((manager, idx) => {
@@ -145,6 +171,47 @@ export function AuctionWorkspace({ auctionId, isAdmin, pendingForSpin, auctionPl
                         </div>
                     </Card>
                 </div>
+            )}
+
+            {/* If there are no managers yet, we still need a way to add them, show an empty state dashboard */}
+            {!hasManagers && isAdmin && (
+                <div className="flex flex-col h-full min-h-[400px]">
+                    <Card className="h-full flex flex-col pt-4 items-center justify-center border-dashed border-2 border-border bg-surface-1/50">
+                        <div className="text-center p-6">
+                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface-2 text-text-muted mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" x2="19" y1="8" y2="14" /><line x1="22" x2="16" y1="11" y2="11" /></svg>
+                            </div>
+                            <h3 className="text-lg font-semibold text-text-primary mb-1">No Managers Yet</h3>
+                            <p className="text-sm text-text-muted mb-4 max-w-[250px] mx-auto">Add managers to this auction to build out the team rosters.</p>
+                            <button
+                                onClick={() => setIsManageManagersOpen(true)}
+                                className="text-sm font-medium text-white bg-accent hover:bg-accent-hover px-4 py-2 rounded-lg shadow-sm transition-colors mx-auto inline-flex items-center gap-2"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                                Add Managers
+                            </button>
+                        </div>
+                    </Card>
+                </div>
+            )}
+
+            {isManagePlayersOpen && (
+                <ManageAuctionPlayersModal
+                    auctionId={auctionId}
+                    allPlayers={allDbPlayers}
+                    initialAssignedIds={auctionPlayers.map(p => p.player_id)}
+                    soldPlayerIds={auctionPlayers.filter(p => p.status === 'sold').map(p => p.player_id)}
+                    onClose={() => setIsManagePlayersOpen(false)}
+                />
+            )}
+
+            {isManageManagersOpen && (
+                <ManageAuctionManagersModal
+                    auctionId={auctionId}
+                    allManagers={allDbManagers}
+                    initialAssignedIds={managers.map(m => m.id)}
+                    onClose={() => setIsManageManagersOpen(false)}
+                />
             )}
         </div>
     )

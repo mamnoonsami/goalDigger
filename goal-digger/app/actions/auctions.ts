@@ -11,6 +11,7 @@ export async function createAuction(data: {
     bid_timer_seconds: number
     budget_per_manager: number
     max_players_per_team: number
+    status: string
     players: { player_id: string; base_price: number }[]
     managerIds?: string[]
 }) {
@@ -36,7 +37,7 @@ export async function createAuction(data: {
             bid_timer_seconds: data.bid_timer_seconds,
             budget_per_manager: data.budget_per_manager,
             max_players_per_team: data.max_players_per_team,
-            status: 'draft',
+            status: data.status,
             created_by: user.id,
         })
         .select()
@@ -86,17 +87,17 @@ export async function createAuction(data: {
     return { id: auction.id }
 }
 
-/* ── Update Auction ── */
-export async function updateAuction(
+/* ── Update Auction Details ── */
+export async function updateAuctionDetails(
     id: string,
     data: {
-        title?: string
-        description?: string
-        scheduled_at?: string
-        bid_timer_seconds?: number
-        budget_per_manager?: number
-        max_players_per_team?: number
-        status?: string
+        title: string
+        description: string
+        scheduled_at: string
+        bid_timer_seconds: number
+        budget_per_manager: number
+        max_players_per_team: number
+        status: string
     }
 ) {
     const supabase = await createClient()
@@ -109,6 +110,92 @@ export async function updateAuction(
     if (error) throw new Error(error.message)
 
     revalidatePath('/auctions')
+    revalidatePath(`/auctions/${id}`)
+}
+
+/* ── Update Auction Players ── */
+export async function updateAuctionPlayers(
+    id: string,
+    playersToAdd: string[],
+    playersToRemove: string[]
+) {
+    const supabase = await createClient()
+    const promises = []
+
+    if (playersToRemove.length > 0) {
+        promises.push(
+            supabase
+                .from('auction_players')
+                .delete()
+                .eq('auction_id', id)
+                .in('player_id', playersToRemove)
+                .neq('status', 'sold')
+        )
+    }
+
+    if (playersToAdd.length > 0) {
+        const { data: maxOrderData } = await supabase
+            .from('auction_players')
+            .select('display_order')
+            .eq('auction_id', id)
+            .order('display_order', { ascending: false })
+            .limit(1)
+
+        const startOrder = (maxOrderData?.[0]?.display_order || 0) + 1
+
+        const playerRows = playersToAdd.map((playerId, i) => ({
+            auction_id: id,
+            player_id: playerId,
+            base_price: 100,
+            status: 'pending',
+            display_order: startOrder + i,
+        }))
+
+        promises.push(
+            supabase.from('auction_players').insert(playerRows)
+        )
+    }
+
+    if (promises.length > 0) {
+        await Promise.all(promises)
+    }
+
+    revalidatePath(`/auctions/${id}`)
+}
+
+/* ── Update Auction Managers ── */
+export async function updateAuctionManagers(
+    id: string,
+    managersToAdd: string[],
+    managersToRemove: string[]
+) {
+    const supabase = await createClient()
+    const promises = []
+
+    if (managersToRemove.length > 0) {
+        promises.push(
+            supabase
+                .from('auction_managers')
+                .delete()
+                .eq('auction_id', id)
+                .in('manager_id', managersToRemove)
+        )
+    }
+
+    if (managersToAdd.length > 0) {
+        const managerRows = managersToAdd.map(managerId => ({
+            auction_id: id,
+            manager_id: managerId,
+        }))
+        promises.push(
+            supabase.from('auction_managers').insert(managerRows)
+        )
+    }
+
+    if (promises.length > 0) {
+        await Promise.all(promises)
+    }
+
     revalidatePath(`/auctions/${id}`)
 }
 
