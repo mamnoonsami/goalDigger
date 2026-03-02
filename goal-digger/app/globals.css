@@ -107,3 +107,491 @@ body {
 @view-transition {
   navigation: auto;
 }
+
+/* ─────────────────────────────────────────────
+   Session timeout modal
+───────────────────────────────────────────── */
+.session-timeout-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  animation: st-fade-in 0.25s ease-out;
+}
+
+.session-timeout-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 380px;
+  padding: 2rem 1.75rem 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+  animation: st-scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.session-timeout-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(234, 179, 8, 0.12);
+  color: #eab308;
+  animation: st-pulse 2s ease-in-out infinite;
+  margin-bottom: 0.25rem;
+}
+
+.session-timeout-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  margin-top: 0.25rem;
+}
+
+.session-timeout-countdown-time {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #eab308;
+  letter-spacing: 0.05em;
+}
+
+.session-timeout-progress-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-3);
+  overflow: hidden;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.session-timeout-progress-bar {
+  height: 100%;
+  border-radius: 2px;
+  background: #eab308;
+  transition: width 1s linear;
+}
+
+@keyframes st-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes st-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes st-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 0 10px rgba(234, 179, 8, 0);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Toast notifications
+───────────────────────────────────────────── */
+.toast-container {
+  position: fixed;
+  top: 4.25rem;
+  right: 1.25rem;
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+  max-width: 380px;
+}
+
+.toast-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toast-accent-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+  background: var(--toast-accent);
+}
+
+.toast-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast-message {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Animations */
+.toast-enter {
+  animation: toast-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast-exit {
+  animation: toast-slide-out 0.3s ease-in forwards;
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toast-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Auction Live Log — retro printer floating widget
+───────────────────────────────────────────── */
+
+/* ── Floating action button ── */
+.live-log-fab {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9990;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  outline: 3px solid #dc2626;
+  outline-offset: -3px;
+  background: var(--surface-2);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
+  animation: live-ring-pulse 2s ease-in-out infinite;
+}
+
+.live-log-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+}
+
+/* YouTube-style red LIVE badge at the bottom of the ring */
+.live-log-fab-live {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 5px 2px 4px;
+  border-radius: 3px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.live-log-fab-live-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+/* Unseen count badge */
+.live-log-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+}
+
+/* ── Floating panel ── */
+.live-log-panel {
+  position: fixed;
+  bottom: 5rem;
+  right: 1.5rem;
+  z-index: 9989;
+  width: 420px;
+  max-width: calc(100vw - 2rem);
+  height: 350px;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: log-panel-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.live-log-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.live-log-panel-body {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Log internals ── */
+.auction-log-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #dc2626;
+  box-shadow: 0 0 6px rgba(220, 38, 38, 0.5);
+  animation: log-blink 2s ease-in-out infinite;
+}
+
+.auction-log-body {
+  overflow-y: auto;
+  padding: 0.5rem 0.625rem;
+  background: #0c0c0c;
+  font-family: 'Inconsolata', 'Courier New', monospace;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  scrollbar-width: thin;
+  scrollbar-color: #333 #0c0c0c;
+}
+
+.auction-log-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.auction-log-body::-webkit-scrollbar-track {
+  background: #0c0c0c;
+}
+
+.auction-log-body::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 2px;
+}
+
+.auction-log-line {
+  display: flex;
+  gap: 0.5rem;
+  animation: log-fade-in 0.3s ease-out;
+}
+
+.auction-log-time {
+  color: #666;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.auction-log-label {
+  flex-shrink: 0;
+  font-weight: 700;
+  min-width: 56px;
+  user-select: none;
+}
+
+.auction-log-msg {
+  color: #f0f0f0;
+}
+
+.auction-log-empty {
+  color: #666;
+  padding: 0.5rem 0;
+}
+
+.auction-log-cursor {
+  animation: log-cursor 1s step-end infinite;
+  margin-left: 2px;
+  color: #dc2626;
+}
+
+/* ── Light theme console ── */
+.light .auction-log-body {
+  background: var(--surface-1);
+  scrollbar-color: #d0c8bc #f5f0e8;
+}
+
+.light .auction-log-body::-webkit-scrollbar-track {
+  background: #fcf4e7;
+}
+
+.light .auction-log-body::-webkit-scrollbar-thumb {
+  background: #c8c0b4;
+}
+
+.light .auction-log-msg {
+  color: #928169;
+}
+
+.light .auction-log-time {
+  color: #9e958a;
+}
+
+.light .auction-log-empty {
+  color: #9e958a;
+}
+
+.light .auction-log-cursor {
+  color: #dc2626;
+}
+
+/* ── Animations ── */
+@keyframes live-ring-pulse {
+
+  0%,
+  100% {
+    outline-color: #dc2626;
+    box-shadow: 0 4px 16px rgba(220, 38, 38, 0.25);
+  }
+
+  50% {
+    outline-color: #f87171;
+    box-shadow: 0 4px 20px rgba(220, 38, 38, 0.45);
+  }
+}
+
+@keyframes live-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes log-blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes log-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes log-cursor {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes log-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

@@ -3,6 +3,7 @@ import { markPlayerSold, markPlayerUnsold } from '../../app/actions/auctions'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Avatar } from '../ui/Avatar'
+import { useToast } from '../providers/ToastProvider'
 
 interface AuctionPlayer {
     id: string
@@ -39,11 +40,14 @@ interface AuctionPlayerListProps {
     managers?: { id: string; first_name: string; last_name: string; avatar_url: string | null }[]
     selectedPlayerId?: string | null
     recentlyUpdated?: string[]
+    budgetPerManager?: number
+    maxPlayersPerTeam?: number
 }
 
-export function AuctionPlayerList({ auctionId, isAdmin, players, managers = [], selectedPlayerId, recentlyUpdated = [] }: AuctionPlayerListProps) {
+export function AuctionPlayerList({ auctionId, isAdmin, players, managers = [], selectedPlayerId, recentlyUpdated = [], budgetPerManager = 0, maxPlayersPerTeam = 0 }: AuctionPlayerListProps) {
     const selectedRef = useRef<HTMLDivElement>(null)
     const updatedRef = useRef<HTMLDivElement>(null)
+    const toast = useToast()
 
     const [sellingPlayerId, setSellingPlayerId] = useState<string | null>(null)
     const [soldPrice, setSoldPrice] = useState('')
@@ -72,9 +76,10 @@ export function AuctionPlayerList({ auctionId, isAdmin, players, managers = [], 
         setIsProcessing(true)
         try {
             await markPlayerUnsold(auctionId, playerId)
+            toast.warning('Player marked as unsold')
         } catch (error) {
             console.error(error)
-            alert('Failed to mark player as unsold.')
+            toast.error('Failed to mark player as unsold')
         } finally {
             setIsProcessing(false)
         }
@@ -83,23 +88,54 @@ export function AuctionPlayerList({ auctionId, isAdmin, players, managers = [], 
     const handleSoldConfirm = async (playerId: string) => {
         const price = parseInt(soldPrice)
         if (isNaN(price) || price < 0) {
-            alert('Please enter a valid price.')
+            toast.error('Please enter a valid price')
             return
         }
         if (!selectedManagerId) {
-            alert('Please select a manager.')
+            toast.error('Please select a manager')
             return
+        }
+
+        // --- Budget & Max Bid Validation ---
+        if (budgetPerManager > 0) {
+            const boughtByManager = players.filter(p => p.status === 'sold' && p.sold_to === selectedManagerId)
+            const spent = boughtByManager.reduce((sum, p) => sum + (p.sold_price || 0), 0)
+            const remaining = budgetPerManager - spent
+
+            // Budget exceeded check
+            if (price > remaining) {
+                toast.error(`Manager cannot exceed their budget. Only $${remaining} remaining`)
+                return
+            }
+
+            // Max bid check (must reserve base prices for remaining slots)
+            if (maxPlayersPerTeam > 0) {
+                const spotsLeft = Math.max(0, maxPlayersPerTeam - boughtByManager.length)
+                if (spotsLeft > 0) {
+                    const availablePlayers = players.filter(p => p.status === 'pending' || p.status === 'unsold')
+                    const minBasePrice = availablePlayers.length > 0
+                        ? Math.min(...availablePlayers.map(p => p.base_price || 0))
+                        : 0
+                    const maxBid = remaining - ((spotsLeft - 1) * minBasePrice)
+                    if (price > maxBid) {
+                        toast.error(`Manager cannot bid more than $${maxBid} on this player`)
+                        return
+                    }
+                }
+            }
         }
 
         setIsProcessing(true)
         try {
             await markPlayerSold(auctionId, playerId, price, selectedManagerId)
+            const manager = managers.find(m => m.id === selectedManagerId)
+            toast.success(`Player sold to ${manager?.first_name ?? 'manager'} for $${price}`)
             setSellingPlayerId(null)
             setSoldPrice('')
             setSelectedManagerId('')
         } catch (error) {
             console.error(error)
-            alert('Failed to mark player as sold.')
+            toast.error('Failed to mark player as sold')
         } finally {
             setIsProcessing(false)
         }

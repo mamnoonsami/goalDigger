@@ -8,6 +8,7 @@ import { EditAuctionDetailsModal } from './EditAuctionDetailsModal'
 import { AuctionStatusBadge } from './AuctionStatusBadge'
 import { joinAuction, leaveAuction } from '../../app/actions/auctions'
 import { createClient } from '../../lib/supabase/client'
+import { useToast } from '../providers/ToastProvider'
 
 interface AuctionHeaderProps {
     auction: {
@@ -30,6 +31,7 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
     const [isMinimized, setIsMinimized] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const toast = useToast()
 
     // Track live auction details so statuses (like 'completed' or title changes) update instantly for everyone
     const [liveAuction, setLiveAuction] = useState(auction)
@@ -66,9 +68,10 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
         setIsProcessing(true)
         try {
             await joinAuction(liveAuction.id)
+            toast.success('Joined auction successfully')
         } catch (error) {
             console.error(error)
-            alert('Failed to join auction')
+            toast.error('Failed to join auction')
         } finally {
             setIsProcessing(false)
         }
@@ -78,9 +81,10 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
         setIsProcessing(true)
         try {
             await leaveAuction(liveAuction.id)
+            toast.warning('Left the auction')
         } catch (error) {
             console.error(error)
-            alert('Failed to leave auction')
+            toast.error('Failed to leave auction')
         } finally {
             setIsProcessing(false)
         }

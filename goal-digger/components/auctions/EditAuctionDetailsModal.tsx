@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '../ui/Button'
 import { updateAuctionDetails } from '../../app/actions/auctions'
+import { useToast } from '../providers/ToastProvider'
 
 interface AuctionDetailsInitial {
     id: string
@@ -23,6 +24,7 @@ interface EditAuctionDetailsModalProps {
 
 export function EditAuctionDetailsModal({ auction, onClose }: EditAuctionDetailsModalProps) {
     const router = useRouter()
+    const toast = useToast()
 
     const formatDate = (isoString?: string) => {
         if (!isoString) return ''
@@ -57,9 +59,11 @@ export function EditAuctionDetailsModal({ auction, onClose }: EditAuctionDetails
                 status,
             })
             router.refresh()
+            toast.success('Auction details updated')
             onClose()
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Something went wrong')
+            toast.error('Failed to update auction details')
             setSaving(false)
         }
     }

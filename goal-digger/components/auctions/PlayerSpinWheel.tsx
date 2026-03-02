@@ -71,7 +71,7 @@ export function PlayerSpinWheel({ players, onPlayerSelected, disabled }: PlayerS
     ]
 
     return (
-        <div className="rounded-xl border border-border bg-surface-1 p-5 overflow-hidden flex flex-col h-full w-full">
+        <div className="rounded-xl border border-border bg-surface-1 p-5 overflow-hidden flex flex-col h-full w-full min-w-0">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
                     🎯 Player Spin Wheel
@@ -88,10 +88,10 @@ export function PlayerSpinWheel({ players, onPlayerSelected, disabled }: PlayerS
                 )}
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center min-h-[350px] py-4">
+            <div className="flex-1 flex flex-col items-center justify-center min-h-[250px] sm:min-h-[350px] py-4">
                 {/* The Wheel */}
                 <div
-                    className={`relative w-full max-w-[350px] aspect-square flex items-center justify-center transition-transform duration-300 ${mustSpin || disabled ? 'opacity-80 cursor-not-allowed' : 'cursor-pointer hover:scale-105 select-none'
+                    className={`relative w-full max-w-[280px] sm:max-w-[350px] aspect-square flex items-center justify-center transition-transform duration-300 ${mustSpin || disabled ? 'opacity-80 cursor-not-allowed' : 'cursor-pointer hover:scale-105 select-none'
                         }`}
                     onClick={() => {
                         if (!disabled && !mustSpin) handleSpinClick()

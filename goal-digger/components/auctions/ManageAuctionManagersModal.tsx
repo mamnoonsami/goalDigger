@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '../ui/Button'
 import { updateAuctionManagers } from '../../app/actions/auctions'
+import { useToast } from '../providers/ToastProvider'
 
 interface Manager {
     id: string
@@ -20,6 +21,7 @@ interface ManageAuctionManagersModalProps {
 
 export function ManageAuctionManagersModal({ auctionId, allManagers, initialAssignedIds, onClose }: ManageAuctionManagersModalProps) {
     const router = useRouter()
+    const toast = useToast()
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -52,10 +54,12 @@ export function ManageAuctionManagersModal({ auctionId, allManagers, initialAssi
             }
 
             await updateAuctionManagers(auctionId, managersToAdd, managersToRemove)
+            toast.success('Managers updated successfully')
             router.refresh()
             onClose()
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Something went wrong')
+            toast.error('Failed to update managers')
             setSaving(false)
         }
     }

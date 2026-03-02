@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '../ui/Button'
 import { updateAuctionPlayers } from '../../app/actions/auctions'
+import { useToast } from '../providers/ToastProvider'
 
 interface Player {
     id: string
@@ -23,6 +24,7 @@ interface ManageAuctionPlayersModalProps {
 
 export function ManageAuctionPlayersModal({ auctionId, allPlayers, initialAssignedIds, soldPlayerIds, onClose }: ManageAuctionPlayersModalProps) {
     const router = useRouter()
+    const toast = useToast()
     const [searchQuery, setSearchQuery] = useState('')
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -37,7 +39,7 @@ export function ManageAuctionPlayersModal({ auctionId, allPlayers, initialAssign
 
     function togglePlayer(playerId: string) {
         if (soldPlayers.has(playerId)) {
-            alert('Cannot remove a player that has already been sold.')
+            toast.warning('Cannot remove a player that has already been sold')
             return
         }
         setSelectedPlayers(prev => {
@@ -78,10 +80,12 @@ export function ManageAuctionPlayersModal({ auctionId, allPlayers, initialAssign
             }
 
             await updateAuctionPlayers(auctionId, playersToAdd, playersToRemove)
+            toast.success('Players updated successfully')
             router.refresh()
             onClose()
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Something went wrong')
+            toast.error('Failed to update players')
             setSaving(false)
         }
     }

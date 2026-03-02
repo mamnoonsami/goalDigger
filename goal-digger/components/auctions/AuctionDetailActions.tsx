@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '../ui/Button'
 import { deleteAuction, resetAuctionPlayers } from '../../app/actions/auctions'
+import { useToast } from '../providers/ToastProvider'
 
 interface AuctionDetailActionsProps {
     auctionId: string
@@ -11,6 +12,7 @@ interface AuctionDetailActionsProps {
 
 export function AuctionDetailActions({ auctionId }: AuctionDetailActionsProps) {
     const router = useRouter()
+    const toast = useToast()
     const [deleting, setDeleting] = useState(false)
     const [isResetting, setIsResetting] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
@@ -19,8 +21,10 @@ export function AuctionDetailActions({ auctionId }: AuctionDetailActionsProps) {
         setDeleting(true)
         try {
             await deleteAuction(auctionId)
+            toast.success('Auction deleted')
             router.push('/auctions')
         } catch {
+            toast.error('Failed to delete auction')
             setDeleting(false)
             setShowConfirm(false)
         }
@@ -31,10 +35,11 @@ export function AuctionDetailActions({ auctionId }: AuctionDetailActionsProps) {
             setIsResetting(true)
             try {
                 await resetAuctionPlayers(auctionId)
+                toast.warning('Auction has been reset — all players are now pending')
                 router.refresh()
             } catch (error) {
                 console.error(error)
-                alert('Failed to reset auction.')
+                toast.error('Failed to reset auction')
             } finally {
                 setIsResetting(false)
             }
