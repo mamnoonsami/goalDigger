@@ -79,6 +79,58 @@ export default async function AuctionDetailPage({ params }: PageProps) {
         hasJoined = (count ?? 0) > 0
     }
 
+    // If auction is linked to a tournament, use tournament players instead
+    let finalAuctionPlayers = auctionPlayers ?? []
+    const hasTournament = !!auction.tournament_id
+    let linkedTournament: { id: string; name: string } | null = null
+    if (hasTournament) {
+        const [{ data: tournamentPlayers }, { data: tournamentInfo }] = await Promise.all([
+            supabase
+                .from('tournament_players')
+                .select('player_id, profiles!player_id(first_name, last_name, player_position, base_score, avatar_url)')
+                .eq('tournament_id', auction.tournament_id),
+            supabase
+                .from('tournaments')
+                .select('id, name')
+                .eq('id', auction.tournament_id)
+                .single(),
+        ])
+
+        linkedTournament = tournamentInfo ?? null
+
+        // Fetch existing auction_players records so we use saved base prices
+        const { data: existingAuctionPlayers } = await supabase
+            .from('auction_players')
+            .select('id, player_id, base_price, sold_to, sold_price, status, display_order, profiles!player_id(first_name, last_name, player_position, base_score, avatar_url)')
+            .eq('auction_id', id)
+
+        const existingMap = new Map<string, any>()
+            ; (existingAuctionPlayers ?? []).forEach((ap: any) => existingMap.set(ap.player_id, ap))
+
+        if (tournamentPlayers && tournamentPlayers.length > 0) {
+            finalAuctionPlayers = tournamentPlayers.map((tp: any, idx: number) => {
+                const existing = existingMap.get(tp.player_id)
+                if (existing) {
+                    // Use the saved auction_players record
+                    return existing
+                }
+                // No auction_players record yet — create synthetic entry with default 20
+                return {
+                    id: `tournament-${tp.player_id}`,
+                    player_id: tp.player_id,
+                    base_price: 20,
+                    sold_to: null,
+                    sold_price: null,
+                    status: 'pending',
+                    display_order: idx,
+                    profiles: tp.profiles,
+                }
+            })
+        } else {
+            finalAuctionPlayers = []
+        }
+    }
+
     const managers = (auctionManagers ?? []).map(am => {
         const profileData = Array.isArray(am.profiles) ? am.profiles[0] : am.profiles;
         return {
@@ -111,18 +163,20 @@ export default async function AuctionDetailPage({ params }: PageProps) {
                 isAdmin={isAdmin}
                 isManager={isManager}
                 hasJoined={hasJoined}
-                playerCount={auctionPlayers?.length ?? 0}
+                playerCount={finalAuctionPlayers.length}
+                linkedTournament={linkedTournament}
             />
 
             <AuctionWorkspace
                 auctionId={id}
                 isAdmin={isAdmin}
-                auctionPlayers={auctionPlayers ?? []}
+                auctionPlayers={finalAuctionPlayers}
                 allDbPlayers={allDbPlayers}
                 allDbManagers={allDbManagers}
                 managers={managers}
                 budgetPerManager={auction.budget_per_manager}
                 maxPlayersPerTeam={auction.max_players_per_team}
+                hasTournament={hasTournament}
             />
         </div>
     )

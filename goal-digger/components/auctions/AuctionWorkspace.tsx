@@ -19,9 +19,10 @@ interface AuctionWorkspaceProps {
     managers: { row_id: string; id: string; first_name: string; last_name: string; avatar_url: string | null }[]
     budgetPerManager: number
     maxPlayersPerTeam: number
+    hasTournament?: boolean
 }
 
-export function AuctionWorkspace({ auctionId, isAdmin, auctionPlayers, allDbPlayers = [], allDbManagers = [], managers, budgetPerManager, maxPlayersPerTeam }: AuctionWorkspaceProps) {
+export function AuctionWorkspace({ auctionId, isAdmin, auctionPlayers, allDbPlayers = [], allDbManagers = [], managers, budgetPerManager, maxPlayersPerTeam, hasTournament = false }: AuctionWorkspaceProps) {
     const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
     const [isManagePlayersOpen, setIsManagePlayersOpen] = useState(false)
     const [isManageManagersOpen, setIsManageManagersOpen] = useState(false)
@@ -235,8 +236,8 @@ export function AuctionWorkspace({ auctionId, isAdmin, auctionPlayers, allDbPlay
                     {/* Player List */}
                     <Card className="h-full flex flex-col pt-4">
                         <div className="flex items-center justify-between mb-4 flex-none px-1">
-                            <h2 className="text-lg font-semibold text-text-primary">Auction Players</h2>
-                            {isAdmin && (
+                            <h2 className="text-lg font-semibold text-text-primary">Auction Players ({liveAuctionPlayers.length})</h2>
+                            {isAdmin && !hasTournament && (
                                 <button
                                     onClick={() => setIsManagePlayersOpen(true)}
                                     className="text-xs font-medium text-accent hover:text-accent-hover bg-accent/10 hover:bg-accent/20 px-3 py-1.5 rounded transition-colors"
@@ -265,7 +266,7 @@ export function AuctionWorkspace({ auctionId, isAdmin, auctionPlayers, allDbPlay
                     <div className="flex flex-col h-full min-h-[400px] min-w-0">
                         <Card className="h-full flex flex-col pt-4">
                             <div className="flex items-center justify-between mb-4 flex-none px-1">
-                                <h2 className="text-lg font-semibold text-text-primary">Manager Dashboard</h2>
+                                <h2 className="text-lg font-semibold text-text-primary">Manager Dashboard ({liveManagers.length})</h2>
                                 {isAdmin && (
                                     <button
                                         onClick={() => setIsManageManagersOpen(true)}

@@ -10,6 +10,9 @@ import { Button } from '../ui/Button'
 import { joinTournament, leaveTournament } from '../../app/actions/tournaments'
 import { useToast } from '../providers/ToastProvider'
 import { AddPlayersModal } from './AddPlayersModal'
+import { CreateTeamModal } from './CreateTeamModal'
+import { ManageTeamsModal } from './ManageTeamsModal'
+import { EditTeamModal } from './EditTeamModal'
 
 interface Auction {
     id: string
@@ -23,15 +26,15 @@ interface Team {
     team_slogan: string | null
     number_of_players: number
     manager_id: string | null
-    profiles: { first_name: string; last_name: string; avatar_url: string | null } | null
+    profiles: { first_name: string; last_name: string; avatar_url: string | null } | { first_name: string; last_name: string; avatar_url: string | null }[] | null
 }
 
 interface TournamentPlayer {
     id: string
     player_id: string
     team_id: string | null
-    profiles: { first_name: string; last_name: string; player_position: string | null; avatar_url: string | null }
-    tournament_teams: { team_name: string } | null
+    profiles: { first_name: string; last_name: string; player_position: string | null; avatar_url: string | null } | { first_name: string; last_name: string; player_position: string | null; avatar_url: string | null }[]
+    tournament_teams: { team_name: string } | { team_name: string }[] | null
 }
 
 interface Tournament {
@@ -56,16 +59,21 @@ interface Props {
     allDbPlayers?: { id: string; first_name: string; last_name: string; player_position: string | null; base_score: number }[]
     isAdmin: boolean
     isPlayer?: boolean
+    isManager?: boolean
     hasJoined?: boolean
+    currentUserId?: string | null
 }
 
-export function TournamentDetailView({ tournament, teams, players, linkedAuction, allAuctions, allDbPlayers = [], isAdmin, isPlayer = false, hasJoined = false }: Props) {
+export function TournamentDetailView({ tournament, teams, players, linkedAuction, allAuctions, allDbPlayers = [], isAdmin, isPlayer = false, isManager = false, hasJoined = false, currentUserId = null }: Props) {
     const router = useRouter()
     const toast = useToast()
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [isMinimized, setIsMinimized] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [isAddPlayersOpen, setIsAddPlayersOpen] = useState(false)
+    const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false)
+    const [isManageTeamsOpen, setIsManageTeamsOpen] = useState(false)
+    const [editingTeamId, setEditingTeamId] = useState<string | null>(null)
 
     return (
         <div className="flex flex-col gap-6">
@@ -219,7 +227,30 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
 
             {/* Teams Section */}
             <div>
-                <h3 className="text-lg font-semibold text-text-primary mb-3">🏆 Teams ({teams.length})</h3>
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-text-primary">🏆 Teams ({teams.length})</h3>
+                    <div className="flex items-center gap-2">
+                        {(isAdmin || isManager) && (
+                            <Button
+                                size="sm"
+                                onClick={() => setIsCreateTeamOpen(true)}
+                                className="text-xs"
+                            >
+                                + Create Team
+                            </Button>
+                        )}
+                        {isAdmin && teams.length > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsManageTeamsOpen(true)}
+                                className="text-xs"
+                            >
+                                Manage Teams
+                            </Button>
+                        )}
+                    </div>
+                </div>
                 {teams.length > 0 ? (
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         {teams.map(team => {
@@ -234,9 +265,20 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                                                 <p className="text-xs text-text-muted italic">&ldquo;{team.team_slogan}&rdquo;</p>
                                             )}
                                         </div>
-                                        <span className="text-xs text-text-muted bg-surface-3 rounded-full px-2 py-0.5">
-                                            {teamPlayers.length} players
-                                        </span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-xs text-text-muted bg-surface-3 rounded-full px-2 py-0.5">
+                                                {teamPlayers.length} players
+                                            </span>
+                                            {(isAdmin || (isManager && team.manager_id === currentUserId)) && (
+                                                <button
+                                                    onClick={() => setEditingTeamId(team.id)}
+                                                    className="p-1 rounded hover:bg-accent/10 text-accent hover:text-accent-hover transition-colors"
+                                                    title="Edit Team"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                     {profile && (
                                         <div className="flex items-center gap-2 mb-3">
@@ -286,7 +328,7 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                             onClick={() => setIsAddPlayersOpen(true)}
                             className="text-xs"
                         >
-                            + Add Players
+                            Manage Players
                         </Button>
                     )}
                 </div>
@@ -336,9 +378,53 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                     tournamentId={tournament.id}
                     allPlayers={allDbPlayers}
                     existingPlayerIds={players.map(p => p.player_id)}
+                    auctionId={tournament.auction_id}
                     onClose={() => setIsAddPlayersOpen(false)}
                 />
             )}
+
+            {isCreateTeamOpen && (
+                <CreateTeamModal
+                    tournamentId={tournament.id}
+                    onClose={() => setIsCreateTeamOpen(false)}
+                />
+            )}
+
+            {isManageTeamsOpen && (
+                <ManageTeamsModal
+                    tournamentId={tournament.id}
+                    teams={teams.map(t => {
+                        const profile = Array.isArray(t.profiles) ? t.profiles[0] : t.profiles
+                        const teamPlayers = players.filter(p => p.team_id === t.id)
+                        return {
+                            id: t.id,
+                            team_name: t.team_name,
+                            team_slogan: t.team_slogan,
+                            number_of_players: t.number_of_players,
+                            manager_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unassigned',
+                            player_count: teamPlayers.length,
+                        }
+                    })}
+                    onClose={() => setIsManageTeamsOpen(false)}
+                />
+            )}
+
+            {editingTeamId && (() => {
+                const team = teams.find(t => t.id === editingTeamId)
+                if (!team) return null
+                return (
+                    <EditTeamModal
+                        teamId={team.id}
+                        tournamentId={tournament.id}
+                        initialData={{
+                            team_name: team.team_name,
+                            team_slogan: team.team_slogan ?? '',
+                            number_of_players: team.number_of_players,
+                        }}
+                        onClose={() => setEditingTeamId(null)}
+                    />
+                )
+            })()}
         </div>
     )
 }

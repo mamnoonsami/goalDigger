@@ -38,7 +38,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
     // Fetch signups with player profile data
     const { data: signups } = await supabase
         .from('match_signups')
-        .select('player_id, team, profiles(first_name, last_name, base_score, goals, player_position)')
+        .select('player_id, team, profiles(first_name, last_name, base_score, goals, player_position, avatar_url)')
         .eq('match_id', id)
         .order('signed_up_at', { ascending: true })
 

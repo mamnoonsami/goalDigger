@@ -34,11 +34,12 @@ export default async function TournamentDetailPage({ params }: PageProps) {
 
     // Get user roles
     const { data: profile } = user
-        ? await supabase.from('profiles').select('is_admin, is_player').eq('id', user.id).single()
+        ? await supabase.from('profiles').select('is_admin, is_player, is_manager').eq('id', user.id).single()
         : { data: null }
 
     const isAdmin = profile?.is_admin ?? false
     const isPlayer = profile?.is_player ?? false
+    const isManager = profile?.is_manager ?? false
 
     // Check if current user has joined this tournament
     let hasJoined = false
@@ -92,7 +93,9 @@ export default async function TournamentDetailPage({ params }: PageProps) {
                 allDbPlayers={allDbPlayers}
                 isAdmin={isAdmin}
                 isPlayer={isPlayer}
+                isManager={isManager}
                 hasJoined={hasJoined}
+                currentUserId={user?.id ?? null}
             />
         </div>
     )

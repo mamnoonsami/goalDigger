@@ -14,6 +14,7 @@ interface SignupPlayer {
         base_score: number
         goals: number
         player_position: string | null
+        avatar_url: string | null
     }
 }
 
@@ -134,8 +135,8 @@ export function TeamRoster({ matchId, signups: initialSignups, isAdmin, matchSta
             {isAdmin && (
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-3">
-                        {/* Balance button — always available for admin if ≥ 2 players */}
-                        {signups.length >= 2 && (
+                        {/* Balance button — only when no teams assigned yet */}
+                        {signups.length >= 2 && !hasTeams && (
                             <Button onClick={handleBalance} variant="secondary" size="sm">
                                 ⚖️ Balance Teams
                             </Button>
@@ -318,9 +319,13 @@ function DraggablePlayer({ signup, isAdmin, isDragging, onDragStart }: {
                 {isAdmin && (
                     <span className="text-text-muted text-xs select-none">⠿</span>
                 )}
-                <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
-                    {p.first_name?.[0]}{p.last_name?.[0]}
-                </div>
+                {p.avatar_url ? (
+                    <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                    <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
+                        {p.first_name?.[0]}{p.last_name?.[0]}
+                    </div>
+                )}
                 <div>
                     <p className="text-sm font-medium text-text-primary">
                         {p.first_name} {p.last_name}
@@ -344,9 +349,13 @@ function PlayerRow({ signup }: { signup: SignupPlayer }) {
     return (
         <li className="flex items-center justify-between px-5 py-3">
             <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
-                    {p.first_name?.[0]}{p.last_name?.[0]}
-                </div>
+                {p.avatar_url ? (
+                    <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                    <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
+                        {p.first_name?.[0]}{p.last_name?.[0]}
+                    </div>
+                )}
                 <div>
                     <p className="text-sm font-medium text-text-primary">
                         {p.first_name} {p.last_name}

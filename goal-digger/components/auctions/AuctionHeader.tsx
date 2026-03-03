@@ -25,9 +25,10 @@ interface AuctionHeaderProps {
     isManager?: boolean
     hasJoined?: boolean
     playerCount: number
+    linkedTournament?: { id: string; name: string } | null
 }
 
-export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined = false, playerCount }: AuctionHeaderProps) {
+export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined = false, playerCount, linkedTournament = null }: AuctionHeaderProps) {
     const [isMinimized, setIsMinimized] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -166,6 +167,9 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
                             <span className="flex items-center gap-1.5">⏱️ {liveAuction.bid_timer_seconds}s bid timer</span>
                             <span className="flex items-center gap-1.5">💰 {liveAuction.budget_per_manager} max budget</span>
                             <span className="flex items-center gap-1.5">👥 {playerCount} / {liveAuction.max_players_per_team} players per team</span>
+                            {linkedTournament && (
+                                <a href={`/tournaments/${linkedTournament.id}`} className="flex items-center gap-1.5 text-accent hover:text-accent-hover transition-colors">🏆 {linkedTournament.name}</a>
+                            )}
                         </div>
                     )}
                 </div>

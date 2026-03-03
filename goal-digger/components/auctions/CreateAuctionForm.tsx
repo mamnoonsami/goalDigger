@@ -63,7 +63,7 @@ export function CreateAuctionForm({ players, managers }: CreateAuctionFormProps)
             if (next.has(player.id)) {
                 next.delete(player.id)
             } else {
-                next.set(player.id, { player_id: player.id, base_price: 100 })
+                next.set(player.id, { player_id: player.id, base_price: 20 })
             }
             return next
         })
@@ -82,7 +82,7 @@ export function CreateAuctionForm({ players, managers }: CreateAuctionFormProps)
 
     function selectAll() {
         const map = new Map<string, { player_id: string; base_price: number }>()
-        players.forEach(p => map.set(p.id, { player_id: p.id, base_price: 100 }))
+        players.forEach(p => map.set(p.id, { player_id: p.id, base_price: 20 }))
         setSelectedPlayers(map)
     }
 
@@ -219,7 +219,7 @@ export function CreateAuctionForm({ players, managers }: CreateAuctionFormProps)
 
             {/* Player Selection */}
             <div className="rounded-xl border border-border bg-surface-1 p-5">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                     <h2 className="text-lg font-semibold text-text-primary">
                         Select Players <span className="text-sm font-normal text-text-muted">({selectedPlayers.size} selected)</span>
                     </h2>
@@ -232,6 +232,12 @@ export function CreateAuctionForm({ players, managers }: CreateAuctionFormProps)
                             Deselect All
                         </button>
                     </div>
+                </div>
+
+                {/* Tournament note */}
+                <div className="mb-4 rounded-lg bg-accent/5 border border-accent/20 px-4 py-2.5 text-xs text-text-muted">
+                    <span className="text-accent font-medium">ℹ️ Tournament Linked?</span>{' '}
+                    Do not select any player if a tournament has been created. You can connect the auction to the tournament later and it will auto-populate the players interested in for the tournament.
                 </div>
 
                 {/* Search */}
@@ -283,7 +289,7 @@ export function CreateAuctionForm({ players, managers }: CreateAuctionFormProps)
                                             <input
                                                 type="number"
                                                 min={1}
-                                                value={entry?.base_price ?? 100}
+                                                value={entry?.base_price ?? 20}
                                                 onChange={e => updateBasePrice(player.id, Number(e.target.value))}
                                                 className="w-20 rounded border border-border bg-surface-2 px-2 py-1 text-xs text-text-primary text-center focus:outline-none focus:ring-1 focus:ring-accent/40"
                                             />
