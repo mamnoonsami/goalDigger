@@ -103,6 +103,15 @@ body {
   outline-offset: 2px;
 }
 
+/* Logo theming — white in dark mode, green in light mode */
+.logo-themed {
+  filter: brightness(0) invert(1);
+}
+
+.light .logo-themed {
+  filter: brightness(0) saturate(100%) invert(32%) sepia(93%) saturate(1000%) hue-rotate(118deg) brightness(92%) contrast(88%);
+}
+
 /* Smooth page transitions */
 @view-transition {
   navigation: auto;

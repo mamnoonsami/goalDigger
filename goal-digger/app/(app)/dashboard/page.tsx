@@ -63,22 +63,37 @@ export default async function DashboardPage() {
                 <StatCard
                     label="Your Score"
                     value={effectiveScore}
-                    icon={<span>⭐</span>}
+                    valueColor="#22c55e"
+                    icon={
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="1em" height="1em"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" /></svg>
+                    }
                 />
                 <StatCard
                     label="Goals"
                     value={profile?.goals ?? 0}
-                    icon={<span>⚽</span>}
+                    valueColor="#38bdf8"
+                    icon={
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="1em" height="1em">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 2v4l3.5 2.5L20 7M12 2l-3.5 6.5L12 12l3.5-3.5M12 12l-3.5-3.5L4 7l4.5 1.5M12 12l-4.5 3L4 17l4.5-2M12 12l4.5 3L20 17l-4.5-2M12 12v5l-3.5 3M12 17l3.5 3" />
+                        </svg>
+                    }
                 />
                 <StatCard
                     label="Matches Played"
                     value={profile?.matches_played ?? 0}
-                    icon={<span>📅</span>}
+                    valueColor="#f59e0b"
+                    icon={
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="1em" height="1em"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                    }
                 />
                 <StatCard
                     label="Base Score"
                     value={profile?.base_score ?? 50}
-                    icon={<span>📊</span>}
+                    valueColor="#a78bfa"
+                    icon={
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="1em" height="1em"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
+                    }
                 />
             </div>
 

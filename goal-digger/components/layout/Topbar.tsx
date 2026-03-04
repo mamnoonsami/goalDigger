@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createBrowserSupabaseClient } from '@goaldigger/core'
 import { ThemeToggle } from '../ui/ThemeToggle'
@@ -44,7 +45,7 @@ export function Topbar({ profile, onMenuClick }: TopbarProps) {
                 <ThemeToggle />
 
                 {profile && (
-                    <div className="flex items-center gap-2.5 rounded-lg border border-border bg-surface-3 px-3 py-1.5">
+                    <Link href="/profile" className="flex items-center gap-2.5 rounded-lg border border-border bg-surface-3 px-3 py-1.5 cursor-pointer hover:bg-surface-3/80 transition-colors">
                         <Avatar
                             firstName={profile.first_name}
                             lastName={profile.last_name}
@@ -54,7 +55,7 @@ export function Topbar({ profile, onMenuClick }: TopbarProps) {
                         <span className="hidden text-sm font-medium text-text-primary sm:block">
                             {profile.first_name}
                         </span>
-                    </div>
+                    </Link>
                 )}
 
                 <button
