@@ -64,6 +64,7 @@ export default async function DashboardPage() {
                     label="Your Score"
                     value={effectiveScore}
                     valueColor="#22c55e"
+                    animated
                     icon={
                         <svg viewBox="0 0 24 24" fill="currentColor" width="1em" height="1em"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" /></svg>
                     }
@@ -71,7 +72,6 @@ export default async function DashboardPage() {
                 <StatCard
                     label="Goals"
                     value={profile?.goals ?? 0}
-                    valueColor="#38bdf8"
                     icon={
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="1em" height="1em">
                             <circle cx="12" cy="12" r="10" />
@@ -82,7 +82,6 @@ export default async function DashboardPage() {
                 <StatCard
                     label="Matches Played"
                     value={profile?.matches_played ?? 0}
-                    valueColor="#f59e0b"
                     icon={
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="1em" height="1em"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
                     }
@@ -90,7 +89,6 @@ export default async function DashboardPage() {
                 <StatCard
                     label="Base Score"
                     value={profile?.base_score ?? 50}
-                    valueColor="#a78bfa"
                     icon={
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="1em" height="1em"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
                     }
