@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Button } from '../components/ui/Button'
+import { Logo } from '../components/ui/Logo'
 
 export default function LandingPage() {
   return (
@@ -16,7 +17,7 @@ export default function LandingPage() {
       {/* Topbar */}
       <header className="flex h-16 items-center justify-between border-b border-border/50 px-6 md:px-10">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-sm shadow-md shadow-accent/30">⚽</span>
+          <Logo size="sm" />
           <span className="text-base font-bold tracking-tight">Goal Digger</span>
         </div>
         <div className="flex items-center gap-3">

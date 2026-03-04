@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Logo } from '../../components/ui/Logo'
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
     return (
@@ -13,9 +14,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             <div className="w-full max-w-md">
                 {/* Logo */}
                 <div className="mb-8 flex flex-col items-center gap-2 text-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-white text-2xl font-black shadow-lg shadow-accent/30">
-                        ⚽
-                    </div>
+                    <Logo size="lg" />
                     <h1 className="text-2xl font-bold text-text-primary tracking-tight">Goal Digger</h1>
                     <p className="text-sm text-text-muted">Your soccer squad management platform</p>
                 </div>

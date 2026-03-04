@@ -7,29 +7,35 @@ interface StatCardProps {
     icon?: ReactNode
     trend?: { value: number; label: string }
     className?: string
+    valueColor?: string
 }
 
-export function StatCard({ label, value, icon, trend, className }: StatCardProps) {
+export function StatCard({ label, value, icon, trend, className, valueColor }: StatCardProps) {
     const trendUp = trend && trend.value >= 0
 
     return (
         <div
             className={cn(
-                'rounded-xl border border-border bg-surface-2 p-5',
+                'relative rounded-xl border border-border bg-surface-2 p-5 overflow-hidden',
                 'flex flex-col gap-3',
                 className
             )}
         >
-            <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-text-muted">{label}</span>
-                {icon && (
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 text-accent">
+            {/* Faded watermark icon — full height, right-aligned, centered */}
+            {icon && (
+                <span
+                    className="pointer-events-none absolute inset-y-0 flex items-center justify-center text-text-primary opacity-[0.07]"
+                    style={{ right: '-25%', width: '55%' }}
+                >
+                    <span style={{ fontSize: '120px', lineHeight: 1 }}>
                         {icon}
                     </span>
-                )}
-            </div>
+                </span>
+            )}
+
+            <span className="text-sm font-medium text-text-muted">{label}</span>
             <div className="flex items-end justify-between gap-2">
-                <span className="font-mono text-3xl font-bold text-text-primary">{value}</span>
+                <span className="font-mono text-3xl font-bold" style={valueColor ? { color: valueColor } : undefined}>{value}</span>
                 {trend && (
                     <span
                         className={cn(
