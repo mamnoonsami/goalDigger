@@ -1,5 +1,6 @@
 import { cn } from '../../lib/utils'
 import type { ReactNode } from 'react'
+import { SlotCounter } from './SlotCounter'
 
 interface StatCardProps {
     label: string
@@ -8,9 +9,10 @@ interface StatCardProps {
     trend?: { value: number; label: string }
     className?: string
     valueColor?: string
+    animated?: boolean
 }
 
-export function StatCard({ label, value, icon, trend, className, valueColor }: StatCardProps) {
+export function StatCard({ label, value, icon, trend, className, valueColor, animated }: StatCardProps) {
     const trendUp = trend && trend.value >= 0
 
     return (
@@ -35,7 +37,11 @@ export function StatCard({ label, value, icon, trend, className, valueColor }: S
 
             <span className="text-sm font-medium text-text-muted">{label}</span>
             <div className="flex items-end justify-between gap-2">
-                <span className="font-mono text-3xl font-bold" style={valueColor ? { color: valueColor } : undefined}>{value}</span>
+                {animated && typeof value === 'number' ? (
+                    <SlotCounter value={value} className="font-mono text-3xl font-bold" style={valueColor ? { color: valueColor } : undefined} />
+                ) : (
+                    <span className="font-mono text-3xl font-bold text-text-primary" style={valueColor ? { color: valueColor } : undefined}>{value}</span>
+                )}
                 {trend && (
                     <span
                         className={cn(
