@@ -4,29 +4,43 @@ import { Card } from '../../../components/ui/Card'
 import { Badge, roleVariant, statusVariant } from '../../../components/ui/Badge'
 import Link from 'next/link'
 import { UpcomingMatches } from '../../../components/dashboard/UpcomingMatches'
+import { OngoingAuctions } from '../../../components/dashboard/OngoingAuctions'
+import { TopPlayersList } from '../../../components/dashboard/TopPlayersList'
+
+export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    const [{ data: profile }, { data: matches }, { data: players }] = await Promise.all([
+    const [{ data: profile }, { data: matches }, { data: players }, { data: auctions }] = await Promise.all([
         supabase
             .from('profiles')
-            .select('first_name, last_name, role, base_score, goals, matches_played, player_position')
+            .select('first_name, last_name, role, is_admin, is_manager, base_score, goals, matches_played, player_position')
             .eq('id', user!.id)
             .single(),
         supabase
             .from('matches')
-            .select('id, title, status, scheduled_at, location')
+            .select('id, title, status, scheduled_at, location, max_players, notes')
             .order('scheduled_at', { ascending: true })
             .limit(5),
         supabase
             .from('profiles')
-            .select('id, first_name, last_name, base_score, goals, role')
-            .eq('role', 'player')
+            .select('id, first_name, last_name, base_score, goals, role, matches_played, player_position, avatar_url')
+            .eq('is_player', true)
             .order('base_score', { ascending: false })
+            .limit(20),
+        supabase
+            .from('auctions')
+            .select('id, title, status, scheduled_at')
+            .order('scheduled_at', { ascending: false })
             .limit(5),
     ])
+
+    // Sort by effective score and take top 5
+    const topPlayers = (players ?? [])
+        .sort((a, b) => (b.base_score + b.goals * 2) - (a.base_score + a.goals * 2))
+        .slice(0, 5)
 
     const effectiveScore = profile
         ? profile.base_score + profile.goals * 2
@@ -69,11 +83,16 @@ export default async function DashboardPage() {
             </div>
 
             {/* 2-column grid on md+ */}
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {/* Upcoming matches */}
                 <UpcomingMatches
                     matches={matches}
-                    isAdmin={profile?.role === 'admin' || profile?.role === 'manager'}
+                    isAdmin={profile?.is_admin || false}
+                />
+
+                {/* Ongoing auctions */}
+                <OngoingAuctions
+                    auctions={auctions}
                 />
 
                 {/* Top players */}
@@ -82,29 +101,7 @@ export default async function DashboardPage() {
                         <h2 className="font-semibold text-text-primary">Top Players</h2>
                         <Link href="/players" className="text-xs text-accent hover:underline">View all →</Link>
                     </div>
-                    {players && players.length > 0 ? (
-                        <ul className="divide-y divide-border">
-                            {players.map((p, i) => (
-                                <li key={p.id} className="flex items-center gap-3 px-5 py-3.5">
-                                    <span className="font-mono text-sm font-bold text-text-muted w-5">
-                                        {i + 1}
-                                    </span>
-                                    <div className="flex-1">
-                                        <p className="text-sm font-medium text-text-primary">
-                                            {p.first_name} {p.last_name}
-                                        </p>
-                                        <p className="text-xs text-text-muted">{p.goals} goals</p>
-                                    </div>
-                                    <Badge variant={roleVariant[p.role] ?? 'slate'}>{p.role}</Badge>
-                                    <span className="font-mono text-sm font-bold text-accent">
-                                        {p.base_score + p.goals * 2}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="px-5 py-8 text-center text-sm text-text-muted">No players yet.</p>
-                    )}
+                    <TopPlayersList players={topPlayers} />
                 </Card>
             </div>
         </div>

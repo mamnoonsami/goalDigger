@@ -15,11 +15,17 @@ export async function createClient() {
         {
             cookies: {
                 getAll: () => cookieStore.getAll(),
-                setAll: (toSet: SetAllCookieEntry[]) =>
-                    toSet.forEach(({ name, value, options }) =>
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        cookieStore.set(name, value, options as any)
-                    ),
+                setAll: (toSet: SetAllCookieEntry[]) => {
+                    try {
+                        toSet.forEach(({ name, value, options }) =>
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            cookieStore.set(name, value, options as any)
+                        )
+                    } catch {
+                        // In Server Components, cookies are read-only.
+                        // The error is expected and can be safely ignored.
+                    }
+                },
             },
         }
     )

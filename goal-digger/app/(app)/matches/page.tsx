@@ -1,6 +1,7 @@
 import { createClient } from '../../../lib/supabase/server'
 import { Card } from '../../../components/ui/Card'
 import { Badge, statusVariant } from '../../../components/ui/Badge'
+import Link from 'next/link'
 
 export default async function MatchesPage() {
     const supabase = await createClient()
@@ -21,17 +22,19 @@ export default async function MatchesPage() {
             {matches && matches.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {matches.map((m) => (
-                        <Card key={m.id} hoverable>
-                            <div className="flex items-start justify-between gap-2 mb-3">
-                                <h2 className="font-semibold text-text-primary">{m.title}</h2>
-                                <Badge variant={statusVariant[m.status] ?? 'slate'}>{m.status}</Badge>
-                            </div>
-                            <div className="flex flex-col gap-1 text-sm text-text-muted">
-                                <span>📍 {m.location ?? 'TBD'}</span>
-                                <span>📅 {new Date(m.scheduled_at).toLocaleString()}</span>
-                                <span>👥 Max {m.max_players} players</span>
-                            </div>
-                        </Card>
+                        <Link key={m.id} href={`/matches/${m.id}`}>
+                            <Card hoverable>
+                                <div className="flex items-start justify-between gap-2 mb-3">
+                                    <h2 className="font-semibold text-text-primary">{m.title}</h2>
+                                    <Badge variant={statusVariant[m.status] ?? 'slate'}>{m.status}</Badge>
+                                </div>
+                                <div className="flex flex-col gap-1 text-sm text-text-muted">
+                                    <span>📍 {m.location ?? 'TBD'}</span>
+                                    <span>📅 {new Date(m.scheduled_at).toLocaleString(undefined, { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                                    <span>👥 Max {m.max_players} players</span>
+                                </div>
+                            </Card>
+                        </Link>
                     ))}
                 </div>
             ) : (
