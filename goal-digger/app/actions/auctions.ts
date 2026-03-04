@@ -102,6 +102,13 @@ export async function updateAuctionDetails(
 ) {
     const supabase = await createClient()
 
+    // Fetch previous state to trigger revalidation of tournament page if necessary
+    const { data: previousAuction } = await supabase
+        .from('auctions')
+        .select('tournament_id')
+        .eq('id', id)
+        .single()
+
     const { error } = await supabase
         .from('auctions')
         .update({ ...data, updated_at: new Date().toISOString() })
@@ -111,6 +118,9 @@ export async function updateAuctionDetails(
 
     revalidatePath('/auctions')
     revalidatePath(`/auctions/${id}`)
+    if (previousAuction?.tournament_id) {
+        revalidatePath(`/tournaments/${previousAuction.tournament_id}`)
+    }
 }
 
 /* ── Update Auction Players ── */

@@ -333,38 +333,61 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                     )}
                 </div>
                 {players.length > 0 ? (
-                    <Card>
-                        <div className="divide-y divide-border">
-                            {players.map(tp => {
-                                const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
-                                const team = Array.isArray(tp.tournament_teams) ? tp.tournament_teams[0] : tp.tournament_teams
-                                return (
-                                    <div key={tp.id} className="flex items-center gap-3 py-2.5">
-                                        {p?.avatar_url ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={p.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover bg-surface-3" />
-                                        ) : (
-                                            <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent">
-                                                {p?.first_name?.[0]}{p?.last_name?.[0]}
-                                            </div>
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                            <span className="text-sm font-medium text-text-primary">
-                                                {p?.first_name} {p?.last_name}
-                                            </span>
-                                            {p?.player_position && (
-                                                <span className="ml-2 text-xs text-text-muted capitalize">{p.player_position}</span>
-                                            )}
-                                        </div>
-                                        {team && (
-                                            <span className="text-xs bg-accent/10 text-accent rounded-full px-2 py-0.5">
-                                                {team.team_name}
-                                            </span>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                        </div>
+                    <Card className="overflow-x-auto p-0">
+                        <table className="w-full text-left text-sm whitespace-nowrap">
+                            <thead>
+                                <tr className="border-b border-border bg-surface-2/50 text-xs text-text-muted">
+                                    <th className="py-3 px-4 font-medium">Player Name</th>
+                                    <th className="py-3 px-4 font-medium">Team Name</th>
+                                    <th className="py-3 px-4 font-medium text-center">Goals</th>
+                                    <th className="py-3 px-4 font-medium text-center">Matches</th>
+                                    <th className="py-3 px-4 font-medium">Position</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                                {players.map(tp => {
+                                    const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
+                                    const team = Array.isArray(tp.tournament_teams) ? tp.tournament_teams[0] : tp.tournament_teams
+                                    return (
+                                        <tr key={tp.id} className="hover:bg-surface-2/30 transition-colors">
+                                            <td className="py-3 px-4">
+                                                <div className="flex items-center gap-3">
+                                                    {p?.avatar_url ? (
+                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                        <img src={p.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover bg-surface-3 flex-shrink-0" />
+                                                    ) : (
+                                                        <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent flex-shrink-0">
+                                                            {p?.first_name?.[0]}{p?.last_name?.[0]}
+                                                        </div>
+                                                    )}
+                                                    <span className="font-medium text-text-primary">
+                                                        {p?.first_name} {p?.last_name}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                {team ? (
+                                                    <span className="text-xs bg-accent/10 text-accent rounded-full px-2.5 py-1">
+                                                        {team.team_name}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-text-muted italic">-</span>
+                                                )}
+                                            </td>
+                                            <td className="py-3 px-4 text-center text-text-muted">0</td>
+                                            <td className="py-3 px-4 text-center text-text-muted">0</td>
+                                            <td className="py-3 px-4">
+                                                {p?.player_position ? (
+                                                    <span className="text-xs text-text-muted capitalize">{p.player_position}</span>
+                                                ) : (
+                                                    <span className="text-xs text-text-muted italic">-</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
                     </Card>
                 ) : (
                     <Card>
