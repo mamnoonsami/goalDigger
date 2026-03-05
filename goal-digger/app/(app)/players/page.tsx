@@ -13,20 +13,20 @@ export default async function PlayersPage() {
         .order('base_score', { ascending: false })
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 overflow-hidden">
             <div>
                 <h1 className="text-2xl font-bold text-text-primary">Players</h1>
                 <p className="mt-1 text-sm text-text-muted">Leaderboard ranked by effective score (base + goals × 2).</p>
             </div>
 
             {players && players.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 min-w-0">
                     {players.map((p, i) => {
                         const score = p.base_score + p.goals * 2
                         return (
                             <Link key={p.id} href={`/players/${p.id}`}>
-                                <Card className="flex items-center gap-4 hover:border-accent/40 transition-colors cursor-pointer">
-                                    <span className="font-mono text-2xl font-black text-text-muted w-8 shrink-0 text-center">
+                                <Card className="flex items-center gap-2 sm:gap-4 !p-3 sm:!p-5 hover:border-accent/40 transition-colors cursor-pointer">
+                                    <span className="font-mono text-lg sm:text-2xl font-black text-text-muted w-6 sm:w-8 shrink-0 text-center">
                                         {i + 1}
                                     </span>
                                     <Avatar
@@ -39,12 +39,12 @@ export default async function PlayersPage() {
                                         <p className="font-semibold text-text-primary truncate">
                                             {p.first_name} {p.last_name}
                                         </p>
-                                        <p className="text-xs text-text-muted capitalize">
+                                        <p className="text-xs text-text-muted capitalize truncate">
                                             {p.player_position ?? 'Unknown position'} · {p.goals}G · {p.matches_played} matches
                                         </p>
                                     </div>
                                     <div className="flex flex-col items-end gap-1 shrink-0">
-                                        <span className="font-mono text-lg font-bold text-accent">{score}</span>
+                                        <span className="font-mono text-base sm:text-lg font-bold text-accent">{score}</span>
                                         <Badge variant="slate">{p.role}</Badge>
                                     </div>
                                 </Card>

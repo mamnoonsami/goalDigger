@@ -202,7 +202,7 @@ export function AuctionPlayerList({ auctionId, isAdmin, players, managers = [], 
                                         )}
                                     </div>
 
-                                    <div className="flex-shrink-0 flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
+                                    <div className="flex-shrink-0 flex items-center justify-end gap-2">
                                         {isAdmin && isSelected && !isSelling && !isSold && (
                                             <div className="flex items-center gap-2">
                                                 <Button

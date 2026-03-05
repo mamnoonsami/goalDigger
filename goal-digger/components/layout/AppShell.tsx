@@ -29,9 +29,9 @@ export function AppShell({ children, profile }: AppShellProps) {
                     />
 
                     {/* Main content area */}
-                    <div className="flex flex-1 flex-col">
+                    <div className="flex flex-1 flex-col min-w-0">
                         <Topbar profile={profile} onMenuClick={() => setSidebarOpen(true)} />
-                        <main className="flex-1 overflow-auto p-3 md:p-4 lg:p-6">
+                        <main className="flex-1 overflow-x-hidden p-3 md:p-4 lg:p-6">
                             {children}
                         </main>
                         <footer className="border-t border-border px-6 py-4">
