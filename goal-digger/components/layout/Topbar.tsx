@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createBrowserSupabaseClient } from '@goaldigger/core'
 import { ThemeToggle } from '../ui/ThemeToggle'
 import { Avatar } from '../ui/Avatar'
+import { Logo } from '../ui/Logo'
 import type { Profile } from '@goaldigger/core'
 
 interface TopbarProps {
@@ -36,6 +37,12 @@ export function Topbar({ profile, onMenuClick }: TopbarProps) {
                     <line x1="3" y1="18" x2="21" y2="18" />
                 </svg>
             </button>
+
+            {/* Mobile brand — next to hamburger */}
+            <Link href="/dashboard" className="flex items-center gap-1.5 md:hidden">
+                <Logo size="sm" />
+                <span className="text-sm font-bold text-text-primary tracking-tight">Goal Digger</span>
+            </Link>
 
             {/* Spacer */}
             <div className="flex-1" />

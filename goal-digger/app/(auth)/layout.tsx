@@ -13,7 +13,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             />
             <div className="w-full max-w-md">
                 {/* Logo */}
-                <div className="mb-8 flex flex-col items-center gap-2 text-center">
+                <div className="mb-8 flex flex-col items-center gap-1 text-center">
                     <Logo size="lg" />
                     <h1 className="text-2xl font-bold text-text-primary tracking-tight">Goal Digger</h1>
                     <p className="text-sm text-text-muted">Your soccer squad management platform</p>

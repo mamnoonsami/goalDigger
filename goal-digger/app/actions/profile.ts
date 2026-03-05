@@ -13,10 +13,16 @@ export async function updateProfile(data: {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
+    // Auto-promote to player when a position is selected
+    const updateData: Record<string, unknown> = { ...data }
+    if (data.player_position && data.player_position.trim() !== '') {
+        updateData.is_player = true
+        updateData.role = 'player'
+    }
 
     const { error } = await supabase
         .from('profiles')
-        .update(data)
+        .update(updateData)
         .eq('id', user.id)
 
     if (error) throw new Error(error.message)
