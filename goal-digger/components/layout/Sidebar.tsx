@@ -58,12 +58,12 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
                     aria-label="Main navigation"
                 >
                     {/* Brand */}
-                    <div className={cn("flex h-16 shrink-0 items-center border-b border-border overflow-hidden transition-all duration-300", isMinimized ? "px-0 justify-center" : "gap-2.5 px-5")}>
+                    <Link href="/dashboard" className={cn("flex h-16 shrink-0 items-center border-b border-border overflow-hidden transition-all duration-300 hover:bg-surface-3/50", isMinimized ? "px-0 justify-center" : "gap-1.5 px-5")}>
                         <Logo size="sm" />
                         {!isMinimized && (
                             <span className="text-base font-bold text-text-primary tracking-tight whitespace-nowrap overflow-hidden">Goal Digger</span>
                         )}
-                    </div>
+                    </Link>
 
                     {/* Nav */}
                     <nav className="flex-1 overflow-y-auto px-3 py-4 min-h-0">
