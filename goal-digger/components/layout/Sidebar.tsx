@@ -38,16 +38,20 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
 
             {/* Sidebar wrapper — relative so the floating toggle can anchor to it */}
             <div className="relative">
+                {/* Spacer — reserves width for the fixed sidebar on desktop */}
+                <div className={cn(
+                    'hidden md:block shrink-0 transition-[width] duration-300 ease-in-out',
+                    isMinimized ? 'w-[72px]' : 'w-[240px]'
+                )} />
                 <aside
                     className={cn(
-                        // Mobile: slide-in drawer from left
                         'fixed inset-y-0 left-0 z-30 flex flex-col',
                         'bg-surface-2 border-r border-border',
                         'transition-[width,transform] duration-300 ease-in-out',
                         'h-screen',
                         isMinimized ? 'w-[72px]' : 'w-[240px]',
                         // Desktop: always visible
-                        'md:translate-x-0 md:static md:z-auto',
+                        'md:translate-x-0',
                         // Mobile: visible only when open
                         open ? 'translate-x-0' : '-translate-x-full'
                     )}

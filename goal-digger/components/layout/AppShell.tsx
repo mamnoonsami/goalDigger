@@ -34,6 +34,9 @@ export function AppShell({ children, profile }: AppShellProps) {
                         <main className="flex-1 overflow-auto p-3 md:p-4 lg:p-6">
                             {children}
                         </main>
+                        <footer className="border-t border-border px-6 py-4">
+                            <p className="text-xs text-text-muted">© 2026 Goal Digger</p>
+                        </footer>
                     </div>
                 </div>
             </SessionTimeoutProvider>
