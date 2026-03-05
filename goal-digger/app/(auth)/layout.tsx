@@ -19,6 +19,9 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                     <p className="text-sm text-text-muted">Your soccer squad management platform</p>
                 </div>
                 {children}
+                <footer className="mt-8 text-center">
+                    <p className="text-xs text-text-muted">© 2026 Goal Digger</p>
+                </footer>
             </div>
         </div>
     )
