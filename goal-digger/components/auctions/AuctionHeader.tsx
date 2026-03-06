@@ -109,8 +109,8 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                                 )}
                             </button>
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-xl sm:text-2xl font-bold text-text-primary truncate">{liveAuction.title}</h1>
+                            <div className="flex flex-col">
+                                <h1 className="text-lg sm:text-2xl font-bold text-text-primary truncate">{liveAuction.title}</h1>
                             </div>
                             <div className="hidden sm:block">
                                 <AuctionStatusBadge status={liveAuction.status} scheduledAt={liveAuction.scheduled_at} />

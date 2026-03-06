@@ -19,7 +19,9 @@ export default function LoginPage() {
 function LoginForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const confirmed = searchParams.get('confirmed')
+
+    // Check if we came from a redirect with an email to verify
+    const verifyEmail = searchParams.get('verifyEmail')
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -50,35 +52,27 @@ function LoginForm() {
     return (
         <Card>
             {error === 'email_not_confirmed' && (
-                <div className="mb-5 flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="2" y="4" width="20" height="16" rx="2" />
-                            <path d="M22 4L12 13L2 4" />
-                        </svg>
+                <div className="mb-5 flex flex-col gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="2" y="4" width="20" height="16" rx="2" />
+                                <path d="M22 4L12 13L2 4" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium" style={{ color: '#f59e0b' }}>Email not confirmed</p>
+                            <p className="text-xs text-text-muted">You must verify your email before signing in.</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-sm font-medium" style={{ color: '#f59e0b' }}>Email not confirmed</p>
-                        <p className="text-xs text-text-muted">Please check your email and confirm your account first.</p>
-                    </div>
-                </div>
-            )}
-            {confirmed === 'true' && (
-                <div className="mb-5 flex items-center gap-3 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-accent">Email confirmed!</p>
-                        <p className="text-xs text-text-muted">Thank you for verifying your email. You can now sign in.</p>
-                    </div>
-                </div>
-            )}
-            {confirmed === 'error' && (
-                <div className="mb-5 flex items-center gap-3 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3">
-                    <p className="text-sm text-danger">Email confirmation failed or link expired. Please try signing up again.</p>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => router.push(`/verify?email=${encodeURIComponent(email)}`)}
+                        className="w-full text-xs"
+                    >
+                        Enter verification code
+                    </Button>
                 </div>
             )}
             <h2 className="mb-6 text-xl font-semibold text-text-primary">Sign in</h2>
