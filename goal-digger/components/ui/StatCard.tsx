@@ -9,11 +9,13 @@ interface StatCardProps {
     trend?: { value: number; label: string }
     className?: string
     valueColor?: string
+    valueGradient?: string // e.g. "from-amber-600 to-amber-800"
     animated?: boolean
 }
 
-export function StatCard({ label, value, icon, trend, className, valueColor, animated }: StatCardProps) {
+export function StatCard({ label, value, icon, trend, className, valueColor, valueGradient, animated }: StatCardProps) {
     const trendUp = trend && trend.value >= 0
+    const gradientClasses = valueGradient ? `bg-gradient-to-br ${valueGradient} bg-clip-text text-transparent inline-block` : ''
 
     return (
         <div
@@ -38,9 +40,13 @@ export function StatCard({ label, value, icon, trend, className, valueColor, ani
             <span className="text-sm font-medium text-text-muted">{label}</span>
             <div className="flex items-end justify-between gap-2">
                 {animated && typeof value === 'number' ? (
-                    <SlotCounter value={value} className="font-mono text-3xl font-bold" style={valueColor ? { color: valueColor } : undefined} />
+                    <div className={cn("font-mono text-4xl font-bold tracking-tight", gradientClasses)} style={valueColor && !valueGradient ? { color: valueColor } : undefined}>
+                        <SlotCounter value={value} />
+                    </div>
                 ) : (
-                    <span className="font-mono text-3xl font-bold text-text-primary" style={valueColor ? { color: valueColor } : undefined}>{value}</span>
+                    <span className={cn("font-mono text-4xl font-bold tracking-tight", gradientClasses || "text-text-primary")} style={valueColor && !valueGradient ? { color: valueColor } : undefined}>
+                        {value}
+                    </span>
                 )}
                 {trend && (
                     <span

@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { Button } from '../ui/Button'
 import { updateProfile } from '../../app/actions/profile'
+import { createClient } from '../../lib/supabase/client'
+import imageCompression from 'browser-image-compression'
 
 interface ProfileFormProps {
     profile: {
@@ -22,12 +24,9 @@ const GOALS_TO_UNLOCK = 15
 
 const AVATAR_STYLES = [
     { style: 'avataaars-neutral', label: 'Avatars' },
-    { style: 'big-smile', label: 'Big Smile' },
     { style: 'bottts', label: 'Bots' },
-    { style: 'fun-emoji', label: 'Fun Emoji' },
     { style: 'micah', label: 'Micah' },
     { style: 'open-peeps', label: 'Open Peeps' },
-    { style: 'toon-head', label: 'Toon Head' },
     { style: 'croodles', label: 'Croodles' },
     { style: 'croodles-neutral', label: 'Croodles Neutral' },
     { style: 'notionists', label: 'Notionists' },
@@ -54,6 +53,7 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
+    const [uploading, setUploading] = useState(false)
 
     // Avatar picker state
     const [showPicker, setShowPicker] = useState(false)
@@ -114,6 +114,74 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
         }
     }
 
+    async function handleUploadPicture(e: React.ChangeEvent<HTMLInputElement>) {
+        if (!e.target.files || e.target.files.length === 0) {
+            return
+        }
+        
+        const file = e.target.files[0]
+        setUploading(true)
+        setError(null)
+        setSuccess(false)
+        
+        try {
+            // Compress the image
+            const options = {
+                maxSizeMB: 0.09, // ~90KB max size
+                maxWidthOrHeight: 400, // Reasonable avatar size
+                useWebWorker: true,
+            }
+            
+            const compressedFile = await imageCompression(file, options)
+            
+            // Get current user id
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            
+            if (!user) {
+                throw new Error('Not authenticated')
+            }
+            
+            // Upload to Supabase
+            const filePath = `${user.id}/avatar.jpeg`
+            const { error: uploadError } = await supabase.storage
+                .from('GoalDiggerProfilePictures')
+                .upload(filePath, compressedFile, {
+                    upsert: true,
+                    contentType: 'image/jpeg',
+                })
+                
+            if (uploadError) {
+                throw uploadError
+            }
+            
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('GoalDiggerProfilePictures')
+                .getPublicUrl(filePath)
+                
+            // Append a timestamp to the URL to bypass browser cache
+            const cacheBustedUrl = `${publicUrl}?t=${new Date().getTime()}`
+                
+            // Update local state and DB
+            setAvatarUrl(cacheBustedUrl)
+            await updateProfile({
+                first_name: firstName,
+                last_name: lastName,
+                player_position: position || null,
+                avatar_url: cacheBustedUrl,
+            })
+            
+            setSuccess(true)
+            setTimeout(() => setSuccess(false), 3000)
+            
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to upload picture')
+        } finally {
+            setUploading(false)
+        }
+    }
+
     return (
         <div className="flex flex-col gap-6">
             {/* Avatar section */}
@@ -132,25 +200,39 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
                         </div>
                     )}
                 </div>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowPicker(!showPicker)}
-                >
-                    {showPicker ? '✕ Close' : '🎨 Choose Avatar'}
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto max-w-[200px] sm:max-w-none mx-auto">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowPicker(!showPicker)}
+                        className="w-full sm:w-auto border border-green-500/50 text-green-500 hover:bg-green-500/10 hover:text-green-400 hover:border-green-400 transition-colors"
+                    >
+                        {showPicker ? '✕ Close' : '🎨 Choose Avatar'}
+                    </Button>
+                    
+                    <label className={`cursor-pointer inline-flex w-full sm:w-auto items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-green-500/50 text-green-500 hover:bg-green-500/10 hover:text-green-400 hover:border-green-400 h-8 px-3 py-2 ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                        {uploading ? '⏳ Uploading...' : '📁 Upload Picture'}
+                        <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleUploadPicture}
+                            disabled={uploading}
+                        />
+                    </label>
+                </div>
             </div>
 
             {/* Avatar Picker */}
             {showPicker && (
                 <div className="rounded-xl border border-border bg-surface-1 p-4">
                     {/* Style tabs */}
-                    <div className="flex flex-wrap gap-2 mb-4">
+                    <div className="flex flex-nowrap overflow-x-auto hide-scrollbar gap-2 mb-4 pb-1">
                         {AVATAR_STYLES.map(({ style, label }) => (
                             <button
                                 key={style}
                                 onClick={() => setActiveStyle(style)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeStyle === style
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 ${activeStyle === style
                                     ? 'bg-accent text-white'
                                     : 'bg-surface-3 text-text-muted hover:text-text-primary'
                                     }`}
@@ -161,7 +243,7 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
                         {/* Pros tab */}
                         <button
                             onClick={() => setActiveStyle('pros')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isProsTab
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 ${isProsTab
                                 ? prosLocked ? 'bg-surface-3 text-text-muted ring-1 ring-border' : 'bg-accent text-white'
                                 : 'bg-surface-3 text-text-muted hover:text-text-primary'
                                 }`}

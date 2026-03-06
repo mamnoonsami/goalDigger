@@ -96,7 +96,7 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                                     )}
                                 </button>
                                 <div className="flex items-center gap-2">
-                                    <h1 className="text-xl sm:text-2xl font-bold text-text-primary truncate">{tournament.name}</h1>
+                                    <h1 className="text-lg sm:text-2xl font-bold text-text-primary truncate">{tournament.name}</h1>
                                 </div>
                                 <div className="hidden sm:block">
                                     <TournamentStatusBadge status={tournament.status} />

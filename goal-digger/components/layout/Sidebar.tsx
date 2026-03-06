@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { createBrowserSupabaseClient } from '@goaldigger/core'
 import { cn } from '../../lib/utils'
 import { Logo } from '../ui/Logo'
 
@@ -25,6 +26,15 @@ interface SidebarProps {
 
 export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMinimize, isAdmin = false }: SidebarProps) {
     const pathname = usePathname()
+    const router = useRouter()
+
+    async function handleLogout() {
+        const supabase = createBrowserSupabaseClient()
+        await supabase.auth.signOut()
+        if (onClose) onClose()
+        router.push('/login')
+        router.refresh()
+    }
 
     // Build nav items — conditionally include admin-only items
     const items = [
@@ -66,7 +76,7 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
                 >
                     {/* Brand */}
                     <Link href="/dashboard" className="flex h-16 shrink-0 items-center justify-center border-b border-border overflow-hidden transition-all duration-300 hover:bg-surface-3/50 px-4">
-                        <Logo size={isMinimized ? 'sm' : 'md'} />
+                        {!isMinimized && <Logo size="md" />}
                     </Link>
 
                     {/* Nav */}
@@ -100,10 +110,25 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
                         </ul>
                     </nav>
 
-                    {/* Footer */}
-                    <div className="border-t border-border flex items-center p-3 min-h-[48px] shrink-0 overflow-hidden">
+                    {/* Footer / Mobile Actions */}
+                    <div className="border-t border-border flex flex-col p-3 shrink-0 overflow-hidden">
+                        {/* Mobile Logout Button */}
+                        <button
+                            onClick={handleLogout}
+                            className={cn(
+                                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-danger hover:bg-danger/10 transition-colors md:hidden w-full text-left"
+                            )}
+                        >
+                            <svg className="flex-shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
+                            </svg>
+                            <span>Sign out</span>
+                        </button>
+
                         {!isMinimized && (
-                            <p className="text-xs text-text-muted whitespace-nowrap pl-2">v0.1</p>
+                            <p className="text-xs text-text-muted whitespace-nowrap pl-2 mt-2 md:mt-0">v0.1</p>
                         )}
                     </div>
                 </aside>

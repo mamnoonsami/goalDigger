@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createBrowserSupabaseClient } from '@goaldigger/core'
 import { Button } from '../../../components/ui/Button'
 import { Input } from '../../../components/ui/Input'
 import { Card } from '../../../components/ui/Card'
 
 export default function SignupPage() {
+    const router = useRouter()
     const [firstName, setFirstName] = useState('')
     const [lastName, setLastName] = useState('')
     const [email, setEmail] = useState('')
@@ -34,37 +36,11 @@ export default function SignupPage() {
             if (authError) {
                 setError(authError.message)
             } else {
-                setSubmitted(true)
+                router.push(`/verify?email=${encodeURIComponent(email)}`)
             }
         } finally {
             setLoading(false)
         }
-    }
-
-    if (submitted) {
-        return (
-            <Card>
-                <div className="flex flex-col items-center gap-4 py-4 text-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/15">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="2" y="4" width="20" height="16" rx="2" />
-                            <path d="M22 4L12 13L2 4" />
-                        </svg>
-                    </div>
-                    <h2 className="text-xl font-semibold text-text-primary">Check your email</h2>
-                    <p className="text-sm text-text-muted leading-relaxed">
-                        We&apos;ve sent a confirmation link to<br />
-                        <span className="font-medium text-text-primary">{email}</span>
-                    </p>
-                    <p className="text-xs text-text-muted">
-                        Click the link in the email to activate your account, then come back to sign in.
-                    </p>
-                    <Link href="/login" className="mt-2 text-sm font-medium text-accent hover:underline">
-                        ← Back to sign in
-                    </Link>
-                </div>
-            </Card>
-        )
     }
 
     return (

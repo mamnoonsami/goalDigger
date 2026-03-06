@@ -32,7 +32,7 @@ export function AppShell({ children, profile, isAdmin = false }: AppShellProps) 
 
                     {/* Main content area */}
                     <div className="flex flex-1 flex-col min-w-0">
-                        <Topbar profile={profile} onMenuClick={() => setSidebarOpen(true)} />
+                        <Topbar profile={profile} onMenuClick={() => setSidebarOpen(true)} isSidebarMinimized={isSidebarMinimized} />
                         <main className="flex-1 overflow-x-hidden p-3 md:p-4 lg:p-6">
                             {children}
                         </main>
