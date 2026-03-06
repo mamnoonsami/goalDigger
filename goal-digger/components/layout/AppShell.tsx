@@ -11,9 +11,10 @@ import type { Profile } from '@goaldigger/core'
 interface AppShellProps {
     children: ReactNode
     profile: Pick<Profile, 'first_name' | 'last_name' | 'avatar_url'> | null
+    isAdmin?: boolean
 }
 
-export function AppShell({ children, profile }: AppShellProps) {
+export function AppShell({ children, profile, isAdmin = false }: AppShellProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [isSidebarMinimized, setIsSidebarMinimized] = useState(false)
 
@@ -26,6 +27,7 @@ export function AppShell({ children, profile }: AppShellProps) {
                         onClose={() => setSidebarOpen(false)}
                         isMinimized={isSidebarMinimized}
                         onToggleMinimize={() => setIsSidebarMinimized(!isSidebarMinimized)}
+                        isAdmin={isAdmin}
                     />
 
                     {/* Main content area */}

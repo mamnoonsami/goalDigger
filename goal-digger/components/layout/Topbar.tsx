@@ -39,9 +39,8 @@ export function Topbar({ profile, onMenuClick }: TopbarProps) {
             </button>
 
             {/* Mobile brand — next to hamburger */}
-            <Link href="/dashboard" className="flex items-center gap-1.5 md:hidden">
+            <Link href="/dashboard" className="flex items-center md:hidden">
                 <Logo size="sm" />
-                <span className="text-sm font-bold text-text-primary tracking-tight">Goal Digger</span>
             </Link>
 
             {/* Spacer */}

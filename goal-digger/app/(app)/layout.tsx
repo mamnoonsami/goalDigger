@@ -10,12 +10,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/login')
 
-    // Fetch profile for topbar
+    // Fetch profile for topbar + admin check for sidebar
     const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, last_name, avatar_url')
+        .select('first_name, last_name, avatar_url, is_admin')
         .eq('id', user.id)
         .single()
 
-    return <AppShell profile={profile}>{children}</AppShell>
+    return <AppShell profile={profile} isAdmin={profile?.is_admin ?? false}>{children}</AppShell>
 }
