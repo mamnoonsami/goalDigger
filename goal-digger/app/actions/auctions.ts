@@ -214,16 +214,6 @@ export async function updateAuctionManagers(
 export async function deleteAuction(id: string) {
     const supabase = await createClient()
 
-    // Only allow deleting draft auctions
-    const { data: auction } = await supabase
-        .from('auctions')
-        .select('status')
-        .eq('id', id)
-        .single()
-
-    if (!auction) throw new Error('Auction not found')
-    if (auction.status !== 'draft') throw new Error('Can only delete draft auctions')
-
     const { error } = await supabase
         .from('auctions')
         .delete()

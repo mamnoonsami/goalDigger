@@ -1,4 +1,8 @@
+'use client'
+
 import { cn } from '../../lib/utils'
+import { useTheme } from 'next-themes'
+import { useEffect, useState } from 'react'
 
 interface LogoProps {
     size?: 'sm' | 'md' | 'lg'
@@ -6,26 +10,39 @@ interface LogoProps {
 }
 
 const sizeMap = {
-    sm: 'h-9 w-9',
-    md: 'h-11 w-11',
-    lg: 'h-14 w-14',
+    sm: 'h-10 w-auto',
+    md: 'h-12 w-auto',
+    lg: 'h-20 w-auto',
 }
 
 export function Logo({ size = 'md', className }: LogoProps) {
+    const { resolvedTheme } = useTheme()
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
     return (
         <div
             className={cn(
-                'flex-shrink-0 flex items-center justify-center rounded-xl overflow-hidden',
+                'flex-shrink-0 flex items-center justify-center overflow-hidden',
                 sizeMap[size],
                 className
             )}
         >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-                src="/goalDiggerLogo.png"
-                alt="Goal Digger"
-                className="logo-themed object-contain w-full h-full"
-            />
+            {mounted ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                    src={resolvedTheme === 'dark' ? "/goalDiggerLogoDarkTheme.png" : "/goalDiggerLogo.png"}
+                    alt="Goal Digger"
+                    className="object-contain h-full w-auto"
+                />
+            ) : (
+                /* Placeholder to prevent layout shift before hydration */
+                <div className="h-full w-full opacity-0" />
+            )}
         </div>
     )
 }
+
