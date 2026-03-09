@@ -95,12 +95,21 @@ export function AuctionLiveLog({ entries }: AuctionLiveLogProps) {
             {/* Floating panel */}
             {isOpen && (
                 <div className="live-log-panel">
-                    <div className="live-log-panel-header">
+                    <div className="live-log-panel-header flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <span className="auction-log-dot" />
                             <span className="text-sm font-semibold">Live Log</span>
+                            <span className="text-[11px] text-text-muted ml-1">{entries.length} entries</span>
                         </div>
-                        <span className="text-[11px] text-text-muted">{entries.length} entries</span>
+                        <button
+                            onClick={() => setIsOpen(false)}
+                            className="p-1.5 -mr-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-3 transition-colors"
+                            title="Minimize Live Log"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                        </button>
                     </div>
 
                     <div ref={bodyRef} className="auction-log-body live-log-panel-body">

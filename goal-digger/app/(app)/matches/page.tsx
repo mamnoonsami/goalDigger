@@ -5,6 +5,17 @@ import Link from 'next/link'
 
 export default async function MatchesPage() {
     const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user!.id)
+        .single()
+
+    const isAdmin = profile?.is_admin ?? false
+
     const { data: matches } = await supabase
         .from('matches')
         .select('id, title, status, scheduled_at, location, max_players')
@@ -17,6 +28,14 @@ export default async function MatchesPage() {
                     <h1 className="text-2xl font-bold text-text-primary">Matches</h1>
                     <p className="mt-1 text-sm text-text-muted">Browse and sign up for upcoming games.</p>
                 </div>
+                {isAdmin && (
+                    <Link
+                        href="/matches/create"
+                        className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-accent/25 transition-all hover:bg-accent-hover hover:shadow-lg hover:shadow-accent/30 active:scale-[0.98]"
+                    >
+                        <span>+</span> Create Match
+                    </Link>
+                )}
             </div>
 
             {matches && matches.length > 0 ? (
