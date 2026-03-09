@@ -3,6 +3,7 @@ import { Card } from '../../../../components/ui/Card'
 import { Badge, statusVariant } from '../../../../components/ui/Badge'
 import { MatchActions } from '../../../../components/matches/MatchActions'
 import { TeamRoster } from '../../../../components/matches/TeamRoster'
+import { MatchAdminActions } from '../../../../components/matches/MatchAdminActions'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { MatchStatus } from '@goaldigger/core'
@@ -58,11 +59,16 @@ export default async function MatchDetailPage({ params }: PageProps) {
             <Card>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                            <h1 className="text-2xl font-bold text-text-primary">{match.title}</h1>
-                            <Badge variant={statusVariant[match.status as MatchStatus] ?? 'slate'}>
-                                {match.status}
-                            </Badge>
+                        <div className="flex items-center justify-between mb-3 min-w-0">
+                            <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
+                                <h1 className="text-lg sm:text-2xl font-bold text-text-primary truncate">{match.title}</h1>
+                                <Badge variant={statusVariant[match.status as MatchStatus] ?? 'slate'}>
+                                    {match.status}
+                                </Badge>
+                            </div>
+                            {isAdmin && (
+                                <MatchAdminActions match={match} />
+                            )}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-text-muted">
                             <span>📍 {match.location ?? 'TBD'}</span>

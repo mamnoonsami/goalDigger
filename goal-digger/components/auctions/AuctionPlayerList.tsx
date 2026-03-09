@@ -232,12 +232,12 @@ export function AuctionPlayerList({ auctionId, isAdmin, players, managers = [], 
                                         )}
 
                                         {isAdmin && isSelected && isSelling && !isSold && (
-                                            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                                                <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
+                                            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                                <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
                                                     <select
                                                         value={selectedManagerId}
                                                         onChange={(e) => setSelectedManagerId(e.target.value)}
-                                                        className="h-7 text-xs rounded-lg border border-border bg-surface-2 px-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent/40 w-full sm:w-32"
+                                                        className="h-8 sm:h-7 text-sm sm:text-xs rounded-lg border border-border bg-surface-2 px-2 text-text-primary focus:outline-none focus:ring-1 focus:ring-accent/40 w-full sm:w-32"
                                                     >
                                                         <option value="" disabled>Select Manager</option>
                                                         {managers.map(m => (
@@ -245,7 +245,7 @@ export function AuctionPlayerList({ auctionId, isAdmin, players, managers = [], 
                                                         ))}
                                                     </select>
 
-                                                    <div className="relative flex-1 sm:w-20">
+                                                    <div className="relative w-full sm:w-20">
                                                         <Input
                                                             type="number"
                                                             value={soldPrice}
@@ -254,14 +254,14 @@ export function AuctionPlayerList({ auctionId, isAdmin, players, managers = [], 
                                                             min={0}
                                                             step={10}
                                                             autoFocus
-                                                            className="pl-6 h-7 text-xs w-full"
+                                                            className="pl-6 h-8 sm:h-7 text-sm sm:text-xs w-full"
                                                         />
                                                         <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-[10px] font-medium">
                                                             $
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-1 justify-end w-full sm:w-auto">
+                                                <div className="flex items-center gap-1 justify-end w-full sm:w-auto mt-1 sm:mt-0">
                                                     <Button
                                                         variant="primary"
                                                         size="sm"

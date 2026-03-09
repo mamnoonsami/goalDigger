@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Card } from '../ui/Card'
 import { Badge, statusVariant } from '../ui/Badge'
-import { MatchEditDialog } from '../../components/matches/MatchEditDialog'
 import type { MatchStatus } from '@goaldigger/core'
 
 interface MatchSnippet {
@@ -23,8 +22,6 @@ interface UpcomingMatchesProps {
 }
 
 export function UpcomingMatches({ matches, isAdmin }: UpcomingMatchesProps) {
-    const [editingMatch, setEditingMatch] = useState<MatchSnippet | null>(null)
-
     return (
         <>
             <Card padding="none">
@@ -48,15 +45,6 @@ export function UpcomingMatches({ matches, isAdmin }: UpcomingMatchesProps) {
                                     <Badge variant={statusVariant[m.status as MatchStatus] ?? 'slate'}>
                                         {m.status}
                                     </Badge>
-                                    {isAdmin && (
-                                        <button
-                                            onClick={() => setEditingMatch(m)}
-                                            className="p-1 px-2 text-xs font-semibold text-accent border border-accent/20 rounded hover:bg-accent/10 transition-colors"
-                                            title="Edit Match"
-                                        >
-                                            Edit
-                                        </button>
-                                    )}
                                 </div>
                             </li>
                         ))}
@@ -65,14 +53,6 @@ export function UpcomingMatches({ matches, isAdmin }: UpcomingMatchesProps) {
                     <p className="px-5 py-8 text-center text-sm text-text-muted">No upcoming matches.</p>
                 )}
             </Card>
-
-            {editingMatch && (
-                <MatchEditDialog
-                    match={editingMatch}
-                    isOpen={!!editingMatch}
-                    onClose={() => setEditingMatch(null)}
-                />
-            )}
         </>
     )
 }

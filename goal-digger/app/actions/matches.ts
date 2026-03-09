@@ -3,6 +3,27 @@
 import { createClient } from '../../lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+export async function createMatch(data: { location?: string; scheduled_at: string; title: string; max_players: number; notes?: string }) {
+    const supabase = await createClient()
+
+    const { data: match, error } = await supabase
+        .from('matches')
+        .insert({
+            ...data,
+            status: 'open',
+        })
+        .select()
+        .single()
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    revalidatePath('/dashboard')
+    revalidatePath('/matches')
+    return match
+}
+
 export async function updateMatch(id: string, data: { location?: string; scheduled_at?: string; title?: string; status?: string; max_players?: number; notes?: string }) {
     const supabase = await createClient()
 
@@ -108,6 +129,23 @@ export async function resetTeams(matchId: string) {
     if (matchError) throw new Error(matchError.message)
 
     revalidatePath(`/matches/${matchId}`)
+    revalidatePath('/dashboard')
+    revalidatePath('/matches')
+}
+
+/** Admin: delete a match completely */
+export async function deleteMatch(id: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('matches')
+        .delete()
+        .eq('id', id)
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
     revalidatePath('/dashboard')
     revalidatePath('/matches')
 }

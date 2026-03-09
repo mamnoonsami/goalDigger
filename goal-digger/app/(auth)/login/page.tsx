@@ -96,6 +96,11 @@ function LoginForm() {
                     autoComplete="current-password"
                     error={error && error !== 'email_not_confirmed' ? error : undefined}
                 />
+                <div className="flex items-center justify-end">
+                    <Link href="/forgot-password" className="text-xs font-medium text-accent hover:underline">
+                        Forgot password?
+                    </Link>
+                </div>
                 <Button type="submit" fullWidth isLoading={loading} className="mt-2">
                     Sign in
                 </Button>
