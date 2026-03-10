@@ -20,8 +20,6 @@ const POSITIONS = ['goalkeeper', 'defender', 'midfielder', 'forward']
 
 /* ── Predefined avatar options using DiceBear API ── */
 /* Each is a tiny URL string (~80 chars), stored in the `avatar_url` text column. */
-const GOALS_TO_UNLOCK = 15
-
 const AVATAR_STYLES = [
     { style: 'avataaars-neutral', label: 'Avatars' },
     { style: 'bottts', label: 'Bots' },
@@ -55,44 +53,8 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
     const [success, setSuccess] = useState(false)
     const [uploading, setUploading] = useState(false)
 
-    // Avatar picker state
     const [showPicker, setShowPicker] = useState(false)
     const [activeStyle, setActiveStyle] = useState(AVATAR_STYLES[0].style)
-    const isProsTab = activeStyle === 'pros'
-    const prosLocked = goals < GOALS_TO_UNLOCK
-
-    // TheSportsDB "Pros" tab state
-    const [proQuery, setProQuery] = useState('')
-    const [proResults, setProResults] = useState<{ id: string; name: string; thumb: string }[]>([])
-    const [proLoading, setProLoading] = useState(false)
-    const [proSearched, setProSearched] = useState(false)
-
-    async function handleProSearch(e: React.FormEvent) {
-        e.preventDefault()
-        if (!proQuery.trim()) return
-        setProLoading(true)
-        setProSearched(true)
-        try {
-            const formatted = proQuery.trim().replace(/\s+/g, '_')
-            const res = await fetch(
-                `https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${formatted}`
-            )
-            const data = await res.json()
-            const players = (data.player || [])
-                .filter((p: any) => p.strSport === 'Soccer' && (p.strCutout || p.strThumb))
-                .map((p: any) => ({
-                    id: p.idPlayer,
-                    name: p.strPlayer,
-                    thumb: p.strCutout || p.strThumb,
-                }))
-            setProResults(players)
-        } catch {
-            setProResults([])
-        } finally {
-            setProLoading(false)
-        }
-    }
-
 
     async function handleSave() {
         setSaving(true)
@@ -240,119 +202,34 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
                                 {label}
                             </button>
                         ))}
-                        {/* Pros tab */}
-                        <button
-                            onClick={() => setActiveStyle('pros')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 ${isProsTab
-                                ? prosLocked ? 'bg-surface-3 text-text-muted ring-1 ring-border' : 'bg-accent text-white'
-                                : 'bg-surface-3 text-text-muted hover:text-text-primary'
-                                }`}
-                        >
-                            {prosLocked ? '🔒 ' : ''}⚽ Pros
-                        </button>
                     </div>
 
                     {/* DiceBear avatar grid */}
-                    {!isProsTab && (
-                        <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                            {AVATAR_SEEDS.map((seed) => {
-                                const url = diceBearUrl(activeStyle, seed)
-                                const isSelected = avatarUrl === url
-                                return (
-                                    <button
-                                        key={seed}
-                                        onClick={() => setAvatarUrl(url)}
-                                        className={`p-1 rounded-xl border-2 transition-all duration-150 ${isSelected
-                                            ? 'border-accent ring-2 ring-accent/30 bg-accent/10 hover:scale-105'
-                                            : 'border-transparent hover:border-border hover:scale-105'
-                                            }`}
-                                        title={seed}
-                                    >
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
-                                            src={url}
-                                            alt={seed}
-                                            className="h-12 w-12 rounded-lg"
-                                            loading="lazy"
-                                        />
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    )}
-
-                    {/* Pros — TheSportsDB search + results */}
-                    {isProsTab && (
-                        <div>
-                            {/* Lock banner */}
-                            {prosLocked && (
-                                <div className="mb-3 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-xs text-amber-400">
-                                    🔒 Score <strong>{GOALS_TO_UNLOCK}+ goals</strong> to use a pro player avatar. You currently have <strong>{goals}</strong>.
-                                </div>
-                            )}
-
-                            <form onSubmit={handleProSearch} className="flex gap-2 mb-4">
-                                <input
-                                    type="text"
-                                    value={proQuery}
-                                    onChange={(e) => setProQuery(e.target.value)}
-                                    placeholder="Search a pro player (e.g. Messi)"
-                                    className="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
-                                />
+                    <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                        {AVATAR_SEEDS.map((seed) => {
+                            const url = diceBearUrl(activeStyle, seed)
+                            const isSelected = avatarUrl === url
+                            return (
                                 <button
-                                    type="submit"
-                                    disabled={proLoading || !proQuery.trim()}
-                                    className="rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium px-4 py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    key={seed}
+                                    onClick={() => setAvatarUrl(url)}
+                                    className={`p-1 rounded-xl border-2 transition-all duration-150 ${isSelected
+                                        ? 'border-accent ring-2 ring-accent/30 bg-accent/10 hover:scale-105'
+                                        : 'border-transparent hover:border-border hover:scale-105'
+                                        }`}
+                                    title={seed}
                                 >
-                                    {proLoading ? '...' : 'Search'}
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        src={url}
+                                        alt={seed}
+                                        className="h-12 w-12 rounded-lg"
+                                        loading="lazy"
+                                    />
                                 </button>
-                            </form>
-
-                            {proLoading && (
-                                <p className="text-center text-xs text-text-muted py-4">Searching TheSportsDB...</p>
-                            )}
-
-                            {!proLoading && proSearched && proResults.length === 0 && (
-                                <p className="text-center text-xs text-text-muted py-4">No soccer players found. Try a different name.</p>
-                            )}
-
-                            {!proLoading && proResults.length > 0 && (
-                                <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                                    {proResults.slice(0, 20).map((player) => {
-                                        const photoUrl = player.thumb + '/small'
-                                        const isSelected = avatarUrl === photoUrl
-                                        return (
-                                            <button
-                                                key={player.id}
-                                                onClick={() => {
-                                                    if (!prosLocked) setAvatarUrl(photoUrl)
-                                                }}
-                                                disabled={prosLocked}
-                                                className={`p-1 rounded-xl border-2 transition-all duration-150 flex flex-col items-center gap-1 ${prosLocked
-                                                    ? 'opacity-50 grayscale cursor-not-allowed border-transparent'
-                                                    : isSelected
-                                                        ? 'border-accent ring-2 ring-accent/30 bg-accent/10 hover:scale-105'
-                                                        : 'border-transparent hover:border-border hover:scale-105'
-                                                    }`}
-                                                title={prosLocked ? `Score ${GOALS_TO_UNLOCK}+ goals to unlock` : player.name}
-                                            >
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img
-                                                    src={photoUrl}
-                                                    alt={player.name}
-                                                    className="h-12 w-12 rounded-lg object-cover bg-surface-3"
-                                                    loading="lazy"
-                                                />
-                                                <span className="text-[9px] text-text-muted truncate w-full text-center leading-tight">
-                                                    {player.name.split(' ').pop()}
-                                                </span>
-                                            </button>
-                                        )
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                            )
+                        })}
+                    </div>
 
                     {/* Remove avatar option */}
                     <button
