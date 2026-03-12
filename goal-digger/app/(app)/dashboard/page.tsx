@@ -58,6 +58,25 @@ export default async function DashboardPage() {
                 </p>
             </div>
 
+            {/* Ratings Notice */}
+            <Link href="/ratings" className="block w-full">
+                <div className="bg-accent/10 hover:bg-accent/20 transition-colors border border-accent/20 rounded-lg p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                        <div>
+                            <h3 className="text-accent font-bold text-lg mb-1">⭐ Ratings going on.</h3>
+                            <p className="text-sm text-accent/90 leading-relaxed font-medium">
+                                Please rate your teammates to make the game fair for everyone. You will be able to see the rating scores everyone recieved only after you rated everyone and the rating deadline ends.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-accent/20 flex justify-end">
+                        <span className="whitespace-nowrap text-sm font-semibold text-accent/90 flex items-center gap-1">
+                            Go to Ratings <span aria-hidden="true">→</span>
+                        </span>
+                    </div>
+                </div>
+            </Link>
+
             {/* Stat cards */}
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <StatCard
