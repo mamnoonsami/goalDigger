@@ -12,7 +12,6 @@ const navItems = [
     { href: '/players', label: 'Players', icon: '👥' },
     { href: '/tournaments', label: 'Tournaments', icon: '🏆' },
     { href: '/auctions', label: 'Auctions', icon: '🔨' },
-    { href: '/ratings', label: 'Ratings', icon: '⭐' },
     { href: '/profile', label: 'My Profile', icon: '👤' },
 ]
 
@@ -40,7 +39,10 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
     // Build nav items — conditionally include admin-only items
     const items = [
         ...navItems,
-        ...(isAdmin ? [{ href: '/users', label: 'User Management', icon: '🛡️' }] : []),
+        ...(isAdmin ? [
+            { href: '/ratings', label: 'Ratings', icon: '⭐' },
+            { href: '/users', label: 'User Management', icon: '🛡️' }
+        ] : []),
     ]
 
     return (

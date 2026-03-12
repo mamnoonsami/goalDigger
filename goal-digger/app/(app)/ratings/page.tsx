@@ -23,6 +23,10 @@ export default async function RatingsPage() {
         redirect('/login')
     }
 
+    if (!profile.is_admin) {
+        redirect('/dashboard')
+    }
+
     const players = await getPlayersToRate()
     const myRatings = await getMyRatings()
 
