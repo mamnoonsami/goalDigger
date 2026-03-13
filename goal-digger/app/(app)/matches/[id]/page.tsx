@@ -44,6 +44,12 @@ export default async function MatchDetailPage({ params }: PageProps) {
         .eq('match_id', id)
         .order('signed_up_at', { ascending: true })
 
+    // Fetch all players for admin management
+    const { data: allPlayers } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, base_score, player_position, avatar_url')
+        .order('first_name', { ascending: true })
+
     const hasJoined = signups?.some((s: { player_id: string }) => s.player_id === user!.id) ?? false
     const isAdmin = profile?.is_admin ?? false
 
@@ -95,6 +101,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                 key={signups?.map((s: { player_id: string }) => s.player_id).join(',') ?? 'empty'}
                 matchId={id}
                 signups={(signups ?? []) as any}
+                allPlayers={allPlayers ?? []}
                 isAdmin={isAdmin}
                 matchStatus={match.status}
             />

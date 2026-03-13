@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { saveTeamAssignments, resetTeams } from '../../app/actions/matches'
 import { balanceTeams as runBalance } from '@goaldigger/core'
 import { Button } from '../ui/Button'
+import { ManageMatchPlayersModal } from './ManageMatchPlayersModal'
 
 interface SignupPlayer {
     player_id: string
@@ -21,6 +22,7 @@ interface SignupPlayer {
 interface TeamRosterProps {
     matchId: string
     signups: SignupPlayer[]
+    allPlayers: any[]
     isAdmin: boolean
     matchStatus: string
 }
@@ -29,12 +31,13 @@ function effectiveScore(p: { base_score: number; goals: number }) {
     return p.base_score + p.goals * 2
 }
 
-export function TeamRoster({ matchId, signups: initialSignups, isAdmin, matchStatus }: TeamRosterProps) {
+export function TeamRoster({ matchId, signups: initialSignups, allPlayers, isAdmin, matchStatus }: TeamRosterProps) {
     const [signups, setSignups] = useState<SignupPlayer[]>(initialSignups)
     const [draggedId, setDraggedId] = useState<string | null>(null)
     const [saving, setSaving] = useState(false)
     const [resetting, setResetting] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [isManagePlayersOpen, setIsManagePlayersOpen] = useState(false)
 
     // Track whether local state differs from what's saved in the DB
     const isDirty = signups.some((s, i) => s.team !== initialSignups[i]?.team)
@@ -208,10 +211,18 @@ export function TeamRoster({ matchId, signups: initialSignups, isAdmin, matchSta
             ) : (
                 /* Pre-balance: just list the players */
                 <div className="bg-surface-2 overflow-hidden rounded-xl border border-border">
-                    <div className="border-b border-border px-5 py-4">
+                    <div className="border-b border-border px-5 py-4 flex items-center justify-between">
                         <h2 className="font-semibold text-text-primary">
                             Signed-Up Players ({signups.length})
                         </h2>
+                        {isAdmin && (
+                            <button
+                                onClick={() => setIsManagePlayersOpen(true)}
+                                className="text-xs font-medium text-accent hover:text-accent-hover bg-accent/10 hover:bg-accent/20 px-3 py-1.5 rounded transition-colors"
+                            >
+                                Manage Players
+                            </button>
+                        )}
                     </div>
                     {signups.length > 0 ? (
                         <ul className="divide-y divide-border">
@@ -225,6 +236,15 @@ export function TeamRoster({ matchId, signups: initialSignups, isAdmin, matchSta
                         </p>
                     )}
                 </div>
+            )}
+
+            {isManagePlayersOpen && (
+                <ManageMatchPlayersModal
+                    matchId={matchId}
+                    allPlayers={allPlayers}
+                    initialAssignedIds={initialSignups.map(s => s.player_id)}
+                    onClose={() => setIsManagePlayersOpen(false)}
+                />
             )}
         </div>
     )
