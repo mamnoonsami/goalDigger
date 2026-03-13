@@ -1,6 +1,7 @@
 import { createClient } from '../../../lib/supabase/server'
 import { Card } from '../../../components/ui/Card'
 import { Badge, statusVariant } from '../../../components/ui/Badge'
+import { LocalTime } from '../../../components/ui/LocalTime'
 import Link from 'next/link'
 
 export default async function MatchesPage() {
@@ -49,7 +50,7 @@ export default async function MatchesPage() {
                                 </div>
                                 <div className="flex flex-col gap-1 text-sm text-text-muted">
                                     <span>📍 {m.location ?? 'TBD'}</span>
-                                    <span>📅 {new Date(m.scheduled_at).toLocaleString(undefined, { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                                    <span>📅 <LocalTime isoString={m.scheduled_at} format="long" /></span>
                                     <span>👥 Max {m.max_players} players</span>
                                 </div>
                             </Card>

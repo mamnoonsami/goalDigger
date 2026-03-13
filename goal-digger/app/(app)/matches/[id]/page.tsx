@@ -4,6 +4,7 @@ import { Badge, statusVariant } from '../../../../components/ui/Badge'
 import { MatchActions } from '../../../../components/matches/MatchActions'
 import { TeamRoster } from '../../../../components/matches/TeamRoster'
 import { MatchAdminActions } from '../../../../components/matches/MatchAdminActions'
+import { LocalTime } from '../../../../components/ui/LocalTime'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { MatchStatus } from '@goaldigger/core'
@@ -72,7 +73,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-text-muted">
                             <span>📍 {match.location ?? 'TBD'}</span>
-                            <span>📅 {new Date(match.scheduled_at).toLocaleString(undefined, { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                            <span>📅 <LocalTime isoString={match.scheduled_at} format="long" /></span>
                             <span>👥 {signups?.length ?? 0} / {match.max_players} players</span>
                             {match.notes && <span className="sm:col-span-2">📝 {match.notes}</span>}
                         </div>

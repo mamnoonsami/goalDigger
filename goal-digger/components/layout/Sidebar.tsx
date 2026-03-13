@@ -40,7 +40,7 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
     const items = [
         ...navItems,
         ...(isAdmin ? [
-            { href: '/ratings', label: 'Ratings', icon: '⭐' },
+            { href: '/ratings', label: 'Rate Your Teammates', icon: '⭐' },
             { href: '/users', label: 'User Management', icon: '🛡️' }
         ] : []),
     ]

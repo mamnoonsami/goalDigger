@@ -1,6 +1,7 @@
 import { createClient } from '../../../lib/supabase/server'
 import { Card } from '../../../components/ui/Card'
 import { AuctionStatusBadge } from '../../../components/auctions/AuctionStatusBadge'
+import { LocalTime } from '../../../components/ui/LocalTime'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -53,7 +54,7 @@ export default async function AuctionsPage() {
                                         <AuctionStatusBadge status={a.status} scheduledAt={a.scheduled_at} />
                                     </div>
                                     <div className="flex flex-col gap-1 text-sm text-text-muted">
-                                        <span>📅 {new Date(a.scheduled_at).toLocaleString(undefined, { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                                        <span>📅 <LocalTime isoString={a.scheduled_at} format="long" /></span>
                                         <span>⏱️ {a.bid_timer_seconds}s bid timer</span>
                                         <span>💰 {a.budget_per_manager} budget per manager</span>
                                         {a.description && (

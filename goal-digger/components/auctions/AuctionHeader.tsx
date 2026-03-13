@@ -6,6 +6,7 @@ import { Button } from '../ui/Button'
 import { AuctionDetailActions } from './AuctionDetailActions'
 import { EditAuctionDetailsModal } from './EditAuctionDetailsModal'
 import { AuctionStatusBadge } from './AuctionStatusBadge'
+import { LocalTime } from '../ui/LocalTime'
 import { joinAuction, leaveAuction } from '../../app/actions/auctions'
 import { createClient } from '../../lib/supabase/client'
 import { useToast } from '../providers/ToastProvider'
@@ -185,7 +186,7 @@ export function AuctionHeader({ auction, isAdmin, isManager = false, hasJoined =
 
                     {!isMinimized && (
                         <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-text-muted pl-1 sm:pl-10">
-                            <span className="flex items-center gap-1.5" suppressHydrationWarning>📅 {new Date(liveAuction.scheduled_at).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                            <span className="flex items-center gap-1.5" suppressHydrationWarning>📅 <LocalTime isoString={liveAuction.scheduled_at} format="short" /></span>
                             <span className="flex items-center gap-1.5">⏱️ {liveAuction.bid_timer_seconds}s bid timer</span>
                             <span className="flex items-center gap-1.5">💰 {liveAuction.budget_per_manager} max budget</span>
                             <span className="flex items-center gap-1.5">👥 {playerCount} / {liveAuction.max_players_per_team} players per team</span>

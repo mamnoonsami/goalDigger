@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Card } from '../ui/Card'
 import { AuctionStatusBadge } from '../auctions/AuctionStatusBadge'
+import { LocalTime } from '../ui/LocalTime'
 
 interface AuctionSnippet {
     id: string
@@ -31,7 +32,7 @@ export function OngoingAuctions({ auctions }: OngoingAuctionsProps) {
                             <div>
                                 <Link href={`/auctions/${a.id}`} className="text-sm font-medium text-text-primary hover:text-accent transition-colors">{a.title}</Link>
                                 <p className="text-xs text-text-muted">
-                                    {new Date(a.scheduled_at).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                    <LocalTime isoString={a.scheduled_at} format="long" />
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
