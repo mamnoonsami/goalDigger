@@ -232,7 +232,7 @@ export default function RatingsClient({ players, myRatings }: RatingsClientProps
                                             step="1"
                                             value={currentRating}
                                             onChange={(e) => handleSliderChange(player.id, Number(e.target.value))}
-                                            className="relative w-full h-1 bg-transparent appearance-none cursor-pointer accent-accent transition-all z-10"
+                                            className="relative w-full h-1 bg-transparent appearance-none cursor-pointer accent-accent transition-all z-10 touch-none"
                                         />
                                     </div>
 
