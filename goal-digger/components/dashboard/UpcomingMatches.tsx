@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Card } from '../ui/Card'
 import { Badge, statusVariant } from '../ui/Badge'
+import { LocalTime } from '../ui/LocalTime'
 import type { MatchStatus } from '@goaldigger/core'
 
 interface MatchSnippet {
@@ -38,7 +39,7 @@ export function UpcomingMatches({ matches, isAdmin }: UpcomingMatchesProps) {
                                 <div>
                                     <Link href={`/matches/${m.id}`} className="text-sm font-medium text-text-primary hover:text-accent transition-colors">{m.title}</Link>
                                     <p className="text-xs text-text-muted">
-                                        {m.location ?? 'TBD'} · {new Date(m.scheduled_at).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+                                        {m.location ?? 'TBD'} · <LocalTime isoString={m.scheduled_at} format="date-only" />
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3">
