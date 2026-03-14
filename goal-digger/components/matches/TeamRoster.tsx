@@ -22,6 +22,7 @@ interface SignupPlayer {
 interface TeamRosterProps {
     matchId: string
     signups: SignupPlayer[]
+    notComingSignups?: SignupPlayer[]
     allPlayers: any[]
     isAdmin: boolean
     matchStatus: string
@@ -31,7 +32,7 @@ function effectiveScore(p: { base_score: number; goals: number }) {
     return p.base_score + p.goals * 2
 }
 
-export function TeamRoster({ matchId, signups: initialSignups, allPlayers, isAdmin, matchStatus }: TeamRosterProps) {
+export function TeamRoster({ matchId, signups: initialSignups, notComingSignups = [], allPlayers, isAdmin, matchStatus }: TeamRosterProps) {
     const [signups, setSignups] = useState<SignupPlayer[]>(initialSignups)
     const [draggedId, setDraggedId] = useState<string | null>(null)
     const [saving, setSaving] = useState(false)
@@ -235,6 +236,44 @@ export function TeamRoster({ matchId, signups: initialSignups, allPlayers, isAdm
                             No players have joined yet. Be the first! 🎯
                         </p>
                     )}
+                </div>
+            )}
+
+            {/* Not Coming Section */}
+            {notComingSignups.length > 0 && (
+                <div className="bg-surface-2 overflow-hidden rounded-xl border border-border mt-4">
+                    <div className="border-b border-border px-5 py-4 flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </div>
+                        <h2 className="font-semibold text-text-primary">
+                            Can't Make It ({notComingSignups.length})
+                        </h2>
+                    </div>
+                    <ul className="divide-y divide-border">
+                        {notComingSignups.map((s) => {
+                            const p = s.profiles
+                            return (
+                                <li key={s.player_id} className="flex items-center gap-3 px-5 py-3 opacity-60">
+                                    {p.avatar_url ? (
+                                        <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover grayscale" />
+                                    ) : (
+                                        <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
+                                            {p.first_name?.[0]}{p.last_name?.[0]}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="text-sm font-medium text-text-muted line-through">
+                                            {p.first_name} {p.last_name}
+                                        </p>
+                                        {p.player_position && (
+                                            <p className="text-xs text-text-muted capitalize">{p.player_position}</p>
+                                        )}
+                                    </div>
+                                </li>
+                            )
+                        })}
+                    </ul>
                 </div>
             )}
 

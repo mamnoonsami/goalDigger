@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { createClient } from '../../../../lib/supabase/server'
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
+    const action = searchParams.get('action') || 'accept'
 
     const secret = process.env.SUPABASE_JWT_SECRET
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    
+    // Support Vercel deployments automatically
+    const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL || process.env.NEXT_PUBLIC_VERCEL_URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (vercelUrl ? `https://${vercelUrl}` : 'http://localhost:3000')
 
     if (!token || !secret) {
         return NextResponse.redirect(`${baseUrl}/?error=Invalid+invitation+link`)
@@ -18,33 +21,36 @@ export async function GET(request: Request) {
         const decoded = jwt.verify(token, secret) as { matchId: string, playerId: string }
         const { matchId, playerId } = decoded
 
-        // 2. Add player to match_signups safely using the Service Role Key
-        // Service Role Key bypasses RLS, acting exactly like our Admin RPC bypassing
-        const supabase = await createClient() // we use standard setup, but let's override the auth header
-        const supabaseAdmin = await createClient()
-
-        // Important: Next.js app router doesn't easily let you pass an entirely different client instance key safely
-        // if they are bound to cookies unless you initialize a pure client. 
-        // We will create an admin-level client explicitly for this insert.
-        
+        // 2. Create admin Supabase client (bypasses RLS)
         const { createClient: createPureClient } = await import('@supabase/supabase-js')
         const adminClient = createPureClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         )
 
+        const accepted = action !== 'decline'
+
+        // 3. Upsert into match_signups
+        // If the player already has a row (e.g. clicked accept then decline or vice versa),
+        // update it. Otherwise, insert a new row.
         const { error } = await adminClient
             .from('match_signups')
-            .insert({ match_id: matchId, player_id: playerId })
+            .upsert(
+                { match_id: matchId, player_id: playerId, invitation_accepted: accepted },
+                { onConflict: 'match_id,player_id' }
+            )
 
-        // 3. Ignore duplicate errors (they already joined)
-        if (error && error.code !== '23505') {
-            console.error('Failed to insert match signup via magic link:', error)
-            return NextResponse.redirect(`${baseUrl}/?error=Could+not+join+match`)
+        if (error) {
+            console.error('Failed to upsert match signup via magic link:', error)
+            return NextResponse.redirect(`${baseUrl}/?error=Could+not+process+invitation`)
         }
 
-        // 4. Redirect to public success page!
-        return NextResponse.redirect(`${baseUrl}/invite/success?match=${matchId}`)
+        // 4. Redirect to the appropriate page
+        if (accepted) {
+            return NextResponse.redirect(`${baseUrl}/invite/success?match=${matchId}`)
+        } else {
+            return NextResponse.redirect(`${baseUrl}/invite/declined?match=${matchId}`)
+        }
 
     } catch (err) {
         console.error('Magic link verification failed:', err)
