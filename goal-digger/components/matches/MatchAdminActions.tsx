@@ -28,6 +28,7 @@ export function MatchAdminActions({ match }: MatchAdminActionsProps) {
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [deleting, setDeleting] = useState(false)
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
     async function handleDelete() {
         setDeleting(true)
@@ -44,13 +45,35 @@ export function MatchAdminActions({ match }: MatchAdminActionsProps) {
 
     return (
         <>
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setIsEditOpen(true)} className="text-accent hover:text-accent-hover hover:bg-accent/10" title="Edit Match">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(true)} className="text-red-500 hover:text-red-400 hover:bg-red-500/10" title="Delete Match">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
                 </Button>
+            </div>
+
+            <div className="relative sm:hidden">
+                <button
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    className="p-1.5 rounded-lg hover:bg-surface-3 text-text-muted transition-colors"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
+                </button>
+                {mobileMenuOpen && (
+                    <>
+                        <div className="fixed inset-0 z-40" onClick={() => setMobileMenuOpen(false)} />
+                        <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-lg border border-border bg-surface-2 shadow-xl py-1">
+                            <button onClick={() => { setIsEditOpen(true); setMobileMenuOpen(false) }} className="w-full text-left px-4 py-2.5 text-sm text-text-primary hover:bg-surface-3 transition-colors">
+                                Edit Match
+                            </button>
+                            <button onClick={() => { setShowDeleteConfirm(true); setMobileMenuOpen(false) }} className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-surface-3 transition-colors">
+                                Delete Match
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
 
             {isEditOpen && (
