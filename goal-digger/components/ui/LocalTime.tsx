@@ -28,7 +28,8 @@ export function LocalTime({ isoString, format = 'long', className }: LocalTimePr
             month: 'short',
             day: 'numeric',
             hour: 'numeric',
-            minute: '2-digit'
+            minute: '2-digit',
+            hour12: true
         })
     } else if (format === 'short') {
         formattedDate = date.toLocaleString(undefined, {
@@ -36,7 +37,8 @@ export function LocalTime({ isoString, format = 'long', className }: LocalTimePr
             month: 'short',
             day: 'numeric',
             hour: 'numeric',
-            minute: '2-digit'
+            minute: '2-digit',
+            hour12: true
         })
     } else if (format === 'date-only') {
         formattedDate = date.toLocaleDateString(undefined, {

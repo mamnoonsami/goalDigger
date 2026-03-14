@@ -40,11 +40,20 @@ export default async function MatchDetailPage({ params }: PageProps) {
     // Fetch signups with player profile data
     const { data: signups } = await supabase
         .from('match_signups')
-        .select('player_id, team, profiles(first_name, last_name, base_score, goals, player_position, avatar_url)')
+        .select('player_id, team, invitation_accepted, profiles(first_name, last_name, base_score, goals, player_position, avatar_url)')
         .eq('match_id', id)
         .order('signed_up_at', { ascending: true })
 
-    const hasJoined = signups?.some((s: { player_id: string }) => s.player_id === user!.id) ?? false
+    // Fetch all players for admin management
+    const { data: allPlayers } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, base_score, player_position, avatar_url')
+        .order('first_name', { ascending: true })
+
+    const comingSignups = signups?.filter((s: any) => s.invitation_accepted) ?? []
+    const notComingSignups = signups?.filter((s: any) => s.invitation_accepted === false) ?? []
+
+    const hasJoined = comingSignups.some((s: { player_id: string }) => s.player_id === user!.id)
     const isAdmin = profile?.is_admin ?? false
 
     return (
@@ -74,7 +83,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-text-muted">
                             <span>📍 {match.location ?? 'TBD'}</span>
                             <span>📅 <LocalTime isoString={match.scheduled_at} format="long" /></span>
-                            <span>👥 {signups?.length ?? 0} / {match.max_players} players</span>
+                            <span>👥 {comingSignups.length} / {match.max_players} players</span>
                             {match.notes && <span className="sm:col-span-2">📝 {match.notes}</span>}
                         </div>
                     </div>
@@ -92,9 +101,11 @@ export default async function MatchDetailPage({ params }: PageProps) {
 
             {/* Players & Team Management */}
             <TeamRoster
-                key={signups?.map((s: { player_id: string }) => s.player_id).join(',') ?? 'empty'}
+                key={comingSignups.map((s: { player_id: string }) => s.player_id).join(',') ?? 'empty'}
                 matchId={id}
-                signups={(signups ?? []) as any}
+                signups={comingSignups as any}
+                notComingSignups={notComingSignups as any}
+                allPlayers={allPlayers ?? []}
                 isAdmin={isAdmin}
                 matchStatus={match.status}
             />

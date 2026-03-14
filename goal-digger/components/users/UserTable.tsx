@@ -128,7 +128,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                     </div>
 
                     {/* Count */}
-                    <div className="hidden sm:flex items-center text-sm text-text-muted whitespace-nowrap">
+                    <div className="flex items-center text-sm text-text-muted whitespace-nowrap">
                         {filtered.length} user{filtered.length !== 1 ? 's' : ''}
                     </div>
                 </div>

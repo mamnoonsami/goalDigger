@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { saveTeamAssignments, resetTeams } from '../../app/actions/matches'
 import { balanceTeams as runBalance } from '@goaldigger/core'
 import { Button } from '../ui/Button'
+import { ManageMatchPlayersModal } from './ManageMatchPlayersModal'
 
 interface SignupPlayer {
     player_id: string
@@ -21,6 +22,8 @@ interface SignupPlayer {
 interface TeamRosterProps {
     matchId: string
     signups: SignupPlayer[]
+    notComingSignups?: SignupPlayer[]
+    allPlayers: any[]
     isAdmin: boolean
     matchStatus: string
 }
@@ -29,12 +32,13 @@ function effectiveScore(p: { base_score: number; goals: number }) {
     return p.base_score + p.goals * 2
 }
 
-export function TeamRoster({ matchId, signups: initialSignups, isAdmin, matchStatus }: TeamRosterProps) {
+export function TeamRoster({ matchId, signups: initialSignups, notComingSignups = [], allPlayers, isAdmin, matchStatus }: TeamRosterProps) {
     const [signups, setSignups] = useState<SignupPlayer[]>(initialSignups)
     const [draggedId, setDraggedId] = useState<string | null>(null)
     const [saving, setSaving] = useState(false)
     const [resetting, setResetting] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [isManagePlayersOpen, setIsManagePlayersOpen] = useState(false)
 
     // Track whether local state differs from what's saved in the DB
     const isDirty = signups.some((s, i) => s.team !== initialSignups[i]?.team)
@@ -208,10 +212,18 @@ export function TeamRoster({ matchId, signups: initialSignups, isAdmin, matchSta
             ) : (
                 /* Pre-balance: just list the players */
                 <div className="bg-surface-2 overflow-hidden rounded-xl border border-border">
-                    <div className="border-b border-border px-5 py-4">
+                    <div className="border-b border-border px-5 py-4 flex items-center justify-between">
                         <h2 className="font-semibold text-text-primary">
                             Signed-Up Players ({signups.length})
                         </h2>
+                        {isAdmin && (
+                            <button
+                                onClick={() => setIsManagePlayersOpen(true)}
+                                className="text-xs font-medium text-accent hover:text-accent-hover bg-accent/10 hover:bg-accent/20 px-3 py-1.5 rounded transition-colors"
+                            >
+                                Manage Players
+                            </button>
+                        )}
                     </div>
                     {signups.length > 0 ? (
                         <ul className="divide-y divide-border">
@@ -225,6 +237,53 @@ export function TeamRoster({ matchId, signups: initialSignups, isAdmin, matchSta
                         </p>
                     )}
                 </div>
+            )}
+
+            {/* Not Coming Section */}
+            {notComingSignups.length > 0 && (
+                <div className="bg-surface-2 overflow-hidden rounded-xl border border-border mt-4">
+                    <div className="border-b border-border px-5 py-4 flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </div>
+                        <h2 className="font-semibold text-text-primary">
+                            Can't Make It ({notComingSignups.length})
+                        </h2>
+                    </div>
+                    <ul className="divide-y divide-border">
+                        {notComingSignups.map((s) => {
+                            const p = s.profiles
+                            return (
+                                <li key={s.player_id} className="flex items-center gap-3 px-5 py-3 opacity-60">
+                                    {p.avatar_url ? (
+                                        <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover grayscale" />
+                                    ) : (
+                                        <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
+                                            {p.first_name?.[0]}{p.last_name?.[0]}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="text-sm font-medium text-text-muted line-through">
+                                            {p.first_name} {p.last_name}
+                                        </p>
+                                        {p.player_position && (
+                                            <p className="text-xs text-text-muted capitalize">{p.player_position}</p>
+                                        )}
+                                    </div>
+                                </li>
+                            )
+                        })}
+                    </ul>
+                </div>
+            )}
+
+            {isManagePlayersOpen && (
+                <ManageMatchPlayersModal
+                    matchId={matchId}
+                    allPlayers={allPlayers}
+                    initialAssignedIds={initialSignups.map(s => s.player_id)}
+                    onClose={() => setIsManagePlayersOpen(false)}
+                />
             )}
         </div>
     )

@@ -49,10 +49,12 @@ export async function joinMatch(matchId: string) {
 
     const { error } = await supabase
         .from('match_signups')
-        .insert({ match_id: matchId, player_id: user.id })
+        .upsert(
+            { match_id: matchId, player_id: user.id, invitation_accepted: true },
+            { onConflict: 'match_id,player_id' }
+        )
 
     if (error) {
-        if (error.code === '23505') throw new Error('You have already joined this match')
         throw new Error(error.message)
     }
 
@@ -148,4 +150,124 @@ export async function deleteMatch(id: string) {
 
     revalidatePath('/dashboard')
     revalidatePath('/matches')
+}
+
+/** Admin: Bulk add/remove players to/from match */
+export async function updateMatchPlayers(matchId: string, addIds: string[], removeIds: string[]) {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
+    if (!profile?.is_admin) throw new Error('Not authorized')
+
+    // Remove players
+    if (removeIds.length > 0) {
+        const { error: removeError } = await supabase
+            .from('match_signups')
+            .delete()
+            .eq('match_id', matchId)
+            .in('player_id', removeIds)
+
+        if (removeError) throw new Error(removeError.message)
+    }
+
+    // Add players
+    if (addIds.length > 0) {
+        const insertData = addIds.map(id => ({ match_id: matchId, player_id: id, invitation_accepted: true }))
+        const { error: addError } = await supabase
+            .from('match_signups')
+            .upsert(insertData, { onConflict: 'match_id,player_id' })
+
+        // Ignoring duplicate errors if any
+        if (addError && addError.code !== '23505') throw new Error(addError.message)
+    }
+
+    revalidatePath(`/matches/${matchId}`)
+    revalidatePath('/dashboard')
+    revalidatePath('/matches')
+}
+
+/** Admin: Send an email invitation directly to a player */
+export async function sendMatchInvitation(matchId: string, playerId: string) {
+    const supabase = await createClient()
+
+    // 1. Verify caller is admin
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
+    if (!profile?.is_admin) throw new Error('Not authorized')
+
+    // 2. Fetch match details for the email content
+    const { data: match } = await supabase.from('matches').select('title, scheduled_at').eq('id', matchId).single()
+    if (!match) throw new Error('Match not found')
+
+    // 3. Fetch the target player's auth profile (Service Role needed to read email)
+    const { createClient: createPureClient } = await import('@supabase/supabase-js')
+    const adminClient = createPureClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // We can query auth.users by linking through the admin API
+    const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(playerId)
+    if (userError || !userData?.user?.email) {
+        throw new Error('Could not find email for this player')
+    }
+    const targetEmail = userData.user.email
+
+    // 4. Generate the stateless JWT
+    const jwt = await import('jsonwebtoken')
+    const secret = process.env.SUPABASE_JWT_SECRET
+    if (!secret) throw new Error('JWT Secret is not configured')
+
+    const token = jwt.sign({ matchId, playerId }, secret, {
+        expiresIn: '5d', // Set to exactly 5 days per user request
+    })
+
+    // 5. Construct the magic links
+    // On Vercel, use their auto-generated production URL or deployment URL if APP_URL isn't set
+    const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL || process.env.NEXT_PUBLIC_VERCEL_URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (vercelUrl ? `https://${vercelUrl}` : 'http://localhost:3000')
+
+    const acceptLink = `${baseUrl}/api/invite?token=${token}&action=accept`
+    const declineLink = `${baseUrl}/api/invite?token=${token}&action=decline`
+
+    // 6. Send the email using Nodemailer and Gmail App Password
+    const nodemailer = await import('nodemailer')
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASSWORD,
+        },
+    })
+
+    const matchDate = match.scheduled_at
+        ? new Date(match.scheduled_at).toLocaleString()
+        : 'TBD'
+
+    await transporter.sendMail({
+        from: `"Goal Digger" <${process.env.SMTP_USER}>`,
+        to: targetEmail,
+        subject: `You're invited to play: ${match.title}! ⚽`,
+        html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 16px;">
+                <h2 style="color: #2F8A4B;">You are needed for the match!</h2>
+                <p>An admin has invited you to join the upcoming match <strong>${match.title}</strong> scheduled for ${matchDate}.</p>
+                <p>Click a button below to let us know.<b> You do not need to log in.</b> You can change your decision through the buttons below, or by logging into your account anytime within 5 days.</p>
+                <div style="margin: 30px 0;">
+                    <a href="${acceptLink}" style="background-color: #2F8A4B; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-right: 12px; margin-bottom: 12px;">
+                        Join Match
+                    </a>
+                    <a href="${declineLink}" style="background-color: #ff837aff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-bottom: 12px;">
+                        Sorry, Next Time
+                    </a>
+                </div>
+                <p style="color: #666; font-size: 14px;">This link will automatically expire in 5 days.</p>
+            </div>
+        `,
+    })
 }
