@@ -44,8 +44,8 @@ function diceBearUrl(style: string, seed: string) {
 }
 
 export function ProfileForm({ profile, goals }: ProfileFormProps) {
-    const [firstName, setFirstName] = useState(profile.first_name)
-    const [lastName, setLastName] = useState(profile.last_name)
+    const firstName = profile.first_name
+    const lastName = profile.last_name
     const [position, setPosition] = useState(profile.player_position ?? '')
     const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url ?? '')
     const [saving, setSaving] = useState(false)
@@ -62,8 +62,6 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
         setSuccess(false)
         try {
             await updateProfile({
-                first_name: firstName,
-                last_name: lastName,
                 player_position: position || null,
                 avatar_url: avatarUrl || null,
             })
@@ -128,8 +126,6 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
             // Update local state and DB
             setAvatarUrl(cacheBustedUrl)
             await updateProfile({
-                first_name: firstName,
-                last_name: lastName,
                 player_position: position || null,
                 avatar_url: cacheBustedUrl,
             })
@@ -249,8 +245,8 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
                     <input
                         type="text"
                         value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        className="rounded-lg border border-border bg-surface-1 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
+                        disabled
+                        className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm text-text-muted cursor-not-allowed opacity-70"
                     />
                 </label>
                 <label className="flex flex-col gap-1.5">
@@ -258,8 +254,8 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
                     <input
                         type="text"
                         value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        className="rounded-lg border border-border bg-surface-1 px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
+                        disabled
+                        className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm text-text-muted cursor-not-allowed opacity-70"
                     />
                 </label>
             </div>

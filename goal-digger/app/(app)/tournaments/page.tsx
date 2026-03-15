@@ -59,7 +59,7 @@ export default async function TournamentsPage() {
                                         <span>📍 {t.location}</span>
                                     )}
                                     {t.auction_id && (
-                                        <span>🔗 Linked to auction</span>
+                                        <span>🔨 Linked to auction</span>
                                     )}
                                     {t.description && (
                                         <span className="mt-1 line-clamp-2 text-xs">{t.description}</span>

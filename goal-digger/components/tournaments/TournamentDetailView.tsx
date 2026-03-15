@@ -186,7 +186,7 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                                 )}
                                 {linkedAuction && (
                                     <a href={`/auctions/${linkedAuction.id}`} className="flex items-center gap-1.5 text-accent hover:text-accent-hover transition-colors">
-                                        🔗 {linkedAuction.title}
+                                        🔨 {linkedAuction.title}
                                     </a>
                                 )}
                                 <span className="flex items-center gap-1.5">🏆 {teams.length} teams</span>

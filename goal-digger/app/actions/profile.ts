@@ -5,8 +5,6 @@ import { revalidatePath } from 'next/cache'
 
 /** User updates their own profile */
 export async function updateProfile(data: {
-    first_name?: string
-    last_name?: string
     player_position?: string | null
     avatar_url?: string | null
 }) {
