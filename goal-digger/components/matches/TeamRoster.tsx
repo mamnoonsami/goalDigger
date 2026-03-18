@@ -21,6 +21,7 @@ interface SignupPlayer {
 
 interface TeamRosterProps {
     matchId: string
+    scheduledAt: string
     signups: SignupPlayer[]
     notComingSignups?: SignupPlayer[]
     allPlayers: any[]
@@ -32,7 +33,7 @@ function effectiveScore(p: { base_score: number; goals: number }) {
     return p.base_score + p.goals * 2
 }
 
-export function TeamRoster({ matchId, signups: initialSignups, notComingSignups = [], allPlayers, isAdmin, matchStatus }: TeamRosterProps) {
+export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notComingSignups = [], allPlayers, isAdmin, matchStatus }: TeamRosterProps) {
     const [signups, setSignups] = useState<SignupPlayer[]>(initialSignups)
     const [draggedId, setDraggedId] = useState<string | null>(null)
     const [saving, setSaving] = useState(false)
@@ -280,6 +281,7 @@ export function TeamRoster({ matchId, signups: initialSignups, notComingSignups 
             {isManagePlayersOpen && (
                 <ManageMatchPlayersModal
                     matchId={matchId}
+                    scheduledAt={scheduledAt}
                     allPlayers={allPlayers}
                     initialAssignedIds={initialSignups.map(s => s.player_id)}
                     onClose={() => setIsManagePlayersOpen(false)}

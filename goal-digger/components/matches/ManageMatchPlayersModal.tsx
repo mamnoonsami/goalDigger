@@ -17,12 +17,13 @@ interface Player {
 
 interface ManageMatchPlayersModalProps {
     matchId: string
+    scheduledAt: string
     allPlayers: Player[]
     initialAssignedIds: string[]
     onClose: () => void
 }
 
-export function ManageMatchPlayersModal({ matchId, allPlayers, initialAssignedIds, onClose }: ManageMatchPlayersModalProps) {
+export function ManageMatchPlayersModal({ matchId, scheduledAt, allPlayers, initialAssignedIds, onClose }: ManageMatchPlayersModalProps) {
     const router = useRouter()
     const toast = useToast()
     const [searchQuery, setSearchQuery] = useState('')
@@ -90,7 +91,17 @@ export function ManageMatchPlayersModal({ matchId, allPlayers, initialAssignedId
         e.stopPropagation() // Prevent row click from toggling checkbox
         setSendingInvite(playerId)
         try {
-            await sendMatchInvitation(matchId, playerId)
+            const date = new Date(scheduledAt)
+            const localizedTime = date.toLocaleString(undefined, {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            })
+
+            await sendMatchInvitation(matchId, playerId, localizedTime)
             toast.success('Invitation sent successfully!')
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : 'Failed to send invitation')

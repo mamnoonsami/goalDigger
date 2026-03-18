@@ -103,6 +103,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
             <TeamRoster
                 key={comingSignups.map((s: { player_id: string }) => s.player_id).join(',') ?? 'empty'}
                 matchId={id}
+                scheduledAt={match.scheduled_at}
                 signups={comingSignups as any}
                 notComingSignups={notComingSignups as any}
                 allPlayers={allPlayers ?? []}

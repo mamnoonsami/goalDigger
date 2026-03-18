@@ -190,7 +190,7 @@ export async function updateMatchPlayers(matchId: string, addIds: string[], remo
 }
 
 /** Admin: Send an email invitation directly to a player */
-export async function sendMatchInvitation(matchId: string, playerId: string) {
+export async function sendMatchInvitation(matchId: string, playerId: string, localizedTime?: string) {
     const supabase = await createClient()
 
     // 1. Verify caller is admin
@@ -201,7 +201,7 @@ export async function sendMatchInvitation(matchId: string, playerId: string) {
     if (!profile?.is_admin) throw new Error('Not authorized')
 
     // 2. Fetch match details for the email content
-    const { data: match } = await supabase.from('matches').select('title, scheduled_at').eq('id', matchId).single()
+    const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()
     if (!match) throw new Error('Match not found')
 
     // 3. Fetch the target player's auth profile (Service Role needed to read email)
@@ -245,29 +245,55 @@ export async function sendMatchInvitation(matchId: string, playerId: string) {
         },
     })
 
-    const matchDate = match.scheduled_at
+    const matchDate = localizedTime || (match.scheduled_at
         ? new Date(match.scheduled_at).toLocaleString()
-        : 'TBD'
+        : 'TBD')
 
     await transporter.sendMail({
-        from: `"Goal Digger" <${process.env.SMTP_USER}>`,
+        from: `"Saturday Soccer Match" <${process.env.SMTP_USER}>`,
         to: targetEmail,
-        subject: `You're invited to play: ${match.title}! ⚽`,
+        subject: `Invite: ${match.title}! ⚽`,
         html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 16px;">
-                <h2 style="color: #2F8A4B;">You are needed for the match!</h2>
-                <p>An admin has invited you to join the upcoming match <strong>${match.title}</strong> scheduled for ${matchDate}.</p>
-                <p>Click a button below to let us know.<b> You do not need to log in.</b> You can change your decision through the buttons below, or by logging into your account anytime within 5 days.</p>
-                <div style="margin: 30px 0;">
-                    <a href="${acceptLink}" style="background-color: #2F8A4B; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-right: 12px; margin-bottom: 12px;">
-                        Join Match
-                    </a>
-                    <a href="${declineLink}" style="background-color: #ff837aff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-bottom: 12px;">
-                        Sorry, Next Time
-                    </a>
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <h1 style="color: #166534; margin: 0; font-size: 24px; font-weight: 800;">You're Needed!</h1>
+                    <p style="color: #475569; margin-top: 8px;">An admin has invited you to join a match.</p>
                 </div>
-                <p style="color: #666; font-size: 14px;">This link will automatically expire in 5 days.</p>
+
+                <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                    <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Match Details</h2>
+                    
+                    <div style="margin-bottom: 12px;">
+                        <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; letter-spacing: 0.05em;">⚽ Match</span>
+                        <strong style="color: #0f172a; font-size: 16px;">${match.title}</strong>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; letter-spacing: 0.05em;">📅 Date & Time</span>
+                        <span style="color: #0f172a; font-size: 16px;">${matchDate}</span>
+                    </div>
+
+                    <div style="margin-bottom: 0;">
+                        <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; letter-spacing: 0.05em;">📍 Location</span>
+                        <span style="color: #0f172a; font-size: 16px;">${match.location || 'TBD'}</span>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <a href="${acceptLink}" style="background-color: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin-right: 8px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.2);">
+                        Accept & Join
+                    </a>
+                    <a href="${declineLink}" style="background-color: #ef4444; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);">
+                        Decline
+                    </a>
+                     <p style="color: #475569; font-size: 14px; margin-bottom: 20px;"><b>No login required.</b> Click a button below to update your status.</p>
+                </div>
+
+                <footer style="text-align: center; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+                    <p style="color: #94a3b8; font-size: 12px; margin: 0;">This invitation link expires in 5 days.</p>
+                    <p style="color: #94a3b8; font-size: 12px; margin-top: 4px;">You can also manage your status by logging into your account.</p>
+                </footer>
             </div>
-        `,
+        `
     })
 }
