@@ -286,7 +286,7 @@ export async function sendMatchInvitation(matchId: string, playerId: string, loc
                     <a href="${declineLink}" style="background-color: #ef4444; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);">
                         Decline
                     </a>
-                     <p style="color: #475569; font-size: 14px; margin-bottom: 20px;"><b>No login required.</b> Click a button below to update your status.</p>
+                     <p style="color: #475569; font-size: 14px; margin-bottom: 20px;"><b>Login not required.</b></p>
                 </div>
 
                 <footer style="text-align: center; border-top: 1px solid #e2e8f0; padding-top: 24px;">
