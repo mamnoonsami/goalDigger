@@ -5,6 +5,9 @@ import { saveTeamAssignments, resetTeams } from '../../app/actions/matches'
 import { balanceTeams as runBalance } from '@goaldigger/core'
 import { Button } from '../ui/Button'
 import { ManageMatchPlayersModal } from './ManageMatchPlayersModal'
+import { MatchActionMenu } from './MatchActionMenu'
+import { SendInvitationsModal } from './SendInvitationsModal'
+import { SendMatchCostModal } from './SendMatchCostModal'
 
 interface SignupPlayer {
     player_id: string
@@ -40,6 +43,8 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
     const [resetting, setResetting] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [isManagePlayersOpen, setIsManagePlayersOpen] = useState(false)
+    const [isInvitationsOpen, setIsInvitationsOpen] = useState(false)
+    const [isCostsOpen, setIsCostsOpen] = useState(false)
 
     // Track whether local state differs from what's saved in the DB
     const isDirty = signups.some((s, i) => s.team !== initialSignups[i]?.team)
@@ -212,18 +217,17 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
                 </>
             ) : (
                 /* Pre-balance: just list the players */
-                <div className="bg-surface-2 overflow-hidden rounded-xl border border-border">
+                <div className="bg-surface-2 rounded-xl border border-border">
                     <div className="border-b border-border px-5 py-4 flex items-center justify-between">
                         <h2 className="font-semibold text-text-primary">
                             Signed-Up Players ({signups.length})
                         </h2>
                         {isAdmin && (
-                            <button
-                                onClick={() => setIsManagePlayersOpen(true)}
-                                className="text-xs font-medium text-accent hover:text-accent-hover bg-accent/10 hover:bg-accent/20 px-3 py-1.5 rounded transition-colors"
-                            >
-                                Manage Players
-                            </button>
+                            <MatchActionMenu
+                                onManage={() => setIsManagePlayersOpen(true)}
+                                onInvite={() => setIsInvitationsOpen(true)}
+                                onCost={() => setIsCostsOpen(true)}
+                            />
                         )}
                     </div>
                     {signups.length > 0 ? (
@@ -242,10 +246,10 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
 
             {/* Not Coming Section */}
             {notComingSignups.length > 0 && (
-                <div className="bg-surface-2 overflow-hidden rounded-xl border border-border mt-4">
+                <div className="bg-surface-2 rounded-xl border border-border mt-4">
                     <div className="border-b border-border px-5 py-4 flex items-center gap-3">
                         <div className="w-6 h-6 rounded-full bg-red-500/15 flex items-center justify-center flex-shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                         </div>
                         <h2 className="font-semibold text-text-primary">
                             Can't Make It ({notComingSignups.length})
@@ -285,6 +289,26 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
                     allPlayers={allPlayers}
                     initialAssignedIds={initialSignups.map(s => s.player_id)}
                     onClose={() => setIsManagePlayersOpen(false)}
+                />
+            )}
+
+            {isInvitationsOpen && (
+                <SendInvitationsModal
+                    matchId={matchId}
+                    scheduledAt={scheduledAt}
+                    allPlayers={allPlayers}
+                    signedInIds={signups.map(s => s.player_id)}
+                    declinedIds={notComingSignups.map(s => s.player_id)}
+                    onClose={() => setIsInvitationsOpen(false)}
+                />
+            )}
+
+            {isCostsOpen && (
+                <SendMatchCostModal
+                    matchId={matchId}
+                    scheduledAt={scheduledAt}
+                    signups={signups}
+                    onClose={() => setIsCostsOpen(false)}
                 />
             )}
         </div>
