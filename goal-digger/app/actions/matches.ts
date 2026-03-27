@@ -297,3 +297,93 @@ export async function sendMatchInvitation(matchId: string, playerId: string, loc
         `
     })
 }
+
+/** Admin: Send match cost request email to a player */
+export async function sendMatchCostEmail(matchId: string, playerId: string, localizedTime: string | undefined, costPerPerson: number) {
+    const supabase = await createClient()
+
+    // 1. Verify caller is admin
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
+    if (!profile?.is_admin) throw new Error('Not authorized')
+
+    // 2. Fetch match details
+    const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()
+    if (!match) throw new Error('Match not found')
+
+    // 3. Fetch target player's email
+    const { createClient: createPureClient } = await import('@supabase/supabase-js')
+    const adminClient = createPureClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(playerId)
+    if (userError || !userData?.user?.email) {
+        throw new Error('Could not find email for this player')
+    }
+    const targetEmail = userData.user.email
+
+    // 4. Send the email using Nodemailer
+    const nodemailer = await import('nodemailer')
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASSWORD,
+        },
+    })
+
+    const matchDate = localizedTime || (match.scheduled_at ? new Date(match.scheduled_at).toLocaleString() : 'TBD')
+
+    await transporter.sendMail({
+        from: `"Goal Digger" <${process.env.SMTP_USER}>`,
+        to: targetEmail,
+        subject: `Interac e-Transfer Request: ${match.title}`,
+        html: `
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <h1 style="color: #d69302ff; margin: 0; font-size: 24px; font-weight: 800;">Payment Request</h1>
+                    <p style="color: #475569; margin-top: 8px;">Please send your e-Transfer for the soccer match.</p>
+                </div>
+
+                <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.05em;">Amount Due</span>
+                        <div style="font-size: 36px; font-weight: 900; color: #0f172a; margin-top: 4px;">
+                            $${costPerPerson.toFixed(2)}
+                        </div>
+
+                    <div style="text-align: center;">
+                        <p style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Please send an Interac e-Transfer to:</p>
+                        <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; display: inline-block;">
+                            <strong style="color: #0f172a; font-size: 18px; letter-spacing: 0.5px; user-select: all;">mamnoon909@gmail.com</strong>
+                        </div>
+                    </div>
+                    </div>
+
+                    <div style="border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: 16px 0; margin-bottom: 20px;">
+                        <div style="margin-bottom: 12px;">
+                            <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px;">Match</span>
+                            <strong style="color: #0f172a; font-size: 14px;">${match.title}</strong>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px;">Date & Time</span>
+                            <span style="color: #0f172a; font-size: 14px;">${matchDate}</span>
+                        </div>
+                        <div style="margin-bottom: 0;">
+                            <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px;">Location</span>
+                            <span style="color: #0f172a; font-size: 14px;">${match.location || 'TBD'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <footer style="text-align: center; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+                    <p style="color: #94a3b8; font-size: 12px; margin: 0;">Thank you for playing!</p>
+                </footer>
+            </div>
+        `
+    })
+}

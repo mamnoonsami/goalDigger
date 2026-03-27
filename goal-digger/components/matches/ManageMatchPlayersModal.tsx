@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '../ui/Button'
-import { updateMatchPlayers, sendMatchInvitation } from '../../app/actions/matches'
+import { updateMatchPlayers } from '../../app/actions/matches'
 import { useToast } from '../providers/ToastProvider'
 
 interface Player {
@@ -29,7 +29,6 @@ export function ManageMatchPlayersModal({ matchId, scheduledAt, allPlayers, init
     const [searchQuery, setSearchQuery] = useState('')
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [sendingInvite, setSendingInvite] = useState<string | null>(null)
 
     const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set(initialAssignedIds))
 
@@ -84,29 +83,6 @@ export function ManageMatchPlayersModal({ matchId, scheduledAt, allPlayers, init
             setError(err instanceof Error ? err.message : 'Something went wrong')
             toast.error('Failed to update players')
             setSaving(false)
-        }
-    }
-
-    async function handleSendInvite(playerId: string, e: React.MouseEvent) {
-        e.stopPropagation() // Prevent row click from toggling checkbox
-        setSendingInvite(playerId)
-        try {
-            const date = new Date(scheduledAt)
-            const localizedTime = date.toLocaleString(undefined, {
-                weekday: 'long',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            })
-
-            await sendMatchInvitation(matchId, playerId, localizedTime)
-            toast.success('Invitation sent successfully!')
-        } catch (err: unknown) {
-            toast.error(err instanceof Error ? err.message : 'Failed to send invitation')
-        } finally {
-            setSendingInvite(null)
         }
     }
 
@@ -180,18 +156,6 @@ export function ManageMatchPlayersModal({ matchId, scheduledAt, allPlayers, init
                                                 <span className="text-xs font-medium px-2 py-0.5 rounded-md capitalize bg-surface-1 text-text-muted border border-border/50 shadow-sm mr-2">
                                                     {player.player_position ?? 'N/A'}
                                                 </span>
-                                                <button
-                                                    onClick={(e) => handleSendInvite(player.id, e)}
-                                                    disabled={sendingInvite === player.id}
-                                                    title="Send Email Invitation"
-                                                    className="p-1.5 rounded-md text-text-muted hover:text-accent hover:bg-accent/10 transition-colors disabled:opacity-50"
-                                                >
-                                                    {sendingInvite === player.id ? (
-                                                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                    ) : (
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.2 8.4c.5.3.8.8.8 1.4v10.2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.8c0-.6.3-1.1.8-1.4l8-5.3c.7-.5 1.7-.5 2.4 0l8 5.3z"/><path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"/></svg>
-                                                    )}
-                                                </button>
                                             </div>
                                         </div>
                                     </div>
