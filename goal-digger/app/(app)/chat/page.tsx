@@ -100,13 +100,15 @@ interface MessageRowProps {
     showTime: boolean
     onReply: (msg: ChatMessage) => void
     onScrollTo: (id: string) => void
+    isContextMenuOpen: boolean
+    onContextMenuOpen: () => void
+    onContextMenuClose: () => void
 }
 
-function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, onReply, onScrollTo }: MessageRowProps) {
+function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, onReply, onScrollTo, isContextMenuOpen, onContextMenuOpen, onContextMenuClose }: MessageRowProps) {
     const [swipeX, setSwipeX] = useState(0)
     const [isSwiping, setIsSwiping] = useState(false)
     const [triggered, setTriggered] = useState(false)
-    const [showContextMenu, setShowContextMenu] = useState(false)
 
     const touchStartX = useRef(0)
     const touchStartY = useRef(0)
@@ -119,9 +121,15 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
         touchStartX.current = e.touches[0].clientX
         touchStartY.current = e.touches[0].clientY
         setTriggered(false)
+
+        holdTimer.current = setTimeout(() => {
+            onContextMenuOpen()
+            if (navigator.vibrate) navigator.vibrate(50)
+        }, 500)
     }
 
     function onTouchMove(e: React.TouchEvent) {
+        if (holdTimer.current) clearTimeout(holdTimer.current)
         const dx = e.touches[0].clientX - touchStartX.current
         const dy = Math.abs(e.touches[0].clientY - touchStartY.current)
         if (dy > 20) return // scrolling vertically — ignore
@@ -135,6 +143,7 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
     }
 
     function onTouchEnd() {
+        if (holdTimer.current) clearTimeout(holdTimer.current)
         if (swipeX >= SWIPE_THRESHOLD && !triggered) {
             setTriggered(true)
             onReply(msg)
@@ -221,27 +230,31 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
                     )}
 
                     {/* Bubble + reply button */}
-                    <div className={`flex items-center gap-1.5 ${isOwn ? 'flex-row' : 'flex-row-reverse'} w-full ${isOwn ? 'justify-end' : 'justify-start'} relative`}>
+                    <div className={`flex items-center gap-1.5 ${isOwn ? 'flex-row' : 'flex-row-reverse'} relative`}>
                         {/* Context Menu Overlay for Mobile */}
-                        {showContextMenu && (
-                            <>
-                                <div 
-                                    className="fixed inset-0 z-40" 
-                                    onTouchStart={() => setShowContextMenu(false)} 
-                                    onMouseDown={() => setShowContextMenu(false)} 
-                                />
-                                <div className={`absolute -top-12 z-50 flex items-center justify-center bg-surface-3 shadow-xl shadow-black/10 border border-border rounded-lg p-1 animate-in fade-in zoom-in-95 duration-200 ${isOwn ? 'right-0' : 'left-0'}`}>
-                                    <button
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(msg.message)
-                                            setShowContextMenu(false)
-                                        }}
-                                        className="text-sm font-semibold text-text-primary hover:text-accent px-4 py-1.5 active:bg-surface-2 rounded-md transition-colors whitespace-nowrap"
-                                    >
-                                        Copy
-                                    </button>
-                                </div>
-                            </>
+                        {isContextMenuOpen && (
+                            <div className={`msg-context-menu absolute -top-12 z-50 flex items-center justify-center bg-surface-3 shadow-xl shadow-black/10 border border-border rounded-lg p-1 animate-in fade-in zoom-in-95 duration-200 ${isOwn ? 'right-0' : 'left-0'}`}>
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            await navigator.clipboard.writeText(msg.message)
+                                        } catch (err) {
+                                            // Fallback for older iOS versions
+                                            const textArea = document.createElement("textarea")
+                                            textArea.value = msg.message
+                                            textArea.style.position = "fixed"
+                                            document.body.appendChild(textArea)
+                                            textArea.select()
+                                            try { document.execCommand('copy') } catch (e) {}
+                                            document.body.removeChild(textArea)
+                                        }
+                                        onContextMenuClose()
+                                    }}
+                                    className="text-sm font-semibold text-text-primary hover:text-accent px-4 py-1.5 active:bg-surface-2 rounded-md transition-colors whitespace-nowrap"
+                                >
+                                    Copy
+                                </button>
+                            </div>
                         )}
 
                         {/* Hover reply button */}
@@ -258,7 +271,7 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
 
                         <div
                             id={`msg-${msg.id}`}
-                            className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words sm:select-text sm:cursor-text select-none cursor-default ${isOwn
+                            className={`w-fit min-w-0 px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap sm:select-text sm:cursor-text select-none cursor-default ${isOwn
                                     ? 'bg-accent text-white rounded-br-sm'
                                     : 'bg-surface-2 text-text-primary rounded-bl-sm border border-border'
                                 }`}
@@ -314,11 +327,34 @@ export default function ChatPage() {
     const [isSending, setIsSending] = useState(false)
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
     const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null)
+    const [contextMenuMsgId, setContextMenuMsgId] = useState<string | null>(null)
+
     const bottomRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLTextAreaElement>(null)
     const msgRefs = useRef<Map<string, HTMLElement>>(new Map())
     const clearUnread = useChatStore((s) => s.clearUnread)
     const supabase = createClient()
+
+    // Global listener to dismiss context menu on click-away
+    useEffect(() => {
+        if (!contextMenuMsgId) return
+        function handleDismiss(e: Event) {
+            // If they clicked the tooltip itself, let the event pass through normally
+            if ((e.target as HTMLElement).closest('.msg-context-menu')) return
+            // Otherwise, actively intercept the background click before it reaches anything!
+            e.stopPropagation()
+            e.preventDefault()
+            setContextMenuMsgId(null)
+        }
+        
+        // Listen in capture phase so we get the click BEFORE any element handles it
+        document.addEventListener('touchstart', handleDismiss, { capture: true, passive: false })
+        document.addEventListener('mousedown', handleDismiss, { capture: true })
+        return () => {
+            document.removeEventListener('touchstart', handleDismiss, { capture: true } as any)
+            document.removeEventListener('mousedown', handleDismiss, { capture: true } as any)
+        }
+    }, [contextMenuMsgId])
 
     const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
         bottomRef.current?.scrollIntoView({ behavior })
@@ -598,6 +634,9 @@ export default function ChatPage() {
                                         showTime={showTime}
                                         onReply={handleReply}
                                         onScrollTo={scrollToMessage}
+                                        isContextMenuOpen={contextMenuMsgId === msg.id}
+                                        onContextMenuOpen={() => setContextMenuMsgId(msg.id)}
+                                        onContextMenuClose={() => setContextMenuMsgId(null)}
                                     />
                                 </div>
                             )
