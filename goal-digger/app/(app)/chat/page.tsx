@@ -106,12 +106,15 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
     const [swipeX, setSwipeX] = useState(0)
     const [isSwiping, setIsSwiping] = useState(false)
     const [triggered, setTriggered] = useState(false)
+    const [showContextMenu, setShowContextMenu] = useState(false)
+
     const touchStartX = useRef(0)
     const touchStartY = useRef(0)
     const dragStartX = useRef(0)
     const isDragging = useRef(false)
+    const holdTimer = useRef<NodeJS.Timeout | null>(null)
 
-    // ── Touch (mobile swipe right) ──
+    // ── Touch (mobile swipe right or left) ──
     function onTouchStart(e: React.TouchEvent) {
         touchStartX.current = e.touches[0].clientX
         touchStartY.current = e.touches[0].clientY
@@ -122,9 +125,11 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
         const dx = e.touches[0].clientX - touchStartX.current
         const dy = Math.abs(e.touches[0].clientY - touchStartY.current)
         if (dy > 20) return // scrolling vertically — ignore
-        if (dx > 0) {
+        
+        const swipeAmount = isOwn ? -dx : dx
+        if (swipeAmount > 0) {
             setIsSwiping(true)
-            const clamped = Math.min(dx, SWIPE_THRESHOLD + 20)
+            const clamped = Math.min(swipeAmount, SWIPE_THRESHOLD + 20)
             setSwipeX(clamped)
         }
     }
@@ -139,7 +144,7 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
         setIsSwiping(false)
     }
 
-    // ── Mouse drag (desktop swipe right) ──
+    // ── Mouse drag (desktop swipe right or left) ──
     function onMouseDown(e: React.MouseEvent) {
         dragStartX.current = e.clientX
         isDragging.current = true
@@ -149,14 +154,16 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
     function onMouseMove(e: React.MouseEvent) {
         if (!isDragging.current) return
         const dx = e.clientX - dragStartX.current
-        if (dx > 0) {
+        const swipeAmount = isOwn ? -dx : dx
+        if (swipeAmount > 0) {
             setIsSwiping(true)
-            setSwipeX(Math.min(dx, SWIPE_THRESHOLD + 20))
+            const clamped = Math.min(swipeAmount, SWIPE_THRESHOLD + 20)
+            setSwipeX(clamped)
         }
     }
 
     function onMouseUp() {
-        if (isDragging.current && swipeX >= SWIPE_THRESHOLD && !triggered) {
+        if (isDragging.current && Math.abs(swipeX) >= SWIPE_THRESHOLD && !triggered) {
             setTriggered(true)
             onReply(msg)
             playDingReply()
@@ -175,85 +182,119 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
-            className={`group flex items-end gap-2.5 px-2 select-none ${isOwn ? 'flex-row-reverse' : 'flex-row'} ${sameAuthorAsPrev ? 'mt-0.5' : 'mt-3'}`}
-            style={{
-                transform: `translateX(${isOwn ? -swipeX : swipeX}px)`,
-                transition: isSwiping ? 'none' : 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)',
-            }}
+            className={`group relative flex flex-col ${isOwn ? 'items-end' : 'items-start'} px-2 select-none ${sameAuthorAsPrev ? 'mt-0.5' : 'mt-3'}`}
+            style={{ zIndex: isSwiping ? 10 : 1 }}
         >
-            {/* Avatar */}
-            {!sameAuthorAsNext ? (
-                <div className="shrink-0 mb-1">
-                    {msg.sender?.avatar_url ? (
-                        <img
-                            src={msg.sender.avatar_url}
-                            alt={`${msg.sender?.first_name} ${msg.sender?.last_name}`}
-                            className="h-8 w-8 rounded-full object-cover ring-2 ring-surface-2"
-                        />
-                    ) : (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent ring-2 ring-surface-2">
-                            {msg.sender ? getInitials(msg.sender.first_name, msg.sender.last_name) : '?'}
-                        </div>
-                    )}
-                </div>
-            ) : (
-                <div className="w-8 shrink-0" />
-            )}
-
-            {/* Column wrapper (Name, BubbleRow, Time) */}
-            <div className={`flex flex-col max-w-[75%] ${isOwn ? 'items-end' : 'items-start'}`}>
-                {!sameAuthorAsPrev && (
-                    <span className={`text-xs font-semibold text-text-muted mb-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                        {isOwn ? 'You' : msg.sender ? `${msg.sender.first_name} ${msg.sender.last_name}` : 'Unknown'}
-                    </span>
+            {/* Content Row: Avatar + (Name & Bubble) */}
+            <div className={`flex items-end gap-2.5 w-full ${isOwn ? 'flex-row-reverse justify-start' : 'flex-row justify-start'}`}>
+                {/* Avatar */}
+                {!sameAuthorAsNext ? (
+                    <div className="shrink-0 z-10">
+                        {msg.sender?.avatar_url ? (
+                            <img
+                                src={msg.sender.avatar_url}
+                                alt={`${msg.sender?.first_name} ${msg.sender?.last_name}`}
+                                className="h-7 w-7 rounded-full object-cover ring-2 ring-[var(--color-surface-2)]"
+                            />
+                        ) : (
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/20 text-[10px] font-bold text-accent ring-2 ring-[var(--color-surface-2)]">
+                                {msg.sender ? getInitials(msg.sender.first_name, msg.sender.last_name) : '?'}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="w-7 shrink-0 z-10" />
                 )}
 
-                {/* Bubble + reply button */}
-                <div className={`flex items-center gap-1.5 ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}>
-                    {/* Hover reply button */}
-                    <button
-                        onClick={() => onReply(msg)}
-                        title="Reply"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-surface-3 text-text-muted hover:text-accent hover:bg-accent/10"
-                    >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="9 17 4 12 9 7" />
-                            <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
-                        </svg>
-                    </button>
+                {/* Column wrapper (Name, BubbleRow) */}
+                <div 
+                    className={`flex flex-col max-w-[75%] ${isOwn ? 'items-end' : 'items-start'} z-10 relative`}
+                    style={{
+                        transform: `translateX(${isOwn ? -swipeX : swipeX}px)`,
+                        transition: isSwiping ? 'none' : 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+                    }}
+                >
+                    {!sameAuthorAsPrev && (
+                        <span className={`text-xs font-semibold text-text-muted mb-1 ${isOwn ? 'text-right' : 'text-left'}`}>
+                            {isOwn ? 'You' : msg.sender ? `${msg.sender.first_name} ${msg.sender.last_name}` : 'Unknown'}
+                        </span>
+                    )}
 
-                    <div
-                        id={`msg-${msg.id}`}
-                        className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${isOwn
-                                ? 'bg-accent text-white rounded-br-sm'
-                                : 'bg-surface-2 text-text-primary rounded-bl-sm border border-border'
-                            }`}
-                    >
-                        {/* Reply-to quote */}
-                        {msg.reply_to && (
-                            <ReplyQuote
-                                replyTo={msg.reply_to}
-                                onClick={() => onScrollTo(msg.reply_to!.id)}
-                                isOwn={isOwn}
-                            />
+                    {/* Bubble + reply button */}
+                    <div className={`flex items-center gap-1.5 ${isOwn ? 'flex-row' : 'flex-row-reverse'} w-full ${isOwn ? 'justify-end' : 'justify-start'} relative`}>
+                        {/* Context Menu Overlay for Mobile */}
+                        {showContextMenu && (
+                            <>
+                                <div 
+                                    className="fixed inset-0 z-40" 
+                                    onTouchStart={() => setShowContextMenu(false)} 
+                                    onMouseDown={() => setShowContextMenu(false)} 
+                                />
+                                <div className={`absolute -top-12 z-50 flex items-center justify-center bg-surface-3 shadow-xl shadow-black/10 border border-border rounded-lg p-1 animate-in fade-in zoom-in-95 duration-200 ${isOwn ? 'right-0' : 'left-0'}`}>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(msg.message)
+                                            setShowContextMenu(false)
+                                        }}
+                                        className="text-sm font-semibold text-text-primary hover:text-accent px-4 py-1.5 active:bg-surface-2 rounded-md transition-colors whitespace-nowrap"
+                                    >
+                                        Copy
+                                    </button>
+                                </div>
+                            </>
                         )}
-                        {msg.message}
+
+                        {/* Hover reply button */}
+                        <button
+                            onClick={() => onReply(msg)}
+                            title="Reply"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-6 w-6 hidden md:flex items-center justify-center rounded-full bg-surface-3 text-text-muted hover:text-accent hover:bg-accent/10"
+                        >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="9 17 4 12 9 7" />
+                                <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+                            </svg>
+                        </button>
+
+                        <div
+                            id={`msg-${msg.id}`}
+                            className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words sm:select-text sm:cursor-text select-none cursor-default ${isOwn
+                                    ? 'bg-accent text-white rounded-br-sm'
+                                    : 'bg-surface-2 text-text-primary rounded-bl-sm border border-border'
+                                }`}
+                        >
+                            {/* Reply-to quote */}
+                            {msg.reply_to && (
+                                <ReplyQuote
+                                    replyTo={msg.reply_to}
+                                    onClick={() => onScrollTo(msg.reply_to!.id)}
+                                    isOwn={isOwn}
+                                />
+                            )}
+                            {msg.message}
+                        </div>
                     </div>
                 </div>
-                {showTime && (
-                    <span className={`mt-1 text-[10px] text-text-muted ${isOwn ? 'text-right' : 'text-left'}`}>
+            </div>
+
+            {/* Timestamp (below avatar and bubble) */}
+            {showTime && (
+                <div className={`mt-1 flex w-full ${isOwn ? 'justify-end pr-[38px]' : 'justify-start pl-[38px]'}`}>
+                    <span className="text-[10px] text-text-muted">
                         {formatTime(msg.created_at)}
                     </span>
-                )}
-            </div>
+                </div>
+            )}
 
             {/* Swipe indicator arrow */}
             <div
-                className="shrink-0 flex items-center justify-center h-7 w-7 rounded-full bg-accent/90 text-white"
+                className="absolute flex items-center justify-center h-7 w-7 rounded-full bg-accent/90 text-white top-1/2"
                 style={{
+                    [isOwn ? 'right' : 'left']: isOwn ? '16px' : '52px',
                     opacity: Math.min(swipeX / SWIPE_THRESHOLD, 1),
-                    transform: `scale(${0.5 + 0.5 * Math.min(swipeX / SWIPE_THRESHOLD, 1)})`,
+                    transform: `translateY(-50%) scale(${0.5 + 0.5 * Math.min(swipeX / SWIPE_THRESHOLD, 1)})`,
                     transition: isSwiping ? 'none' : 'opacity 0.25s, transform 0.25s',
+                    zIndex: 0,
                 }}
             >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
