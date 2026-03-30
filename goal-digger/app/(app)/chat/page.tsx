@@ -553,7 +553,13 @@ export default function ChatPage() {
     }
 
     function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
+        if (e.key === 'Enter' && !e.shiftKey) {
+            // On desktop (>= 768px), Enter sends current message. On mobile, Enter simply creates a new line.
+            if (window.innerWidth >= 768) {
+                e.preventDefault()
+                handleSend()
+            }
+        }
         if (e.key === 'Escape') cancelReply()
     }
 
