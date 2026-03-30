@@ -567,16 +567,26 @@ export default function ChatPage() {
 
     return (
         <>
-            {/* Flash animation style */}
+            {/* Layout lock: make main a position anchor, remove its padding, hide footer */}
             <style>{`
                 @keyframes highlightFlash {
                     0%, 100% { background-color: transparent; }
                     30% { background-color: color-mix(in srgb, var(--color-accent, #6366f1) 25%, transparent); }
                 }
                 .highlight-flash { animation: highlightFlash 1.2s ease; border-radius: 12px; }
+
+                /* Pin the chat page inside main; hide the AppShell footer */
+                main:has(#chat-root) {
+                    position: relative !important;
+                    overflow: hidden !important;
+                    padding: 0 !important;
+                }
+                main:has(#chat-root) ~ footer {
+                    display: none !important;
+                }
             `}</style>
 
-            <div className="flex flex-col -mb-3 md:-mb-4 lg:-mb-6 h-[calc(100dvh-130px)] md:h-[calc(100dvh-135px)] lg:h-[calc(100dvh-145px)] min-h-[400px]">
+            <div id="chat-root" className="absolute inset-0 flex flex-col px-3 md:px-4 lg:px-6 pt-3 md:pt-4 lg:pt-6 pb-2">
                 {/* Header */}
                 <div className="flex items-center gap-3 pb-4 border-b border-border shrink-0">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-accent text-lg">💬</div>
