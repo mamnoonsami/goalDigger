@@ -44,7 +44,7 @@ export function Badge({ children, variant = 'slate', className }: BadgeProps) {
                 className
             )}
         >
-            {children}
+            {typeof children === 'string' ? children.replace(/_/g, ' ') : children}
         </span>
     )
 }

@@ -6,6 +6,7 @@ import { createBrowserSupabaseClient } from '@goaldigger/core'
 import { ThemeToggle } from '../ui/ThemeToggle'
 import { Avatar } from '../ui/Avatar'
 import { Logo } from '../ui/Logo'
+import { useChatStore } from '../../store/chatStore'
 import type { Profile } from '@goaldigger/core'
 
 import { cn } from '../../lib/utils'
@@ -21,6 +22,7 @@ export function Topbar({ profile, onMenuClick, isSidebarMinimized = false }: Top
     const router = useRouter()
     const [profileMenuOpen, setProfileMenuOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
+    const unreadCount = useChatStore((s) => s.unreadCount)
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -71,6 +73,21 @@ export function Topbar({ profile, onMenuClick, isSidebarMinimized = false }: Top
 
             {/* Right controls */}
             <div className="flex items-center gap-2">
+                <Link
+                    href="/chat"
+                    className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface-3 text-text-muted hover:bg-surface-3/80 hover:text-accent transition-colors"
+                    title="Group Chat"
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    {unreadCount > 0 && (
+                        <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-[var(--color-surface-2)]">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                    )}
+                </Link>
+
                 <ThemeToggle />
 
                 {profile && (

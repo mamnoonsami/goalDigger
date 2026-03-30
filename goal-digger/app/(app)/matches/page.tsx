@@ -17,10 +17,18 @@ export default async function MatchesPage() {
 
     const isAdmin = profile?.is_admin ?? false
 
-    const { data: matches } = await supabase
+    const { data: queriedMatches } = await supabase
         .from('matches')
         .select('id, title, status, scheduled_at, location, max_players')
         .order('scheduled_at', { ascending: true })
+
+    const matches = [...(queriedMatches ?? [])].sort((a, b) => {
+        const priority: Record<string, number> = { open: 1, completed: 3 }
+        const pA = priority[a.status] || 2
+        const pB = priority[b.status] || 2
+        if (pA !== pB) return pA - pB
+        return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
+    })
 
     return (
         <div className="flex flex-col gap-6">
