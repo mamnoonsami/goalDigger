@@ -42,6 +42,14 @@ export default async function DashboardPage() {
         .sort((a, b) => (b.base_score + b.goals * 2) - (a.base_score + a.goals * 2))
         .slice(0, 5)
 
+    const sortedMatches = [...(matches ?? [])].sort((a, b) => {
+        const priority: Record<string, number> = { open: 1, completed: 3 }
+        const pA = priority[a.status] || 2
+        const pB = priority[b.status] || 2
+        if (pA !== pB) return pA - pB
+        return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
+    })
+
     const effectiveScore = profile
         ? profile.base_score + profile.goals * 2
         : 0
@@ -123,7 +131,7 @@ export default async function DashboardPage() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {/* Upcoming matches */}
                 <UpcomingMatches
-                    matches={matches}
+                    matches={sortedMatches}
                     isAdmin={profile?.is_admin || false}
                 />
 

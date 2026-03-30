@@ -19,6 +19,8 @@ export interface Profile {
     matches_played: number
     /** Budget allocated for auctions (managers only) */
     auction_budget: number
+    /** Timestamp used to track unread global chat messages */
+    last_read_chat_at: string | null
     created_at: string
     updated_at: string
 }

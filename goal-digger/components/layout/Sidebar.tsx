@@ -5,9 +5,11 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createBrowserSupabaseClient } from '@goaldigger/core'
 import { cn } from '../../lib/utils'
 import { Logo } from '../ui/Logo'
+import { useChatStore } from '../../store/chatStore'
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { href: '/chat', label: 'Group Chat', icon: '💬' },
     { href: '/matches', label: 'Matches', icon: '⚽' },
     { href: '/players', label: 'Players', icon: '👥' },
     { href: '/tournaments', label: 'Tournaments', icon: '🏆' },
@@ -27,6 +29,7 @@ interface SidebarProps {
 export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMinimize, isAdmin = false }: SidebarProps) {
     const pathname = usePathname()
     const router = useRouter()
+    const unreadCount = useChatStore((s) => s.unreadCount)
 
     async function handleLogout() {
         const supabase = createBrowserSupabaseClient()
@@ -87,6 +90,8 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
                         <ul className="flex flex-col gap-1">
                             {items.map(({ href, label, icon }) => {
                                 const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
+                                const isChat = href === '/chat'
+                                const showBadge = isChat && unreadCount > 0 && !active
                                 return (
                                     <li key={href}>
                                         <Link
@@ -102,9 +107,25 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
                                                     : 'text-text-muted hover:bg-surface-3 hover:text-text-primary'
                                             )}
                                         >
-                                            <span className="flex-shrink-0 text-base leading-none flex items-center justify-center">{icon}</span>
+                                            <span className="relative flex-shrink-0 text-base leading-none flex items-center justify-center">
+                                                {icon}
+                                                {/* Unread notification dot (minimized) */}
+                                                {showBadge && isMinimized && (
+                                                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-surface-2">
+                                                        {unreadCount > 99 ? '99+' : unreadCount}
+                                                    </span>
+                                                )}
+                                            </span>
                                             {!isMinimized && (
-                                                <span className="whitespace-nowrap overflow-hidden">{label}</span>
+                                                <span className="flex flex-1 items-center justify-between whitespace-nowrap overflow-hidden">
+                                                    {label}
+                                                    {/* Unread badge (expanded) */}
+                                                    {showBadge && (
+                                                        <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                                        </span>
+                                                    )}
+                                                </span>
                                             )}
                                         </Link>
                                     </li>

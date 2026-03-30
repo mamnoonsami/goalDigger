@@ -6,21 +6,24 @@ import { Sidebar } from '../../components/layout/Sidebar'
 import { Topbar } from '../../components/layout/Topbar'
 import { SessionTimeoutProvider } from '../providers/SessionTimeoutProvider'
 import { ToastProvider } from '../providers/ToastProvider'
+import { ChatProvider } from '../providers/ChatProvider'
 import type { Profile } from '@goaldigger/core'
 
 interface AppShellProps {
     children: ReactNode
     profile: Pick<Profile, 'first_name' | 'last_name' | 'avatar_url'> | null
     isAdmin?: boolean
+    initialUnreadCount?: number
 }
 
-export function AppShell({ children, profile, isAdmin = false }: AppShellProps) {
+export function AppShell({ children, profile, isAdmin = false, initialUnreadCount = 0 }: AppShellProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [isSidebarMinimized, setIsSidebarMinimized] = useState(false)
 
     return (
         <ToastProvider>
             <SessionTimeoutProvider>
+                <ChatProvider initialUnreadCount={initialUnreadCount} />
                 <div className="flex min-h-screen bg-surface-1">
                     <Sidebar
                         open={sidebarOpen}
@@ -45,3 +48,4 @@ export function AppShell({ children, profile, isAdmin = false }: AppShellProps) 
         </ToastProvider>
     )
 }
+

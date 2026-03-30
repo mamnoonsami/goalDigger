@@ -10,12 +10,27 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/login')
 
-    // Fetch profile for topbar + admin check for sidebar
+    // Fetch profile for topbar + admin check for sidebar + chat read timestamp
     const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, last_name, avatar_url, is_admin')
+        .select('first_name, last_name, avatar_url, is_admin, last_read_chat_at')
         .eq('id', user.id)
         .single()
 
-    return <AppShell profile={profile} isAdmin={profile?.is_admin ?? false}>{children}</AppShell>
+    // Compute initial unread count server-side (messages newer than last_read_chat_at)
+    const lastRead = profile?.last_read_chat_at ?? new Date(0).toISOString()
+    const { count: unreadCount } = await supabase
+        .from('global_messages')
+        .select('id', { count: 'exact', head: true })
+        .gt('created_at', lastRead)
+
+    return (
+        <AppShell
+            profile={profile}
+            isAdmin={profile?.is_admin ?? false}
+            initialUnreadCount={unreadCount ?? 0}
+        >
+            {children}
+        </AppShell>
+    )
 }
