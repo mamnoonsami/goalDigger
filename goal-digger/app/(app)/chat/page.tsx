@@ -77,8 +77,8 @@ function ReplyQuote({ replyTo, onClick, isOwn }: { replyTo: NonNullable<ChatMess
         <button
             onClick={onClick}
             className={`w-full text-left rounded-lg border-l-2 px-2.5 py-1.5 mb-1.5 transition-colors ${isOwn
-                    ? 'border-white/60 bg-white/10 hover:bg-white/20'
-                    : 'border-accent/60 bg-black/5 hover:bg-black/10 dark:bg-accent/10 dark:hover:bg-accent/20'
+                ? 'border-white/60 bg-white/10 hover:bg-white/20'
+                : 'border-accent/60 bg-black/5 hover:bg-black/10 dark:bg-accent/10 dark:hover:bg-accent/20'
                 }`}
         >
             <p className={`text-[10px] font-semibold mb-0.5 truncate ${isOwn ? 'text-white/90' : 'text-accent/90'}`}>
@@ -119,13 +119,21 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
         touchStartX.current = e.touches[0].clientX
         touchStartY.current = e.touches[0].clientY
         setTriggered(false)
+        setShowContextMenu(false)
+
+        holdTimer.current = setTimeout(() => {
+            setShowContextMenu(true)
+            if (navigator.vibrate) navigator.vibrate(50)
+        }, 500)
     }
 
     function onTouchMove(e: React.TouchEvent) {
+        if (holdTimer.current) clearTimeout(holdTimer.current)
+
         const dx = e.touches[0].clientX - touchStartX.current
         const dy = Math.abs(e.touches[0].clientY - touchStartY.current)
         if (dy > 20) return // scrolling vertically — ignore
-        
+
         const swipeAmount = isOwn ? -dx : dx
         if (swipeAmount > 0) {
             setIsSwiping(true)
@@ -135,7 +143,9 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
     }
 
     function onTouchEnd() {
-        if (swipeX >= SWIPE_THRESHOLD && !triggered) {
+        if (holdTimer.current) clearTimeout(holdTimer.current)
+
+        if (isSwiping && Math.abs(swipeX) >= SWIPE_THRESHOLD && !triggered) {
             setTriggered(true)
             onReply(msg)
             playDingReply()
@@ -207,7 +217,7 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
                 )}
 
                 {/* Column wrapper (Name, BubbleRow) */}
-                <div 
+                <div
                     className={`flex flex-col max-w-[75%] ${isOwn ? 'items-end' : 'items-start'} z-10 relative`}
                     style={{
                         transform: `translateX(${isOwn ? -swipeX : swipeX}px)`,
@@ -225,10 +235,10 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
                         {/* Context Menu Overlay for Mobile */}
                         {showContextMenu && (
                             <>
-                                <div 
-                                    className="fixed inset-0 z-40" 
-                                    onTouchStart={() => setShowContextMenu(false)} 
-                                    onMouseDown={() => setShowContextMenu(false)} 
+                                <div
+                                    className="fixed inset-0 z-40"
+                                    onTouchStart={() => setShowContextMenu(false)}
+                                    onMouseDown={() => setShowContextMenu(false)}
                                 />
                                 <div className={`absolute -top-12 z-50 flex items-center justify-center bg-surface-3 shadow-xl shadow-black/10 border border-border rounded-lg p-1 animate-in fade-in zoom-in-95 duration-200 ${isOwn ? 'right-0' : 'left-0'}`}>
                                     <button
@@ -259,8 +269,8 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
                         <div
                             id={`msg-${msg.id}`}
                             className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words sm:select-text sm:cursor-text select-none cursor-default ${isOwn
-                                    ? 'bg-accent text-white rounded-br-sm'
-                                    : 'bg-surface-2 text-text-primary rounded-bl-sm border border-border'
+                                ? 'bg-accent text-white rounded-br-sm'
+                                : 'bg-surface-2 text-text-primary rounded-bl-sm border border-border'
                                 }`}
                         >
                             {/* Reply-to quote */}
@@ -532,9 +542,12 @@ export default function ChatPage() {
                     30% { background-color: color-mix(in srgb, var(--color-accent, #6366f1) 25%, transparent); }
                 }
                 .highlight-flash { animation: highlightFlash 1.2s ease; border-radius: 12px; }
+                
+                /* Layout Lock - Binds the chat interface perfectly to the AppShell */
+                main { position: relative !important; display: flex !important; flex-direction: column !important; }
             `}</style>
 
-            <div className="flex flex-col -mb-3 md:-mb-4 lg:-mb-6 h-[calc(100dvh-130px)] md:h-[calc(100dvh-135px)] lg:h-[calc(100dvh-145px)] min-h-[400px]">
+            <div className="absolute inset-0 flex flex-col px-3 md:px-4 lg:px-6 pt-3 md:pt-4 lg:pt-6 pb-2">
                 {/* Header */}
                 <div className="flex items-center gap-3 pb-4 border-b border-border shrink-0">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-accent text-lg">💬</div>
