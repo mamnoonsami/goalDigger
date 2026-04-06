@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     // Fetch profile for topbar + admin check for sidebar + chat read timestamp
     const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, last_name, avatar_url, is_admin, last_read_chat_at')
+        .select('first_name, last_name, avatar_url, is_admin, is_king, is_player, is_manager, last_read_chat_at')
         .eq('id', user.id)
         .single()
 
@@ -27,7 +27,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     return (
         <AppShell
             profile={profile}
-            isAdmin={profile?.is_admin ?? false}
+            isAdmin={profile?.is_admin || profile?.is_king || false}
+            isPlayer={profile?.is_player ?? false}
+            isManager={profile?.is_manager ?? false}
             initialUnreadCount={unreadCount ?? 0}
         >
             {children}

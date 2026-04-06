@@ -20,10 +20,10 @@ export async function createTournament(data: {
     // Verify admin
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin) throw new Error('Only admins can create tournaments')
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can create tournaments')
 
     // Insert tournament
     const { data: tournament, error } = await supabase
@@ -66,10 +66,10 @@ export async function updateTournament(
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin) throw new Error('Only admins can update tournaments')
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can update tournaments')
 
     const { error } = await supabase
         .from('tournaments')
@@ -115,10 +115,10 @@ export async function deleteTournament(id: string) {
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin) throw new Error('Only admins can delete tournaments')
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can delete tournaments')
 
     const { error } = await supabase
         .from('tournaments')
@@ -178,10 +178,10 @@ export async function addPlayersToTournament(
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin) throw new Error('Only admins can add players')
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can add players')
 
     const rows = playerIds.map(pid => ({
         tournament_id: tournamentId,
@@ -220,10 +220,10 @@ export async function removePlayerFromTournament(tournamentId: string, playerId:
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin) throw new Error('Only admins can remove players')
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can remove players')
 
     const { error } = await supabase
         .from('tournament_players')
@@ -259,10 +259,10 @@ export async function createTeamForTournament(data: {
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin, is_manager')
+        .select('is_admin, is_king, is_manager')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin && !profile?.is_manager) throw new Error('Only admins and managers can create teams')
+    if (!profile?.is_admin && !profile?.is_king && !profile?.is_manager) throw new Error('Only admins and managers can create teams')
 
     const { error } = await supabase
         .from('tournament_teams')
@@ -295,14 +295,14 @@ export async function updateTeamForTournament(
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin, is_manager')
+        .select('is_admin, is_king, is_manager')
         .eq('id', user.id)
         .single()
 
-    if (!profile?.is_admin && !profile?.is_manager) throw new Error('Not authorized')
+    if (!profile?.is_admin && !profile?.is_king && !profile?.is_manager) throw new Error('Not authorized')
 
     // Non-admin managers can only update their own teams
-    if (!profile.is_admin) {
+    if (!profile.is_admin && !profile.is_king) {
         const { data: team } = await supabase
             .from('tournament_teams')
             .select('manager_id')
@@ -333,10 +333,10 @@ export async function deleteTeamFromTournament(tournamentId: string, teamId: str
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin) throw new Error('Only admins can delete teams')
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can delete teams')
 
     const { error } = await supabase
         .from('tournament_teams')

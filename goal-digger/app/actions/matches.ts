@@ -159,8 +159,8 @@ export async function updateMatchPlayers(matchId: string, addIds: string[], remo
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
-    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
-    if (!profile?.is_admin) throw new Error('Not authorized')
+    const { data: profile } = await supabase.from('profiles').select('is_admin, is_king').eq('id', user.id).single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
 
     // Remove players
     if (removeIds.length > 0) {
@@ -197,8 +197,8 @@ export async function sendMatchInvitation(matchId: string, playerId: string, loc
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
-    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
-    if (!profile?.is_admin) throw new Error('Not authorized')
+    const { data: profile } = await supabase.from('profiles').select('is_admin, is_king').eq('id', user.id).single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
 
     // 2. Fetch match details for the email content
     const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()
@@ -306,8 +306,8 @@ export async function sendMatchCostEmail(matchId: string, playerId: string, loca
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
-    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
-    if (!profile?.is_admin) throw new Error('Not authorized')
+    const { data: profile } = await supabase.from('profiles').select('is_admin, is_king').eq('id', user.id).single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
 
     // 2. Fetch match details
     const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()

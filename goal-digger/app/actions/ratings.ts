@@ -137,3 +137,59 @@ export async function submitAllRatings(ratings: { rateeId: string; rating: numbe
     revalidatePath('/ratings')
     return { success: true }
 }
+
+/**
+ * Admin Action: Fetch all ratings from all users with ratee and rater profile data.
+ * Merges raw ratings with the globally cached profile list to prevent complex PostgREST join mapping.
+ */
+export async function getAllRatingsAdmin() {
+    const supabase = await createClient()
+
+    const { data: userData } = await supabase.auth.getUser()
+    const myId = userData?.user?.id
+
+    if (!myId) return { error: 'Not authenticated.', data: [] }
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_king')
+        .eq('id', myId)
+        .single()
+
+    if (!profile?.is_king) {
+        return { error: 'Unauthorized. Kings only.', data: [] }
+    }
+
+    // Fetch all ratings
+    const { data: ratings, error: ratingsError } = await supabase
+        .from('player_ratings')
+        .select('*')
+
+    if (ratingsError) {
+        console.error('Error fetching all ratings for admin:', ratingsError.message)
+        return { error: ratingsError.message, data: [] }
+    }
+
+    // Fetch all profiles to map manually and avoid ambiguous FK issues
+    const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, avatar_url, player_position')
+
+    if (profilesError) {
+        console.error('Error fetching profiles mapping:', profilesError.message)
+        return { error: profilesError.message, data: [] }
+    }
+
+    const profilesMap = new Map(profiles?.map(p => [p.id, p]))
+
+    const stitchedRatings = (ratings || []).map(r => ({
+        rater_id: r.rater_id,
+        ratee_id: r.ratee_id,
+        rating: r.rating,
+        updated_at: r.updated_at,
+        rater: profilesMap.get(r.rater_id) || null,
+        ratee: profilesMap.get(r.ratee_id) || null
+    }))
+
+    return { success: true, data: stitchedRatings }
+}

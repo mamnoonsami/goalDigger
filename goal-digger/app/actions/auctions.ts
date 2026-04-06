@@ -22,10 +22,10 @@ export async function createAuction(data: {
     // Verify admin
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin) throw new Error('Only admins can create auctions')
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can create auctions')
 
     // Insert auction
     const { data: auction, error: auctionError } = await supabase
@@ -233,10 +233,10 @@ export async function markPlayerSold(auctionId: string, playerId: string, price:
     // Verify admin
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin) throw new Error('Only admins can modify auction players')
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can modify auction players')
 
     const { error } = await supabase
         .from('auction_players')
@@ -258,10 +258,10 @@ export async function markPlayerUnsold(auctionId: string, playerId: string) {
     // Verify admin
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin) throw new Error('Only admins can modify auction players')
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can modify auction players')
 
     const { error } = await supabase
         .from('auction_players')
@@ -283,10 +283,10 @@ export async function resetAuctionPlayers(auctionId: string) {
     // Verify admin
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin) throw new Error('Only admins can modify auction players')
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can modify auction players')
 
     const { error } = await supabase
         .from('auction_players')

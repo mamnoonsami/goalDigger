@@ -16,7 +16,7 @@ interface ProfileFormProps {
     goals: number
 }
 
-const POSITIONS = ['goalkeeper', 'defender', 'midfielder', 'forward']
+const POSITIONS = ['goalkeeper', 'defender', 'midfielder', 'striker']
 
 /* ── Predefined avatar options using DiceBear API ── */
 /* Each is a tiny URL string (~80 chars), stored in the `avatar_url` text column. */
