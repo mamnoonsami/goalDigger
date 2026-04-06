@@ -10,7 +10,7 @@ interface EditUserModalProps {
     onClose: () => void
 }
 
-const POSITIONS = ['goalkeeper', 'defender', 'midfielder', 'forward']
+const POSITIONS = ['goalkeeper', 'defender', 'midfielder', 'striker']
 const ROLES = ['admin', 'manager', 'player', 'viewer']
 
 export function EditUserModal({ user, onClose }: EditUserModalProps) {

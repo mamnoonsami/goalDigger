@@ -11,11 +11,11 @@ async function requireAdmin() {
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user.id)
         .single()
 
-    if (!profile?.is_admin) throw new Error('Only admins can manage users')
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can manage users')
     return { supabase, userId: user.id }
 }
 
@@ -25,7 +25,7 @@ export async function getUsers() {
 
     const { data, error } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, avatar_url, role, is_admin, is_manager, is_player, is_viewer, player_position, base_score, goals, matches_played, auction_budget, created_at, updated_at')
+        .select('id, first_name, last_name, avatar_url, role, is_admin, is_king, is_manager, is_player, is_viewer, player_position, base_score, goals, matches_played, auction_budget, created_at, updated_at')
         .order('created_at', { ascending: true })
 
     if (error) throw new Error(error.message)

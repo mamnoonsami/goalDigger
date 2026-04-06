@@ -8,6 +8,7 @@ import { Avatar } from '../../../components/ui/Avatar'
 import { Button } from '../../../components/ui/Button'
 import { Badge } from '../../../components/ui/Badge'
 import { useToast } from '../../../components/providers/ToastProvider'
+import { RatingsDisclaimerModal } from './RatingsDisclaimerModal'
 
 interface Player {
     id: string
@@ -29,6 +30,9 @@ interface RatingsClientProps {
 
 export default function RatingsClient({ players, myRatings }: RatingsClientProps) {
     const toast = useToast()
+    const [activeTab, setActiveTab] = useState('striker')
+    const [disclaimerClosed, setDisclaimerClosed] = useState(false)
+    const [hasSwitchedTabs, setHasSwitchedTabs] = useState(false)
     // Keep local state for responsive UI
     const [localRatings, setLocalRatings] = useState<Record<string, number>>(() => {
         const acc: Record<string, number> = {}
@@ -149,6 +153,7 @@ export default function RatingsClient({ players, myRatings }: RatingsClientProps
 
     return (
         <div className="flex flex-col gap-6 pb-20">
+            <RatingsDisclaimerModal onClose={() => setDisclaimerClosed(true)} />
             <div className="flex justify-between items-center bg-surface-1 sticky top-16 md:top-0 z-10 py-2 border-b border-border">
                 <p className="text-sm text-text-muted">
                     {players.length} players to rate
@@ -164,88 +169,148 @@ export default function RatingsClient({ players, myRatings }: RatingsClientProps
                 </Button>
             </div>
 
-            <div className="flex flex-col gap-4">
-                {players.map(player => {
-                    const currentRating = localRatings[player.id] ?? 30 // Default to 30 if not rated
-                    const hasExistingRating = myRatings.some(r => r.ratee_id === player.id)
+            <div className="flex flex-col gap-6">
+                {/* Tabs UI */}
+                <div className="relative">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pb-2 border-b border-border relative z-10 bg-surface-1">
+                        {['striker', 'midfielder', 'defender', 'goalkeeper', 'other'].map(pos => (
+                            <button
+                                key={pos}
+                                onClick={() => {
+                                    setActiveTab(pos)
+                                    setHasSwitchedTabs(true)
+                                }}
+                                className={`px-4 py-2 rounded-t-lg text-sm font-semibold capitalize whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+                                    activeTab === pos
+                                        ? 'bg-surface-2 text-accent border-t-2 border-accent shadow-sm'
+                                        : 'text-text-muted hover:text-text-primary hover:bg-surface-2/50 border-t-2 border-transparent'
+                                }`}
+                            >
+                                {pos === 'other' ? 'Other' : `${pos}s`}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Tutorial Tooltip overlay */}
+                    {disclaimerClosed && !hasSwitchedTabs && (
+                        <div className="absolute top-full left-4 sm:left-10 mt-3 z-20 animate-bounce">
+                            <div className="bg-accent text-white text-sm font-bold px-4 py-2 rounded-lg shadow-xl shadow-accent/20 relative flex items-center gap-3">
+                                <div className="absolute -top-[6px] left-6 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-accent" />
+                                <span>👋 Don't forget to switch tabs to rate all players!</span>
+                                <button
+                                    onClick={() => setHasSwitchedTabs(true)}
+                                    className="p-1 -mx-1 hover:bg-black/20 rounded-full transition-colors focus:outline-none"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Subheadings */}
+                <div className="px-1 -mt-2">
+                    {activeTab === 'striker' && <p className="text-sm text-text-muted">Compare against other Strikers. <strong className="text-text-primary">Who is the most lethal forward?</strong></p>}
+                    {activeTab === 'midfielder' && <p className="text-sm text-text-muted">Compare against other Midfielders. <strong className="text-text-primary">Who controls the game best?</strong></p>}
+                    {activeTab === 'defender' && <p className="text-sm text-text-muted">Compare against other Defenders. <strong className="text-text-primary">Who is the most solid at the back?</strong></p>}
+                    {activeTab === 'goalkeeper' && <p className="text-sm text-text-muted">Compare against other Goalkeepers. <strong className="text-text-primary">Who is the most reliable stopper?</strong></p>}
+                    {activeTab === 'other' && <p className="text-sm text-text-muted">Players without a specific assigned position.</p>}
+                </div>
+
+                {(() => {
+                    const groupPlayers = players.filter(p => {
+                        const pos = p.player_position?.toLowerCase() || ''
+                        if (activeTab === 'striker') return pos.includes('striker') || pos.includes('forward')
+                        if (activeTab === 'midfielder') return pos.includes('midfield')
+                        if (activeTab === 'defender') return pos.includes('defend')
+                        if (activeTab === 'goalkeeper') return pos.includes('goal') || pos.includes('gk')
+                        return !pos.includes('striker') && !pos.includes('forward') && !pos.includes('midfield') && !pos.includes('defend') && !pos.includes('goal') && !pos.includes('gk')
+                    })
+
+                    if (groupPlayers.length === 0) {
+                        return (
+                            <Card className="py-12 mt-4 flex items-center justify-center border border-dashed border-border/50">
+                                <p className="text-sm text-text-muted">No {activeTab === 'other' ? 'Other Players' : `${activeTab}s`} found to rate.</p>
+                            </Card>
+                        )
+                    }
 
                     return (
-                        <Card key={player.id} className="flex flex-col md:flex-row md:items-center gap-4 !p-4">
-                            <div className="flex items-center gap-3 shrink-0 md:w-64">
-                                <Avatar
-                                    firstName={player.first_name}
-                                    lastName={player.last_name}
-                                    avatarUrl={player.avatar_url}
-                                    size="md"
-                                />
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-text-primary truncate">
-                                        {player.first_name} {player.last_name}
-                                    </p>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-xs text-text-muted capitalize">
-                                            {player.player_position ?? 'Unknown Position'}
-                                        </p>
-                                        {hasExistingRating && (
-                                            <Badge variant="green" className="text-[10px] px-1.5 py-0.5 whitespace-nowrap">
-                                                Rated
-                                            </Badge>
-                                        )}
-                                    </div>
-                                </div>
+                        <div className="flex flex-col gap-4 mt-2">
+                            <div className="flex flex-col gap-4">
+                                {groupPlayers.map(player => {
+                                    const currentRating = localRatings[player.id] ?? 30 // Default to 30 if not rated
+                                    const hasExistingRating = myRatings.some(r => r.ratee_id === player.id)
+
+                                    return (
+                                        <Card key={player.id} className="flex flex-col md:flex-row md:items-center gap-4 !p-4">
+                                            <div className="flex items-center gap-3 w-full md:w-64 shrink-0">
+                                                <Avatar
+                                                    firstName={player.first_name}
+                                                    lastName={player.last_name}
+                                                    avatarUrl={player.avatar_url}
+                                                    size="md"
+                                                />
+                                                <div className="flex-1 flex items-center justify-between min-w-0">
+                                                    <p className="font-semibold text-text-primary truncate mr-2">
+                                                        {player.first_name} {player.last_name}
+                                                    </p>
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <p className="text-xs text-text-muted capitalize">
+                                                            {player.player_position ?? 'Unknown Position'}
+                                                        </p>
+                                                        {hasExistingRating && (
+                                                            <Badge variant="green" className="text-[10px] px-1.5 py-0.5 whitespace-nowrap">
+                                                                Rated
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex-1 flex flex-col justify-center">
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-xs font-mono text-text-muted font-medium w-6 text-right">30</span>
+
+                                                    <div className="relative flex-1 flex items-center h-4">
+                                                        {/* Horizontal connecting line (background) */}
+                                                        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2 bg-border rounded-full" />
+
+                                                        {/* Active filled line */}
+                                                        <div
+                                                            className="absolute left-0 top-1/2 -translate-y-1/2 h-2 bg-accent rounded-full transition-all duration-150"
+                                                            style={{ width: `${((currentRating - 30) / 70) * 100}%` }}
+                                                        />
+
+                                                        {/* Actual slider */}
+                                                        <input
+                                                            type="range"
+                                                            min="30"
+                                                            max="100"
+                                                            step="1"
+                                                            value={currentRating}
+                                                            onChange={(e) => handleSliderChange(player.id, Number(e.target.value))}
+                                                            className="relative w-full h-1 bg-transparent appearance-none cursor-pointer accent-accent transition-all z-10 touch-none"
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex flex-col border-l border-border/50 pl-3 min-w-[70px] shrink-0 pointer-events-none">
+                                                        <span className="text-[9px] uppercase font-bold text-text-muted leading-tight">Top {activeTab === 'other' ? 'Player' : activeTab}</span>
+                                                        <span className="text-[10px] text-text-muted font-mono leading-tight">Max 100</span>
+                                                    </div>
+
+                                                    <span className="text-xl font-mono font-bold text-accent w-10 text-right shrink-0 ml-auto">
+                                                        {currentRating}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    )
+                                })}
                             </div>
-
-                            <div className="flex-1 flex flex-col justify-center">
-                                <div className="flex items-center gap-4">
-                                    <span className="text-xs font-mono text-text-muted font-medium w-6 text-right">30</span>
-
-                                    <div className="relative flex-1 flex items-center h-4">
-                                        {/* Horizontal connecting line (background) */}
-                                        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] bg-border rounded-full" />
-
-                                        {/* Active filled line */}
-                                        <div
-                                            className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] bg-accent rounded-full transition-all duration-150"
-                                            style={{ width: `${((currentRating - 30) / 70) * 100}%` }}
-                                        />
-
-                                        {/* Vertical tick marks */}
-                                        <div className="absolute inset-x-0 flex items-center justify-between pointer-events-none px-[6px]">
-                                            {[...Array(8)].map((_, idx) => {
-                                                const tickValue = 30 + (idx * 10)
-                                                // Color tick marks accent if they are at or below current value
-                                                const isActive = currentRating >= tickValue
-                                                return (
-                                                    <div
-                                                        key={idx}
-                                                        className={`w-0.5 h-3 rounded-full z-0 transition-colors duration-150 ${isActive ? 'bg-accent' : 'bg-border'}`}
-                                                    />
-                                                )
-                                            })}
-                                        </div>
-
-                                        {/* Actual slider */}
-                                        <input
-                                            type="range"
-                                            min="30"
-                                            max="100"
-                                            step="1"
-                                            value={currentRating}
-                                            onChange={(e) => handleSliderChange(player.id, Number(e.target.value))}
-                                            className="relative w-full h-1 bg-transparent appearance-none cursor-pointer accent-accent transition-all z-10 touch-none"
-                                        />
-                                    </div>
-
-                                    <span className="text-xs font-mono text-text-muted font-medium w-6 text-left">100</span>
-
-                                    <span className="text-lg font-mono font-bold text-accent w-10 text-right shrink-0">
-                                        {currentRating}
-                                    </span>
-                                </div>
-                            </div>
-                        </Card>
+                        </div>
                     )
-                })}
+                })()}
             </div>
 
             {/* Sticky mobile submit button */}

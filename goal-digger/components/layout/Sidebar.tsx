@@ -24,9 +24,11 @@ interface SidebarProps {
     isMinimized?: boolean
     onToggleMinimize?: () => void
     isAdmin?: boolean
+    isPlayer?: boolean
+    isManager?: boolean
 }
 
-export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMinimize, isAdmin = false }: SidebarProps) {
+export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMinimize, isAdmin = false, isPlayer = false, isManager = false }: SidebarProps) {
     const pathname = usePathname()
     const router = useRouter()
     const unreadCount = useChatStore((s) => s.unreadCount)
@@ -39,11 +41,15 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
         router.refresh()
     }
 
-    // Build nav items — conditionally include admin-only items
+    // Build nav items — conditionally include admin-only and rating items
+    const canRate = isAdmin || isPlayer || isManager
+    
     const items = [
         ...navItems,
+        ...(canRate ? [
+            { href: '/ratings', label: 'Rate Your Teammates', icon: '⭐' }
+        ] : []),
         ...(isAdmin ? [
-            { href: '/ratings', label: 'Rate Your Teammates', icon: '⭐' },
             { href: '/users', label: 'User Management', icon: '🛡️' }
         ] : []),
     ]

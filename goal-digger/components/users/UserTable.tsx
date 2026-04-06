@@ -15,6 +15,7 @@ export interface UserRow {
     avatar_url: string | null
     role: string
     is_admin: boolean
+    is_king: boolean
     is_manager: boolean
     is_player: boolean
     is_viewer: boolean
@@ -33,7 +34,7 @@ interface UserTableProps {
 }
 
 type RoleFilter = 'all' | 'admin' | 'manager' | 'player' | 'viewer'
-type PositionFilter = 'all' | 'goalkeeper' | 'defender' | 'midfielder' | 'forward'
+type PositionFilter = 'all' | 'goalkeeper' | 'defender' | 'midfielder' | 'striker'
 
 export function UserTable({ users, currentUserId }: UserTableProps) {
     const [search, setSearch] = useState('')
@@ -123,7 +124,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                             <option value="goalkeeper">Goalkeeper</option>
                             <option value="defender">Defender</option>
                             <option value="midfielder">Midfielder</option>
-                            <option value="forward">Forward</option>
+                            <option value="striker">Striker</option>
                         </select>
                     </div>
 
@@ -171,6 +172,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                                 </td>
                                 <td className="px-5 py-3">
                                     <div className="flex gap-1 flex-wrap">
+                                        {u.is_king && flagBadge(true, 'K')}
                                         {flagBadge(u.is_admin, 'A')}
                                         {flagBadge(u.is_manager, 'M')}
                                         {flagBadge(u.is_player, 'P')}
@@ -243,6 +245,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                                     {u.player_position ?? 'No position'} · Score: {u.base_score} · {u.goals}G · {u.matches_played}M
                                 </p>
                                 <div className="flex gap-1 mt-1.5 flex-wrap">
+                                    {u.is_king && flagBadge(true, 'K')}
                                     {flagBadge(u.is_admin, 'A')}
                                     {flagBadge(u.is_manager, 'M')}
                                     {flagBadge(u.is_player, 'P')}

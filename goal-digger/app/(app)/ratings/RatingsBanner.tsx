@@ -12,7 +12,7 @@ export default function RatingsBanner() {
             <span className="text-accent mt-0.5" aria-hidden="true">⚠️</span>
             <div className="flex-1 pr-6">
                 <p className="text-sm text-accent font-medium leading-relaxed">
-                    Please rate honestly/fairly to help split the teams automatically in future. If you rated <b>100</b> to Messi and Ronaldo, how much would you rate your teammates?
+                    Please rate players purely on how good they are at their specific position. For example, if Ronaldo is a 95 Striker, then Maldini is a 95 Defender—the best Defender in our squad should receive a similar score to our best Striker. <strong>Do not compare Strikers to Goalkeepers.</strong>
                 </p>
             </div>
             <button
