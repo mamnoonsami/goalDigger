@@ -13,6 +13,7 @@ export interface Profile {
     is_player: boolean
     is_viewer: boolean
     player_position: Position | null
+    nickname?: string | null
     /** Admin-assigned base score (1–100) */
     base_score: number
     /** Career goals — incremented after each match */

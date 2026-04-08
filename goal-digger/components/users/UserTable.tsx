@@ -12,6 +12,7 @@ export interface UserRow {
     id: string
     first_name: string
     last_name: string
+    nickname?: string | null
     avatar_url: string | null
     role: string
     is_admin: boolean

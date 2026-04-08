@@ -42,11 +42,11 @@ export function TopPlayersList({ players }: TopPlayersListProps) {
                         onClick={() => setSelectedPlayer(p)}
                     >
                         <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                            <Avatar 
-                                firstName={p.first_name} 
-                                lastName={p.last_name} 
-                                avatarUrl={p.avatar_url} 
-                                size="sm" 
+                            <Avatar
+                                firstName={p.first_name}
+                                lastName={p.last_name}
+                                avatarUrl={p.avatar_url}
+                                size="sm"
                             />
                         </div>
                         <div className="flex-1">
@@ -55,7 +55,7 @@ export function TopPlayersList({ players }: TopPlayersListProps) {
                             </p>
                             <p className="text-xs text-text-muted">{p.goals} goals</p>
                         </div>
-                        <Badge variant={p.player_position ? posVariant[p.player_position] ?? 'slate' : 'slate'}>{p.player_position ?? 'Unknown'}</Badge>
+                        <Badge variant={p.player_position ? posVariant[p.player_position] ?? 'slate' : 'slate'}>{p.player_position ? posAbbr[p.player_position] || 'PLY' : 'Unknown'}</Badge>
                         <span className="font-mono text-sm font-bold text-accent">
                             {p.base_score + p.goals * 2}
                         </span>

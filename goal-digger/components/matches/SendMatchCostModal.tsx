@@ -7,6 +7,7 @@ import { sendMatchCostEmail } from '../../app/actions/matches'
 
 interface SignupPlayer {
     player_id: string
+    paid?: boolean
     profiles: {
         first_name: string
         last_name: string
@@ -26,8 +27,10 @@ export function SendMatchCostModal({ matchId, scheduledAt, signups, onClose }: S
     const [sending, setSending] = useState(false)
     const [progress, setProgress] = useState(0)
 
-    // Pre-select all signed-up players by default
-    const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set(signups.map(s => s.player_id)))
+    const unpaidSignups = useMemo(() => signups.filter(s => !s.paid), [signups])
+
+    // Pre-select all unpaid players by default
+    const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set(unpaidSignups.map(s => s.player_id)))
     const [totalCost, setTotalCost] = useState<string>('150')
     const [customNumPlayers, setCustomNumPlayers] = useState<string>('')
 
@@ -145,18 +148,18 @@ export function SendMatchCostModal({ matchId, scheduledAt, signups, onClose }: S
                             <h3 className="text-sm font-semibold text-text-primary">Selected Players</h3>
                             <button 
                                 type="button" 
-                                onClick={() => setSelectedPlayers(new Set(signups.map(s => s.player_id)))} 
-                                disabled={sending || selectedPlayers.size === signups.length}
+                                onClick={() => setSelectedPlayers(new Set(unpaidSignups.map(s => s.player_id)))} 
+                                disabled={sending || selectedPlayers.size === unpaidSignups.length}
                                 className="text-xs font-medium text-accent hover:underline disabled:opacity-50 disabled:no-underline"
                             >
-                                Reset to All ({signups.length})
+                                Reset to All ({unpaidSignups.length})
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-1 max-h-[250px]">
-                            {signups.length === 0 ? (
-                                <div className="p-4 text-center text-sm text-text-muted">No players signed up for this match yet.</div>
+                            {unpaidSignups.length === 0 ? (
+                                <div className="p-4 text-center text-sm text-text-muted">No unpaid players left to request from.</div>
                             ) : (
-                                signups.map(signup => {
+                                unpaidSignups.map(signup => {
                                     const isSelected = selectedPlayers.has(signup.player_id)
                                     return (
                                         <div
