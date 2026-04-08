@@ -154,7 +154,7 @@ export default function RatingsClient({ players, myRatings }: RatingsClientProps
     return (
         <div className="flex flex-col gap-6 pb-20">
             <RatingsDisclaimerModal onClose={() => setDisclaimerClosed(true)} />
-            <div className="flex justify-between items-center bg-surface-1 sticky top-16 md:top-0 z-10 py-2 border-b border-border">
+            <div className="flex justify-between items-center bg-surface-1 sticky top-16 z-10 py-2 border-b border-border">
                 <p className="text-sm text-text-muted">
                     {players.length} players to rate
                 </p>

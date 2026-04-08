@@ -12,11 +12,11 @@ export default async function CreateMatchPage() {
     // Check admin
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user.id)
         .single()
 
-    if (!profile?.is_admin) redirect('/matches')
+    if (!profile?.is_admin && !profile?.is_king) redirect('/matches')
 
     return (
         <div className="flex flex-col gap-6">

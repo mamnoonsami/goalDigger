@@ -43,7 +43,7 @@ export function Topbar({ profile, onMenuClick, isSidebarMinimized = false }: Top
     }
 
     return (
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b border-border bg-surface-2/80 px-4 backdrop-blur-sm md:px-6">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-border bg-surface-2/80 px-4 backdrop-blur-sm md:px-6">
             {/* Hamburger — mobile only */}
             <button
                 onClick={onMenuClick}

@@ -11,11 +11,11 @@ export default async function MatchesPage() {
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, is_king')
         .eq('id', user!.id)
         .single()
 
-    const isAdmin = profile?.is_admin ?? false
+    const isAdmin = profile?.is_admin || profile?.is_king || false
 
     const { data: queriedMatches } = await supabase
         .from('matches')

@@ -1,20 +1,24 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { saveTeamAssignments, resetTeams } from '../../app/actions/matches'
+import { useState, useCallback, useEffect } from 'react'
+import { saveTeamAssignments, resetTeams, togglePaidStatus } from '../../app/actions/matches'
 import { balanceTeams as runBalance } from '@goaldigger/core'
 import { Button } from '../ui/Button'
 import { ManageMatchPlayersModal } from './ManageMatchPlayersModal'
 import { MatchActionMenu } from './MatchActionMenu'
 import { SendInvitationsModal } from './SendInvitationsModal'
 import { SendMatchCostModal } from './SendMatchCostModal'
+import { ManageDeclinedPlayersModal } from './ManageDeclinedPlayersModal'
+import { useToast } from '../providers/ToastProvider'
 
 interface SignupPlayer {
     player_id: string
     team: 1 | 2 | null
+    paid?: boolean
     profiles: {
         first_name: string
         last_name: string
+        nickname?: string | null
         base_score: number
         goals: number
         player_position: string | null
@@ -43,11 +47,30 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
     const [resetting, setResetting] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [isManagePlayersOpen, setIsManagePlayersOpen] = useState(false)
+    const [isManageDeclinedOpen, setIsManageDeclinedOpen] = useState(false)
     const [isInvitationsOpen, setIsInvitationsOpen] = useState(false)
     const [isCostsOpen, setIsCostsOpen] = useState(false)
 
+    const toast = useToast()
+
     // Track whether local state differs from what's saved in the DB
-    const isDirty = signups.some((s, i) => s.team !== initialSignups[i]?.team)
+    const isDirty = signups.some((s) => {
+        const initial = initialSignups.find(u => u.player_id === s.player_id)
+        return s.team !== (initial?.team ?? null)
+    })
+
+    // Safely sync server properties (like updated `paid` toggles) while preserving un-saved drag distributions
+    useEffect(() => {
+        setSignups(prev => {
+            return initialSignups.map(serverS => {
+                const localS = prev.find(p => p.player_id === serverS.player_id)
+                return {
+                    ...serverS,
+                    team: localS ? localS.team : serverS.team,
+                }
+            })
+        })
+    }, [initialSignups])
 
     const team1 = signups.filter((s) => s.team === 1)
     const team2 = signups.filter((s) => s.team === 2)
@@ -112,6 +135,27 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
             setSaving(false)
         }
     }, [signups, matchId])
+
+    /* ── Copy Players to Clipboard ── */
+    const handleCopyPlayers = useCallback(async () => {
+        const date = new Date(scheduledAt)
+        const dayName = date.toLocaleDateString(undefined, { weekday: 'long' })
+        const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true })
+        
+        let msg = `Soccer this ${dayName} at ${time}. Please Put your name if you are interested.\n`
+        signups.forEach((s, index) => {
+            const name = s.profiles.nickname || `${s.profiles.first_name} ${s.profiles.last_name}`
+            msg += `${index + 1}. ${name}\n`
+        })
+
+        try {
+            await navigator.clipboard.writeText(msg.trim())
+            toast.success('Roster copied to clipboard!')
+        } catch (err) {
+            console.error('Failed to copy roster', err)
+            toast.error('Failed to copy roster')
+        }
+    }, [scheduledAt, signups, toast])
 
     /* ── Drag & Drop (local state only) ── */
     const handleDragStart = useCallback((playerId: string) => {
@@ -196,6 +240,7 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
                             score={team1Score}
                             color="accent"
                             isAdmin={isAdmin}
+                            matchId={matchId}
                             draggedId={draggedId}
                             onDragStart={handleDragStart}
                             onDragOver={handleDragOver}
@@ -208,6 +253,7 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
                             score={team2Score}
                             color="warning"
                             isAdmin={isAdmin}
+                            matchId={matchId}
                             draggedId={draggedId}
                             onDragStart={handleDragStart}
                             onDragOver={handleDragOver}
@@ -223,17 +269,26 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
                             Signed-Up Players ({signups.length})
                         </h2>
                         {isAdmin && (
-                            <MatchActionMenu
-                                onManage={() => setIsManagePlayersOpen(true)}
-                                onInvite={() => setIsInvitationsOpen(true)}
-                                onCost={() => setIsCostsOpen(true)}
-                            />
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={handleCopyPlayers}
+                                    title="Copy signed up players to clipboard"
+                                    className="flex items-center justify-center w-8 h-8 rounded-full text-text-muted hover:text-accent hover:bg-surface-3 transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </button>
+                                <MatchActionMenu
+                                    onManage={() => setIsManagePlayersOpen(true)}
+                                    onInvite={() => setIsInvitationsOpen(true)}
+                                    onCost={() => setIsCostsOpen(true)}
+                                />
+                            </div>
                         )}
                     </div>
                     {signups.length > 0 ? (
                         <ul className="divide-y divide-border">
                             {signups.map((s) => (
-                                <PlayerRow key={s.player_id} signup={s} />
+                                <PlayerRow key={s.player_id} signup={s} isAdmin={isAdmin} matchId={matchId} />
                             ))}
                         </ul>
                     ) : (
@@ -244,41 +299,64 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
                 </div>
             )}
 
+            {/* Manage Declined Players Modal */}
+            {isManageDeclinedOpen && (
+                <ManageDeclinedPlayersModal
+                    matchId={matchId}
+                    allPlayers={allPlayers}
+                    initialDeclinedIds={notComingSignups.map((s) => s.player_id)}
+                    onClose={() => setIsManageDeclinedOpen(false)}
+                />
+            )}
+
             {/* Not Coming Section */}
-            {notComingSignups.length > 0 && (
+            {(notComingSignups.length > 0 || isAdmin) && (
                 <div className="bg-surface-2 rounded-xl border border-border mt-4">
-                    <div className="border-b border-border px-5 py-4 flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-red-500/15 flex items-center justify-center flex-shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                    <div className="border-b border-border px-5 py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-full bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                            </div>
+                            <h2 className="font-semibold text-text-primary">
+                                Can't Make It ({notComingSignups.length})
+                            </h2>
                         </div>
-                        <h2 className="font-semibold text-text-primary">
-                            Can't Make It ({notComingSignups.length})
-                        </h2>
+                        {isAdmin && (
+                            <MatchActionMenu
+                                onManage={() => setIsManageDeclinedOpen(true)}
+                            />
+                        )}
                     </div>
-                    <ul className="divide-y divide-border">
-                        {notComingSignups.map((s) => {
-                            const p = s.profiles
-                            return (
-                                <li key={s.player_id} className="flex items-center gap-3 px-5 py-3 opacity-60">
-                                    {p.avatar_url ? (
-                                        <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover grayscale" />
-                                    ) : (
-                                        <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
-                                            {p.first_name?.[0]}{p.last_name?.[0]}
-                                        </div>
-                                    )}
-                                    <div>
-                                        <p className="text-sm font-medium text-text-muted line-through">
-                                            {p.first_name} {p.last_name}
-                                        </p>
-                                        {p.player_position && (
-                                            <p className="text-xs text-text-muted capitalize">{p.player_position}</p>
+                    {notComingSignups.length > 0 ? (
+                        <ul className="divide-y divide-border">
+                            {notComingSignups.map((s) => {
+                                const p = s.profiles
+                                return (
+                                    <li key={s.player_id} className="flex items-center gap-3 px-5 py-3 opacity-60">
+                                        {p.avatar_url ? (
+                                            <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover grayscale" />
+                                        ) : (
+                                            <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted flex-shrink-0">
+                                                {p.first_name?.[0]}{p.last_name?.[0]}
+                                            </div>
                                         )}
-                                    </div>
-                                </li>
-                            )
-                        })}
-                    </ul>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-text-muted line-through">
+                                                {p.nickname || `${p.first_name} ${p.last_name}`}
+                                            </p>
+                                            {p.player_position && (
+                                                <p className="text-xs text-text-muted capitalize">{p.player_position}</p>
+                                            )}
+                                        </div>
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    ) : (
+                        <p className="px-5 py-8 text-center text-sm text-text-muted">
+                            No one has declined yet.
+                        </p>
+                    )}
                 </div>
             )}
 
@@ -324,13 +402,14 @@ interface TeamColumnProps {
     score: number
     color: string
     isAdmin: boolean
+    matchId: string
     draggedId: string | null
     onDragStart: (id: string) => void
     onDragOver: (e: React.DragEvent) => void
     onDrop: (team: 1 | 2) => void
 }
 
-function TeamColumn({ title, team, players, score, color, isAdmin, draggedId, onDragStart, onDragOver, onDrop }: TeamColumnProps) {
+function TeamColumn({ title, team, players, score, color, isAdmin, matchId, draggedId, onDragStart, onDragOver, onDrop }: TeamColumnProps) {
     const [isDragOver, setIsDragOver] = useState(false)
 
     const borderColor = color === 'accent' ? 'border-accent/40' : 'border-warning/40'
@@ -365,6 +444,7 @@ function TeamColumn({ title, team, players, score, color, isAdmin, draggedId, on
                             key={s.player_id}
                             signup={s}
                             isAdmin={isAdmin}
+                            matchId={matchId}
                             isDragging={draggedId === s.player_id}
                             onDragStart={onDragStart}
                         />
@@ -381,14 +461,39 @@ function TeamColumn({ title, team, players, score, color, isAdmin, draggedId, on
 
 /* ── Draggable Player Row ── */
 
-function DraggablePlayer({ signup, isAdmin, isDragging, onDragStart }: {
+function DraggablePlayer({ signup, isAdmin, matchId, isDragging, onDragStart }: {
     signup: SignupPlayer
     isAdmin: boolean
+    matchId: string
     isDragging: boolean
     onDragStart: (id: string) => void
 }) {
     const p = signup.profiles
     const score = effectiveScore(p)
+    const [isUpdating, setIsUpdating] = useState(false)
+    const [optimisticPaid, setOptimisticPaid] = useState(signup.paid)
+    const toast = useToast()
+
+    useEffect(() => {
+        setOptimisticPaid(signup.paid)
+    }, [signup.paid])
+
+    async function handleTogglePaid() {
+        if (!isAdmin || isUpdating) return
+        
+        setIsUpdating(true)
+        const nextState = !optimisticPaid
+        setOptimisticPaid(nextState)
+        
+        try {
+            await togglePaidStatus(matchId, signup.player_id, nextState)
+        } catch (err: unknown) {
+            setOptimisticPaid(!nextState)
+            toast.error('Failed to update paid status')
+        } finally {
+            setIsUpdating(false)
+        }
+    }
 
     return (
         <li
@@ -405,52 +510,118 @@ function DraggablePlayer({ signup, isAdmin, isDragging, onDragStart }: {
                     <span className="text-text-muted text-xs select-none">⠿</span>
                 )}
                 {p.avatar_url ? (
-                    <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                    <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                 ) : (
-                    <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
+                    <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted flex-shrink-0">
                         {p.first_name?.[0]}{p.last_name?.[0]}
                     </div>
                 )}
                 <div>
                     <p className="text-sm font-medium text-text-primary">
-                        {p.first_name} {p.last_name}
+                        {p.nickname || `${p.first_name} ${p.last_name}`}
                     </p>
                     {p.player_position && (
                         <p className="text-xs text-text-muted capitalize">{p.player_position}</p>
                     )}
                 </div>
             </div>
-            <span className="font-mono text-sm font-bold text-accent">{score}</span>
+            
+            <div className="flex items-center gap-3">
+                {isAdmin ? (
+                    <button
+                        onClick={handleTogglePaid}
+                        disabled={isUpdating}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors ${
+                            optimisticPaid 
+                            ? 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20' 
+                            : 'bg-surface-3 text-text-muted border-border hover:bg-surface-4'
+                        }`}
+                        title="Toggle Paid Status"
+                    >
+                        {optimisticPaid ? 'PAID' : 'UNPAID'}
+                    </button>
+                ) : optimisticPaid && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/30">
+                        PAID
+                    </span>
+                )}
+                <span className="font-mono text-sm font-bold text-accent">{score}</span>
+            </div>
         </li>
     )
 }
 
 /* ── Simple Player Row (pre-balance list) ── */
 
-function PlayerRow({ signup }: { signup: SignupPlayer }) {
+function PlayerRow({ signup, isAdmin, matchId }: { signup: SignupPlayer, isAdmin: boolean, matchId: string }) {
     const p = signup.profiles
     const score = effectiveScore(p)
+    const [isUpdating, setIsUpdating] = useState(false)
+    const [optimisticPaid, setOptimisticPaid] = useState(signup.paid)
+    const toast = useToast()
+
+    useEffect(() => {
+        setOptimisticPaid(signup.paid)
+    }, [signup.paid])
+
+    async function handleTogglePaid() {
+        if (!isAdmin || isUpdating) return
+        
+        setIsUpdating(true)
+        const nextState = !optimisticPaid
+        setOptimisticPaid(nextState)
+        
+        try {
+            await togglePaidStatus(matchId, signup.player_id, nextState)
+        } catch (err: unknown) {
+            setOptimisticPaid(!nextState)
+            toast.error('Failed to update paid status')
+        } finally {
+            setIsUpdating(false)
+        }
+    }
 
     return (
         <li className="flex items-center justify-between px-5 py-3">
             <div className="flex items-center gap-3">
                 {p.avatar_url ? (
-                    <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                    <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                 ) : (
-                    <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
+                    <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted flex-shrink-0">
                         {p.first_name?.[0]}{p.last_name?.[0]}
                     </div>
                 )}
                 <div>
                     <p className="text-sm font-medium text-text-primary">
-                        {p.first_name} {p.last_name}
+                        {p.nickname || `${p.first_name} ${p.last_name}`}
                     </p>
                     {p.player_position && (
                         <p className="text-xs text-text-muted capitalize">{p.player_position}</p>
                     )}
                 </div>
             </div>
-            <span className="font-mono text-sm font-bold text-accent">{score}</span>
+            
+            <div className="flex items-center gap-3">
+                {isAdmin ? (
+                    <button
+                        onClick={handleTogglePaid}
+                        disabled={isUpdating}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors ${
+                            optimisticPaid 
+                            ? 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20' 
+                            : 'bg-surface-3 text-text-muted border-border hover:bg-surface-4'
+                        }`}
+                        title="Toggle Paid Status"
+                    >
+                        {optimisticPaid ? 'PAID' : 'UNPAID'}
+                    </button>
+                ) : optimisticPaid && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/30">
+                        PAID
+                    </span>
+                )}
+                <span className="font-mono text-sm font-bold text-accent">{score}</span>
+            </div>
         </li>
     )
 }
