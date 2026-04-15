@@ -15,17 +15,16 @@ export default function LandingPage() {
       />
 
       {/* Topbar */}
-      <header className="flex h-16 items-center justify-between border-b border-border/50 px-6 md:px-10">
+      <header className="flex h-16 items-center justify-between border-b border-border/50 px-4 sm:px-6 md:px-10">
         <div className="flex items-center gap-2.5">
           <Logo size="sm" />
-          <span className="text-base font-bold tracking-tight">Goal Digger</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link href="/login">
-            <Button variant="ghost" size="sm">Sign in</Button>
+            <Button variant="secondary" size="sm" className="whitespace-nowrap">Sign in</Button>
           </Link>
           <Link href="/signup">
-            <Button size="sm">Get started</Button>
+            <Button size="sm" className="whitespace-nowrap">Sign up</Button>
           </Link>
         </div>
       </header>
@@ -83,7 +82,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="flex justify-center border-t border-border/50 px-6 py-6">
-        <p className="text-sm text-text-muted">© 2026 Goal Digger. Built with ⚽ and ❤️</p>
+        <p className="text-sm text-text-muted">© 2026 Goal Digger.</p>
       </footer>
     </div>
   )

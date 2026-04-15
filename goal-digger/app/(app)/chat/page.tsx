@@ -76,7 +76,7 @@ function ReplyQuote({ replyTo, onClick, isOwn }: { replyTo: NonNullable<ChatMess
     return (
         <button
             onClick={onClick}
-            className={`w-full text-left rounded-lg border-l-2 px-2.5 py-1.5 mb-1.5 transition-colors ${isOwn
+            className={`w-full block overflow-hidden text-left rounded-lg border-l-2 px-2.5 py-1.5 mb-1.5 transition-colors ${isOwn
                     ? 'border-white/60 bg-white/10 hover:bg-white/20'
                     : 'border-accent/60 bg-black/5 hover:bg-black/10 dark:bg-accent/10 dark:hover:bg-accent/20'
                 }`}
@@ -230,7 +230,7 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
                     )}
 
                     {/* Bubble + reply button */}
-                    <div className={`flex items-center gap-1.5 ${isOwn ? 'flex-row' : 'flex-row-reverse'} relative`}>
+                    <div className={`flex items-center gap-1.5 ${isOwn ? 'flex-row' : 'flex-row-reverse'} relative max-w-full`}>
                         {/* Context Menu Overlay for Mobile */}
                         {isContextMenuOpen && (
                             <div className={`msg-context-menu absolute -top-12 z-50 flex items-center justify-center bg-surface-3 shadow-xl shadow-black/10 border border-border rounded-lg p-1 animate-in fade-in zoom-in-95 duration-200 ${isOwn ? 'right-0' : 'left-0'}`}>
@@ -271,7 +271,7 @@ function MessageRow({ msg, isOwn, sameAuthorAsPrev, sameAuthorAsNext, showTime, 
 
                         <div
                             id={`msg-${msg.id}`}
-                            className={`w-fit min-w-0 px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap sm:select-text sm:cursor-text select-none cursor-default ${isOwn
+                            className={`w-fit max-w-full min-w-0 px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words sm:select-text sm:cursor-text select-none cursor-default ${isOwn
                                     ? 'bg-accent text-white rounded-br-sm'
                                     : 'bg-surface-2 text-text-primary rounded-bl-sm border border-border'
                                 }`}
