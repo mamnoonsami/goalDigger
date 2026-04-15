@@ -20,7 +20,7 @@ export function OngoingAuctions({ auctions }: OngoingAuctionsProps) {
     return (
         <Card padding="none">
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                <h2 className="font-semibold text-text-primary">Auctions</h2>
+                <h2 className="font-bold text-accent">Auctions</h2>
                 <Link href="/auctions" className="text-xs text-accent hover:underline">
                     View all →
                 </Link>

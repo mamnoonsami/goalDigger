@@ -27,18 +27,29 @@ export default async function TournamentsPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-text-primary">Tournaments</h1>
                     <p className="mt-1 text-sm text-text-muted">Competitive tournament events and standings.</p>
                 </div>
                 {isAdmin && (
-                    <Link
-                        href="/tournaments/create"
-                        className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-accent/25 transition-all hover:bg-accent-hover hover:shadow-lg hover:shadow-accent/30 active:scale-[0.98]"
-                    >
-                        <span>+</span> Create Tournament
-                    </Link>
+                    <>
+                        <Link
+                            href="/tournaments/create"
+                            className="hidden sm:inline-flex shrink-0 items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-accent/25 transition-all hover:bg-accent-hover hover:shadow-lg hover:shadow-accent/30 active:scale-[0.98] whitespace-nowrap"
+                        >
+                            <span>+</span> Create Tournament
+                        </Link>
+                        <Link
+                            href="/tournaments/create"
+                            className="fixed bottom-20 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-lg shadow-accent/40 transition-all hover:bg-accent-hover hover:scale-105 active:scale-[0.98] sm:hidden"
+                        >
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                        </Link>
+                    </>
                 )}
             </div>
 

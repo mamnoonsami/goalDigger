@@ -21,9 +21,9 @@ export default async function DashboardPage() {
             .single(),
         supabase
             .from('matches')
-            .select('id, title, status, scheduled_at, location, max_players, notes')
-            .order('scheduled_at', { ascending: true })
-            .limit(5),
+            .select('id, title, status, scheduled_at, location, max_players, notes, created_at')
+            .order('created_at', { ascending: false })
+            .limit(20),
         supabase
             .from('profiles')
             .select('id, first_name, last_name, base_score, goals, role, matches_played, player_position, avatar_url')
@@ -58,8 +58,8 @@ export default async function DashboardPage() {
         const pA = priority[a.status] || 2
         const pB = priority[b.status] || 2
         if (pA !== pB) return pA - pB
-        return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
-    })
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    }).slice(0, 3)
 
     const effectiveScore = profile
         ? profile.base_score + profile.goals * 2
@@ -156,7 +156,7 @@ export default async function DashboardPage() {
                 {/* Top players */}
                 <Card padding="none">
                     <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                        <h2 className="font-semibold text-text-primary">Top Players</h2>
+                        <h2 className="font-bold text-accent">Top Players</h2>
                         <Link href="/players" className="text-xs text-accent hover:underline">View all →</Link>
                     </div>
                     <TopPlayersList players={topPlayers} />
