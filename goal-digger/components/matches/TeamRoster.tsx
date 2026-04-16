@@ -23,6 +23,7 @@ interface SignupPlayer {
         goals: number
         player_position: string | null
         avatar_url: string | null
+        peer_rating_score?: number | null
     }
 }
 
@@ -38,6 +39,16 @@ interface TeamRosterProps {
 
 function effectiveScore(p: { base_score: number; goals: number }) {
     return p.base_score + p.goals * 2
+}
+
+function abbrevPos(pos: string) {
+    switch (pos.toLowerCase()) {
+        case 'striker': return 'STK'
+        case 'midfielder': return 'MID'
+        case 'defender': return 'DEF'
+        case 'goalkeeper': return 'GK'
+        default: return pos.substring(0, 3).toUpperCase()
+    }
 }
 
 export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notComingSignups = [], allPlayers, isAdmin, matchStatus }: TeamRosterProps) {
@@ -76,9 +87,13 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
     const team2 = signups.filter((s) => s.team === 2)
     const hasTeams = team1.length > 0 || team2.length > 0
 
-    const team1Score = team1.reduce((sum, s) => sum + effectiveScore(s.profiles), 0)
-    const team2Score = team2.reduce((sum, s) => sum + effectiveScore(s.profiles), 0)
-    const scoreDiff = Math.abs(team1Score - team2Score)
+    const getScoreVal = (s: SignupPlayer) => s.profiles.peer_rating_score ?? effectiveScore(s.profiles)
+
+    const team1ScoreRaw = team1.reduce((sum, s) => sum + getScoreVal(s), 0)
+    const team2ScoreRaw = team2.reduce((sum, s) => sum + getScoreVal(s), 0)
+    const team1Score = Number(team1ScoreRaw.toFixed(2))
+    const team2Score = Number(team2ScoreRaw.toFixed(2))
+    const scoreDiff = Number(Math.abs(team1ScoreRaw - team2ScoreRaw).toFixed(2))
 
     /* ── Balance (client-side only) ── */
     const handleBalance = useCallback(() => {
@@ -141,7 +156,7 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
         const date = new Date(scheduledAt)
         const dayName = date.toLocaleDateString(undefined, { weekday: 'long' })
         const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true })
-        
+
         let msg = `Soccer this ${dayName} at ${time}. Please Put your name if you are interested.\n`
         signups.forEach((s, index) => {
             const name = s.profiles.nickname || `${s.profiles.first_name} ${s.profiles.last_name}`
@@ -232,7 +247,7 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
             {hasTeams ? (
                 <>
                     {isAdmin && <p className="text-xs text-text-muted italic">Drag players between teams to adjust</p>}
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid grid-cols-2 gap-1.5 sm:gap-4">
                         <TeamColumn
                             title="Team 1"
                             team={1}
@@ -431,10 +446,10 @@ function TeamColumn({ title, team, players, score, color, isAdmin, matchId, drag
                 onDrop(team)
             }}
         >
-            <div className={`flex items-center justify-between px-5 py-3 ${headerBg} rounded-t-xl border-b ${borderColor}`}>
-                <h3 className={`font-bold ${headerText}`}>{title}</h3>
-                <span className="text-xs text-text-muted font-mono">
-                    Score: {score} · {players.length} players
+            <div className={`flex flex-col sm:flex-row items-center justify-between px-2 sm:px-5 py-2 sm:py-3 ${headerBg} rounded-t-xl border-b ${borderColor}`}>
+                <h3 className={`font-bold text-xs sm:text-base ${headerText}`}>{title}</h3>
+                <span className="text-[10px] sm:text-xs text-text-muted font-mono whitespace-nowrap">
+                    Score: <span className="font-bold">{score}</span> · {players.length}
                 </span>
             </div>
             {players.length > 0 ? (
@@ -469,7 +484,8 @@ function DraggablePlayer({ signup, isAdmin, matchId, isDragging, onDragStart }: 
     onDragStart: (id: string) => void
 }) {
     const p = signup.profiles
-    const score = effectiveScore(p)
+    const scoreVal = p.peer_rating_score ?? effectiveScore(p)
+    const score = p.peer_rating_score !== null && p.peer_rating_score !== undefined ? Number(p.peer_rating_score).toFixed(1) : scoreVal.toFixed(1)
     const [isUpdating, setIsUpdating] = useState(false)
     const [optimisticPaid, setOptimisticPaid] = useState(signup.paid)
     const toast = useToast()
@@ -480,11 +496,11 @@ function DraggablePlayer({ signup, isAdmin, matchId, isDragging, onDragStart }: 
 
     async function handleTogglePaid() {
         if (!isAdmin || isUpdating) return
-        
+
         setIsUpdating(true)
         const nextState = !optimisticPaid
         setOptimisticPaid(nextState)
-        
+
         try {
             await togglePaidStatus(matchId, signup.player_id, nextState)
         } catch (err: unknown) {
@@ -502,50 +518,50 @@ function DraggablePlayer({ signup, isAdmin, matchId, isDragging, onDragStart }: 
                 e.dataTransfer.effectAllowed = 'move'
                 onDragStart(signup.player_id)
             }}
-            className={`flex items-center justify-between px-5 py-3 transition-all duration-150 ${isAdmin ? 'cursor-grab active:cursor-grabbing hover:bg-surface-3' : ''
+            className={`flex items-center justify-between gap-1.5 px-1.5 sm:px-5 py-2 sm:py-3 transition-all duration-150 ${isAdmin ? 'cursor-grab active:cursor-grabbing hover:bg-surface-3' : ''
                 } ${isDragging ? 'opacity-40 scale-95' : ''}`}
         >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 flex-1 min-w-0">
                 {isAdmin && (
-                    <span className="text-text-muted text-xs select-none">⠿</span>
+                    <span className="text-text-muted text-[10px] sm:text-xs select-none -mr-1 sm:mr-0 sm:pr-1">⠿</span>
                 )}
                 {p.avatar_url ? (
-                    <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                    <img src={p.avatar_url} alt="" className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover flex-shrink-0" />
                 ) : (
-                    <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted flex-shrink-0">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-surface-3 flex items-center justify-center text-[10px] sm:text-xs font-bold text-text-muted flex-shrink-0">
                         {p.first_name?.[0]}{p.last_name?.[0]}
                     </div>
                 )}
-                <div>
-                    <p className="text-sm font-medium text-text-primary">
+                <div className="min-w-0 flex-1">
+                    <p className="text-[11px] sm:text-sm font-medium text-text-primary truncate">
                         {p.nickname || `${p.first_name} ${p.last_name}`}
                     </p>
-                    {p.player_position && (
-                        <p className="text-xs text-text-muted capitalize">{p.player_position}</p>
-                    )}
+                    <div className="flex items-center gap-1.5 text-[8px] sm:text-[9px] text-text-muted truncate">
+                        {p.player_position && <span className="font-medium tracking-wide">{abbrevPos(p.player_position)}</span>}
+                        {p.player_position && score !== '-' && <span className="opacity-50">•</span>}
+                        <span className="font-mono text-accent font-medium">{score}</span>
+                    </div>
                 </div>
             </div>
-            
-            <div className="flex items-center gap-3">
+
+            <div className="flex-shrink-0">
                 {isAdmin ? (
                     <button
                         onClick={handleTogglePaid}
                         disabled={isUpdating}
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors ${
-                            optimisticPaid 
-                            ? 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20' 
+                        className={`text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded border transition-colors ${optimisticPaid
+                            ? 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20'
                             : 'bg-surface-3 text-text-muted border-border hover:bg-surface-4'
-                        }`}
+                            }`}
                         title="Toggle Paid Status"
                     >
                         {optimisticPaid ? 'PAID' : 'UNPAID'}
                     </button>
                 ) : optimisticPaid && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/30">
+                    <span className="text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/30">
                         PAID
                     </span>
                 )}
-                <span className="font-mono text-sm font-bold text-accent">{score}</span>
             </div>
         </li>
     )
@@ -555,7 +571,8 @@ function DraggablePlayer({ signup, isAdmin, matchId, isDragging, onDragStart }: 
 
 function PlayerRow({ signup, isAdmin, matchId }: { signup: SignupPlayer, isAdmin: boolean, matchId: string }) {
     const p = signup.profiles
-    const score = effectiveScore(p)
+    const scoreVal = p.peer_rating_score ?? effectiveScore(p)
+    const score = p.peer_rating_score !== null && p.peer_rating_score !== undefined ? Number(p.peer_rating_score).toFixed(1) : scoreVal.toFixed(1)
     const [isUpdating, setIsUpdating] = useState(false)
     const [optimisticPaid, setOptimisticPaid] = useState(signup.paid)
     const toast = useToast()
@@ -566,11 +583,11 @@ function PlayerRow({ signup, isAdmin, matchId }: { signup: SignupPlayer, isAdmin
 
     async function handleTogglePaid() {
         if (!isAdmin || isUpdating) return
-        
+
         setIsUpdating(true)
         const nextState = !optimisticPaid
         setOptimisticPaid(nextState)
-        
+
         try {
             await togglePaidStatus(matchId, signup.player_id, nextState)
         } catch (err: unknown) {
@@ -582,45 +599,45 @@ function PlayerRow({ signup, isAdmin, matchId }: { signup: SignupPlayer, isAdmin
     }
 
     return (
-        <li className="flex items-center justify-between px-5 py-3">
-            <div className="flex items-center gap-3">
+        <li className="flex items-center justify-between gap-1.5 px-1.5 sm:px-5 py-2 sm:py-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 flex-1 min-w-0">
                 {p.avatar_url ? (
-                    <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                    <img src={p.avatar_url} alt="" className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover flex-shrink-0" />
                 ) : (
-                    <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted flex-shrink-0">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-surface-3 flex items-center justify-center text-[10px] sm:text-xs font-bold text-text-muted flex-shrink-0">
                         {p.first_name?.[0]}{p.last_name?.[0]}
                     </div>
                 )}
-                <div>
-                    <p className="text-sm font-medium text-text-primary">
+                <div className="min-w-0 flex-1">
+                    <p className="text-[11px] sm:text-sm font-medium text-text-primary truncate">
                         {p.nickname || `${p.first_name} ${p.last_name}`}
                     </p>
-                    {p.player_position && (
-                        <p className="text-xs text-text-muted capitalize">{p.player_position}</p>
-                    )}
+                    <div className="flex items-center gap-1.5 text-[8px] sm:text-[11px] text-text-muted truncate">
+                        {p.player_position && <span className="font-medium tracking-wide">{abbrevPos(p.player_position)}</span>}
+                        {p.player_position && score !== '-' && <span className="opacity-50">•</span>}
+                        <span className="font-mono text-accent font-medium">{score}</span>
+                    </div>
                 </div>
             </div>
-            
-            <div className="flex items-center gap-3">
+
+            <div className="flex-shrink-0">
                 {isAdmin ? (
                     <button
                         onClick={handleTogglePaid}
                         disabled={isUpdating}
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors ${
-                            optimisticPaid 
-                            ? 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20' 
+                        className={`text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded border transition-colors ${optimisticPaid
+                            ? 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20'
                             : 'bg-surface-3 text-text-muted border-border hover:bg-surface-4'
-                        }`}
+                            }`}
                         title="Toggle Paid Status"
                     >
                         {optimisticPaid ? 'PAID' : 'UNPAID'}
                     </button>
                 ) : optimisticPaid && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/30">
+                    <span className="text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/30">
                         PAID
                     </span>
                 )}
-                <span className="font-mono text-sm font-bold text-accent">{score}</span>
             </div>
         </li>
     )

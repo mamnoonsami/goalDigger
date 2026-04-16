@@ -38,7 +38,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
     // Fetch signups with player profile data
     const { data: signups } = await supabase
         .from('match_signups')
-        .select('player_id, team, invitation_accepted, paid, profiles(first_name, last_name, nickname, base_score, goals, player_position, avatar_url)')
+        .select('player_id, team, invitation_accepted, paid, profiles(first_name, last_name, nickname, base_score, goals, peer_rating_score, player_position, avatar_url)')
         .eq('match_id', id)
         .order('signed_up_at', { ascending: true })
         .order('player_id', { ascending: true })
@@ -46,7 +46,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
     // Fetch all players for admin management
     const { data: allPlayers } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, base_score, player_position, avatar_url')
+        .select('id, first_name, last_name, base_score, peer_rating_score, player_position, avatar_url')
         .order('first_name', { ascending: true })
 
     const comingSignups = signups?.filter((s: any) => s.invitation_accepted) ?? []

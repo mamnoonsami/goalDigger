@@ -42,29 +42,31 @@ export function MatchActions({ matchId, matchStatus, hasJoined, hasDeclined = fa
     }
 
     return (
-        <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col gap-3 w-full sm:w-auto">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
                 {isOpen && !hasJoined && (
-                    <Button onClick={handleJoin} isLoading={loading} size="lg">
+                    <Button onClick={handleJoin} isLoading={loading} size="lg" className="w-full sm:w-auto justify-center text-xs sm:text-base px-2 sm:px-6">
                         ⚽ Join Game
                     </Button>
                 )}
                 {isOpen && hasJoined && (
-                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-accent bg-transparent px-4 py-2.5 rounded-lg border border-black shadow-inner dark:border-border">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                        You already joined
+                    <span className="flex w-full sm:w-auto items-center justify-center text-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold text-accent bg-transparent px-2 sm:px-4 py-2.5 rounded-lg border border-black shadow-inner dark:border-border">
+                        <svg className="flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                        <span className="truncate sm:hidden">Joined</span>
+                        <span className="hidden sm:inline">You already joined</span>
                     </span>
                 )}
 
                 {isOpen && !hasDeclined && (
-                    <Button onClick={handleDecline} isLoading={loading} variant="danger" size="lg">
+                    <Button onClick={handleDecline} isLoading={loading} variant="danger" size="lg" className="w-full sm:w-auto justify-center text-xs sm:text-base px-2 sm:px-6">
                         Can't Make It
                     </Button>
                 )}
                 {isOpen && hasDeclined && (
-                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-danger bg-transparent px-4 py-2.5 rounded-lg border border-black shadow-inner dark:border-border">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                        You declined this match
+                    <span className="flex w-full sm:w-auto items-center justify-center text-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold text-danger bg-transparent px-2 sm:px-4 py-2.5 rounded-lg border border-black shadow-inner dark:border-border">
+                        <svg className="flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                        <span className="truncate sm:hidden">Declined</span>
+                        <span className="hidden sm:inline">You declined this match</span>
                     </span>
                 )}
             </div>
