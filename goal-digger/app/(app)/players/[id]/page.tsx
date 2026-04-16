@@ -24,7 +24,7 @@ export default async function PlayerDetailPage({ params }: PageProps) {
         supabase.auth.getUser(),
         supabase
             .from('profiles')
-            .select('id, first_name, last_name, avatar_url, role, player_position, base_score, goals, matches_played, created_at')
+            .select('id, first_name, last_name, avatar_url, role, player_position, base_score, goals, matches_played, created_at, peer_rating_score')
             .eq('id', id)
             .single(),
     ])
@@ -80,7 +80,11 @@ export default async function PlayerDetailPage({ params }: PageProps) {
             </Card>
 
             {/* Stats Grid */}
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-5">
+                <Card className="flex flex-col items-center text-center py-5">
+                    <span className="text-3xl font-black text-accent font-mono">{player.peer_rating_score ?? '-'}</span>
+                    <span className="text-xs text-text-muted mt-1">Peer Rating</span>
+                </Card>
                 <Card className="flex flex-col items-center text-center py-5">
                     <span className="text-3xl font-black text-accent font-mono">{effectiveScore}</span>
                     <span className="text-xs text-text-muted mt-1">Effective Score</span>

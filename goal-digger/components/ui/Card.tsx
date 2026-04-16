@@ -1,7 +1,7 @@
 import { cn } from '../../lib/utils'
 import type { ReactNode } from 'react'
 
-interface CardProps {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
     children: ReactNode
     className?: string
     /** Add a hover lift effect — useful for clickable cards */
@@ -16,7 +16,7 @@ const paddings = {
     lg: 'p-6 md:p-8',
 }
 
-export function Card({ children, className, hoverable = false, padding = 'md' }: CardProps) {
+export function Card({ children, className, hoverable = false, padding = 'md', ...props }: CardProps) {
     return (
         <div
             className={cn(
@@ -26,6 +26,7 @@ export function Card({ children, className, hoverable = false, padding = 'md' }:
                 paddings[padding],
                 className
             )}
+            {...props}
         >
             {children}
         </div>

@@ -56,7 +56,7 @@ export default async function RatingsPage() {
                     </p>
                 </Card>
             ) : (
-                <RatingsClient players={players} myRatings={myRatings} />
+                <RatingsClient players={players} myRatings={myRatings} isAdmin={profile.is_admin} />
             )}
         </div>
     )

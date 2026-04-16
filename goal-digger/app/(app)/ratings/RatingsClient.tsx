@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { submitAllRatings } from '../../actions/ratings'
+import { submitAllRatings, publishRatings } from '../../actions/ratings'
 import { Card } from '../../../components/ui/Card'
 import { Avatar } from '../../../components/ui/Avatar'
 import { Button } from '../../../components/ui/Button'
@@ -26,9 +26,10 @@ interface Rating {
 interface RatingsClientProps {
     players: Player[]
     myRatings: Rating[]
+    isAdmin?: boolean
 }
 
-export default function RatingsClient({ players, myRatings }: RatingsClientProps) {
+export default function RatingsClient({ players, myRatings, isAdmin }: RatingsClientProps) {
     const toast = useToast()
     const [activeTab, setActiveTab] = useState('striker')
     const [disclaimerClosed, setDisclaimerClosed] = useState(false)
@@ -43,7 +44,26 @@ export default function RatingsClient({ players, myRatings }: RatingsClientProps
     })
     const [isSavingAll, setIsSavingAll] = useState(false)
     const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false)
+    const [isPublishing, setIsPublishing] = useState(false)
     const router = useRouter()
+
+    const handlePublish = async () => {
+        if (!confirm('Are you sure you want to publish these ratings to all player profiles? This will calculate the average of all submitted ratings.')) return;
+        
+        setIsPublishing(true)
+        try {
+            const result = await publishRatings()
+            if (result.error) {
+                toast.error(result.error)
+            } else {
+                toast.success(`Successfully published ratings to ${result.count} players!`)
+            }
+        } catch (err) {
+            toast.error('Failed to publish ratings')
+        } finally {
+            setIsPublishing(false)
+        }
+    }
 
     // Determine if there are unsaved changes
     const hasUnsavedChanges = useMemo(() => {
@@ -158,15 +178,28 @@ export default function RatingsClient({ players, myRatings }: RatingsClientProps
                 <p className="text-sm text-text-muted">
                     {players.length} players to rate
                 </p>
-                <Button
-                    onClick={handleSaveAll}
-                    isLoading={isSavingAll}
-                    disabled={isSavingAll}
-                    variant="primary"
-                    size="md"
-                >
-                    Submit All Ratings
-                </Button>
+                <div className="flex items-center gap-2">
+                    {isAdmin && (
+                        <Button
+                            onClick={handlePublish}
+                            isLoading={isPublishing}
+                            disabled={isSavingAll || isPublishing}
+                            variant="ghost"
+                            size="md"
+                        >
+                            Publish Results
+                        </Button>
+                    )}
+                    <Button
+                        onClick={handleSaveAll}
+                        isLoading={isSavingAll}
+                        disabled={isSavingAll || isPublishing}
+                        variant="primary"
+                        size="md"
+                    >
+                        Submit All Ratings
+                    </Button>
+                </div>
             </div>
 
             <div className="flex flex-col gap-6">

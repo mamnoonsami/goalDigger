@@ -13,6 +13,7 @@ export interface FifaPlayerStats {
     role: string
     player_position: string | null
     avatar_url: string | null
+    peer_rating_score?: number | null
 }
 
 interface FifaPlayerCardProps {
@@ -37,8 +38,8 @@ export function FifaPlayerCard({ player, onClose }: FifaPlayerCardProps) {
             onClick={onClose}
         >
             {/* Card Container - using surface-3 and no outer gold border */}
-            <button
-                type="button"
+            <div
+                role="dialog"
                 className="relative w-full max-w-[320px] aspect-[2/3] bg-surface-3 border border-border rounded-t-[3rem] rounded-b-[2rem] shadow-2xl animate-in zoom-in-95 duration-300 group cursor-default overflow-hidden flex flex-col items-center pt-8 pb-8 px-4 text-text-primary"
                 onClick={(e) => e.stopPropagation()}
             >
@@ -83,22 +84,26 @@ export function FifaPlayerCard({ player, onClose }: FifaPlayerCardProps) {
                 </div>
 
                 {/* Stats Grid - Made Larger */}
-                <div className="w-full grid grid-cols-4 gap-x-2 mt-2 z-10 px-2 text-text-primary pb-2">
+                <div className="w-full grid grid-cols-5 gap-x-1 mt-2 z-10 px-1 text-text-primary pb-2">
                     <div className="flex flex-col items-center">
-                        <span className="text-xs font-bold tracking-wider uppercase mb-1 text-text-muted">BAS</span>
-                        <span className="text-3xl leading-none font-black">{player.base_score}</span>
+                        <span className="text-[10px] font-bold tracking-wider uppercase mb-1 text-text-muted">BAS</span>
+                        <span className="text-2xl leading-none font-black">{player.base_score}</span>
                     </div>
                     <div className="flex flex-col items-center">
-                        <span className="text-xs font-bold tracking-wider uppercase mb-1 text-text-muted">GLS</span>
-                        <span className="text-3xl leading-none font-black">{player.goals}</span>
+                        <span className="text-[10px] font-bold tracking-wider uppercase mb-1 text-text-muted">PER</span>
+                        <span className="text-2xl leading-none font-black text-accent">{player.peer_rating_score ?? '-'}</span>
                     </div>
                     <div className="flex flex-col items-center">
-                        <span className="text-xs font-bold tracking-wider uppercase mb-1 text-text-muted">MAT</span>
-                        <span className="text-3xl leading-none font-black">{player.matches_played}</span>
+                        <span className="text-[10px] font-bold tracking-wider uppercase mb-1 text-text-muted">GLS</span>
+                        <span className="text-2xl leading-none font-black">{player.goals}</span>
                     </div>
                     <div className="flex flex-col items-center">
-                        <span className="text-xs font-bold tracking-wider uppercase mb-1 text-text-muted">RLE</span>
-                        <span className="text-xl leading-none font-black uppercase mt-1">{player.role.substring(0, 3)}</span>
+                        <span className="text-[10px] font-bold tracking-wider uppercase mb-1 text-text-muted">MAT</span>
+                        <span className="text-2xl leading-none font-black">{player.matches_played}</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <span className="text-[10px] font-bold tracking-wider uppercase mb-1 text-text-muted">RLE</span>
+                        <span className="text-lg leading-none font-black uppercase mt-1">{player.role.substring(0, 3)}</span>
                     </div>
                 </div>
 
@@ -111,7 +116,7 @@ export function FifaPlayerCard({ player, onClose }: FifaPlayerCardProps) {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
-            </button>
+            </div>
         </div>
     )
 }

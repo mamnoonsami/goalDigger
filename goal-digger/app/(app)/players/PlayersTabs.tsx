@@ -16,6 +16,7 @@ type Player = {
     base_score: number
     goals: number
     matches_played: number
+    peer_rating_score?: number | null
 }
 
 const POSITIONS = ['striker', 'midfielder', 'defender', 'goalkeeper'] as const
@@ -50,7 +51,7 @@ export function PlayersTabs({ players }: { players: Player[] }) {
             {filteredPlayers.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 min-w-0">
                     {filteredPlayers.map((p, i) => {
-                        const score = p.base_score + p.goals * 2
+                        const score = p.peer_rating_score ?? '-'
                         const rankColor = i < 3 ? 'text-yellow-600' : 'text-text-muted'
                         const borderColor = i < 3 ? 'ring-2 ring-yellow-600' : ''
                         return (

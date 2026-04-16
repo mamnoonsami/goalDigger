@@ -57,7 +57,7 @@ export function TopPlayersList({ players }: TopPlayersListProps) {
                         </div>
                         <Badge variant={p.player_position ? posVariant[p.player_position] ?? 'slate' : 'slate'}>{p.player_position ? posAbbr[p.player_position] || 'PLY' : 'Unknown'}</Badge>
                         <span className="font-mono text-sm font-bold text-accent">
-                            {p.base_score + p.goals * 2}
+                            {p.peer_rating_score ?? '-'}
                         </span>
                     </li>
                 ))}

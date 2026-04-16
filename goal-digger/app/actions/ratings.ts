@@ -193,3 +193,73 @@ export async function getAllRatingsAdmin() {
 
     return { success: true, data: stitchedRatings }
 }
+
+/**
+ * Publish all ratings.
+ * Averages ratings for each player and updates peer_rating_score.
+ */
+export async function publishRatings() {
+    const supabase = await createClient()
+
+    const { data: userData } = await supabase.auth.getUser()
+    const myId = userData?.user?.id
+
+    if (!myId) {
+        return { error: 'Not authenticated.' }
+    }
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', myId)
+        .single()
+        
+    if (!profile?.is_admin) {
+        return { error: 'Unauthorized. Only admins can publish ratings.' }
+    }
+
+    const { data: ratings, error } = await supabase
+        .from('player_ratings')
+        .select('ratee_id, rating')
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    if (!ratings || ratings.length === 0) {
+        return { error: 'No ratings found to publish.' }
+    }
+
+    const sums: Record<string, { sum: number, count: number }> = {}
+    for (const r of ratings) {
+        if (!sums[r.ratee_id]) {
+            sums[r.ratee_id] = { sum: 0, count: 0 }
+        }
+        sums[r.ratee_id].sum += r.rating
+        sums[r.ratee_id].count += 1
+    }
+
+    const updates = []
+    for (const ratee_id in sums) {
+        const avg = sums[ratee_id].sum / sums[ratee_id].count
+        const roundedAvg = Math.round(avg * 100) / 100
+        updates.push({ id: ratee_id, peer_rating_score: roundedAvg })
+    }
+
+    // Update each profile
+    let updatedCount = 0
+    for(const u of updates) {
+        const { error: updateErr } = await supabase
+            .from('profiles')
+            .update({ peer_rating_score: u.peer_rating_score })
+            .eq('id', u.id)
+            
+        if (!updateErr) updatedCount++
+    }
+
+    revalidatePath('/ratings')
+    revalidatePath('/players')
+    revalidatePath('/dashboard')
+    
+    return { success: true, count: updatedCount }
+}

@@ -16,7 +16,7 @@ export default async function DashboardPage() {
     const [{ data: profile }, { data: matches }, { data: players }, { data: auctions }] = await Promise.all([
         supabase
             .from('profiles')
-            .select('first_name, last_name, role, is_admin, is_king, is_manager, is_player, base_score, goals, matches_played, player_position')
+            .select('first_name, last_name, role, is_admin, is_king, is_manager, is_player, base_score, goals, matches_played, player_position, peer_rating_score')
             .eq('id', user!.id)
             .single(),
         supabase
@@ -26,7 +26,7 @@ export default async function DashboardPage() {
             .limit(20),
         supabase
             .from('profiles')
-            .select('id, first_name, last_name, base_score, goals, role, matches_played, player_position, avatar_url')
+            .select('id, first_name, last_name, base_score, goals, role, matches_played, player_position, avatar_url, peer_rating_score')
             .eq('is_player', true)
             .limit(100),
         supabase
@@ -45,13 +45,13 @@ export default async function DashboardPage() {
         if (playersInPos.length === 0) return null
 
         return playersInPos.reduce((prev, current) => {
-            const prevScore = prev.base_score + prev.goals * 2
-            const currentScore = current.base_score + current.goals * 2
+            const prevScore = prev.peer_rating_score ?? 0
+            const currentScore = current.peer_rating_score ?? 0
             return (prevScore > currentScore) ? prev : current
         })
     })
         .filter((p): p is NonNullable<typeof p> => p !== null)
-        .sort((a, b) => (b.base_score + b.goals * 2) - (a.base_score + a.goals * 2))
+        .sort((a, b) => (b.peer_rating_score ?? 0) - (a.peer_rating_score ?? 0))
 
     const sortedMatches = [...(matches ?? [])].sort((a, b) => {
         const priority: Record<string, number> = { open: 1, completed: 3 }
@@ -112,6 +112,15 @@ export default async function DashboardPage() {
                     }
                 />
                 <StatCard
+                    label="Peer Rating"
+                    value={profile?.peer_rating_score ?? '-'}
+                    valueGradient="from-amber-700 to-amber-900 dark:from-amber-500 dark:to-amber-700"
+                    icon={
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="1em" height="1em"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
+                    }
+                />
+
+                {/* <StatCard
                     label="Goals"
                     value={profile?.goals ?? 0}
                     valueGradient="from-amber-700 to-amber-900 dark:from-amber-500 dark:to-amber-700"
@@ -121,10 +130,11 @@ export default async function DashboardPage() {
                             <path d="M12 2v4l3.5 2.5L20 7M12 2l-3.5 6.5L12 12l3.5-3.5M12 12l-3.5-3.5L4 7l4.5 1.5M12 12l-4.5 3L4 17l4.5-2M12 12l4.5 3L20 17l-4.5-2M12 12v5l-3.5 3M12 17l3.5 3" />
                         </svg>
                     }
-                />
+                /> */}
                 <StatCard
                     label="Matches Played"
                     value={profile?.matches_played ?? 0}
+
                     valueGradient="from-emerald-800 to-emerald-950 dark:from-emerald-500 dark:to-emerald-700"
                     icon={
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="1em" height="1em"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
