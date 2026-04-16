@@ -599,42 +599,41 @@ function PlayerRow({ signup, isAdmin, matchId }: { signup: SignupPlayer, isAdmin
     }
 
     return (
-        <li className="flex items-center justify-between gap-1.5 px-1.5 sm:px-5 py-2 sm:py-3">
-            <div className="flex items-center gap-1.5 sm:gap-3 flex-1 min-w-0">
+        <li className="flex items-center justify-between px-5 py-3">
+            <div className="flex items-center gap-3">
                 {p.avatar_url ? (
-                    <img src={p.avatar_url} alt="" className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover flex-shrink-0" />
+                    <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                 ) : (
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-surface-3 flex items-center justify-center text-[10px] sm:text-xs font-bold text-text-muted flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted flex-shrink-0">
                         {p.first_name?.[0]}{p.last_name?.[0]}
                     </div>
                 )}
-                <div className="min-w-0 flex-1">
-                    <p className="text-[11px] sm:text-sm font-medium text-text-primary truncate">
+                <div>
+                    <p className="text-sm font-medium text-text-primary">
                         {p.nickname || `${p.first_name} ${p.last_name}`}
                     </p>
-                    <div className="flex items-center gap-1.5 text-[8px] sm:text-[11px] text-text-muted truncate">
-                        {p.player_position && <span className="font-medium tracking-wide">{abbrevPos(p.player_position)}</span>}
-                        {p.player_position && score !== '-' && <span className="opacity-50">•</span>}
-                        <span className="font-mono text-accent font-medium">{score}</span>
-                    </div>
+                    {p.player_position && (
+                        <p className="text-xs text-text-muted capitalize">{p.player_position}</p>
+                    )}
                 </div>
             </div>
 
-            <div className="flex-shrink-0">
+            <div className="flex items-center gap-3">
+                <span className="font-mono text-sm font-bold text-accent">{score}</span>
                 {isAdmin ? (
                     <button
                         onClick={handleTogglePaid}
                         disabled={isUpdating}
-                        className={`text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded border transition-colors ${optimisticPaid
-                            ? 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20'
-                            : 'bg-surface-3 text-text-muted border-border hover:bg-surface-4'
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors ${optimisticPaid
+                                ? 'bg-green-500/10 text-green-500 border-green-500/30 hover:bg-green-500/20'
+                                : 'bg-surface-3 text-text-muted border-border hover:bg-surface-4'
                             }`}
                         title="Toggle Paid Status"
                     >
                         {optimisticPaid ? 'PAID' : 'UNPAID'}
                     </button>
                 ) : optimisticPaid && (
-                    <span className="text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/30">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/30">
                         PAID
                     </span>
                 )}
