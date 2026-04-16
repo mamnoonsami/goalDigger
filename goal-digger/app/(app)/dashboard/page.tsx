@@ -16,20 +16,19 @@ export default async function DashboardPage() {
     const [{ data: profile }, { data: matches }, { data: players }, { data: auctions }] = await Promise.all([
         supabase
             .from('profiles')
-            .select('first_name, last_name, role, is_admin, is_manager, base_score, goals, matches_played, player_position')
+            .select('first_name, last_name, role, is_admin, is_king, is_manager, is_player, base_score, goals, matches_played, player_position')
             .eq('id', user!.id)
             .single(),
         supabase
             .from('matches')
-            .select('id, title, status, scheduled_at, location, max_players, notes')
-            .order('scheduled_at', { ascending: true })
-            .limit(5),
+            .select('id, title, status, scheduled_at, location, max_players, notes, created_at')
+            .order('created_at', { ascending: false })
+            .limit(20),
         supabase
             .from('profiles')
             .select('id, first_name, last_name, base_score, goals, role, matches_played, player_position, avatar_url')
             .eq('is_player', true)
-            .order('base_score', { ascending: false })
-            .limit(20),
+            .limit(100),
         supabase
             .from('auctions')
             .select('id, title, status, scheduled_at')
@@ -37,22 +36,36 @@ export default async function DashboardPage() {
             .limit(5),
     ])
 
-    // Sort by effective score and take top 5
-    const topPlayers = (players ?? [])
+    // Group players by position and find the best
+    const playersList = players ?? []
+    const positions = ['striker', 'midfielder', 'defender', 'goalkeeper']
+
+    const topPlayers = positions.map(pos => {
+        const playersInPos = playersList.filter(p => p.player_position === pos)
+        if (playersInPos.length === 0) return null
+
+        return playersInPos.reduce((prev, current) => {
+            const prevScore = prev.base_score + prev.goals * 2
+            const currentScore = current.base_score + current.goals * 2
+            return (prevScore > currentScore) ? prev : current
+        })
+    })
+        .filter((p): p is NonNullable<typeof p> => p !== null)
         .sort((a, b) => (b.base_score + b.goals * 2) - (a.base_score + a.goals * 2))
-        .slice(0, 5)
 
     const sortedMatches = [...(matches ?? [])].sort((a, b) => {
         const priority: Record<string, number> = { open: 1, completed: 3 }
         const pA = priority[a.status] || 2
         const pB = priority[b.status] || 2
         if (pA !== pB) return pA - pB
-        return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
-    })
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    }).slice(0, 3)
 
     const effectiveScore = profile
         ? profile.base_score + profile.goals * 2
         : 0
+
+    const canRate = profile?.is_admin || profile?.is_king || profile?.is_player || profile?.is_manager
 
     return (
         <div className="flex flex-col gap-6">
@@ -67,14 +80,14 @@ export default async function DashboardPage() {
             </div>
 
             {/* Ratings Notice */}
-            {profile?.is_admin && (
+            {canRate && (
                 <Link href="/ratings" className="block w-full">
                     <div className="bg-accent/10 hover:bg-accent/20 transition-colors border border-accent/20 rounded-lg p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="flex items-start gap-4">
                             <div>
                                 <h3 className="text-accent font-bold text-lg mb-1">⭐ Ratings going on.</h3>
                                 <p className="text-sm text-accent/90 leading-relaxed font-medium">
-                                    Please rate your teammates to make the game fair for everyone. You will be able to see the rating scores everyone recieved only after you rated everyone and the rating deadline ends.
+                                    Please rate your teammates to make the game fair for everyone. You will be able to see the rating scores once everyone completes rating.
                                 </p>
                             </div>
                         </div>
@@ -132,7 +145,7 @@ export default async function DashboardPage() {
                 {/* Upcoming matches */}
                 <UpcomingMatches
                     matches={sortedMatches}
-                    isAdmin={profile?.is_admin || false}
+                    isAdmin={profile?.is_admin || profile?.is_king || false}
                 />
 
                 {/* Ongoing auctions */}
@@ -143,7 +156,7 @@ export default async function DashboardPage() {
                 {/* Top players */}
                 <Card padding="none">
                     <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                        <h2 className="font-semibold text-text-primary">Top Players</h2>
+                        <h2 className="font-bold text-accent">Top Players</h2>
                         <Link href="/players" className="text-xs text-accent hover:underline">View all →</Link>
                     </div>
                     <TopPlayersList players={topPlayers} />

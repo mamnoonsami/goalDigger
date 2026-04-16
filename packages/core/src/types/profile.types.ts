@@ -1,5 +1,5 @@
 export type UserRole = 'admin' | 'manager' | 'player' | 'viewer'
-export type Position = 'goalkeeper' | 'defender' | 'midfielder' | 'forward'
+export type Position = 'goalkeeper' | 'defender' | 'midfielder' | 'striker'
 
 export interface Profile {
     id: string
@@ -8,10 +8,12 @@ export interface Profile {
     avatar_url: string | null
     role: UserRole
     is_admin: boolean
+    is_king: boolean
     is_manager: boolean
     is_player: boolean
     is_viewer: boolean
     player_position: Position | null
+    nickname?: string | null
     /** Admin-assigned base score (1–100) */
     base_score: number
     /** Career goals — incremented after each match */

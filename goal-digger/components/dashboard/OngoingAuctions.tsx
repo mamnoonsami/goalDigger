@@ -20,7 +20,7 @@ export function OngoingAuctions({ auctions }: OngoingAuctionsProps) {
     return (
         <Card padding="none">
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                <h2 className="font-semibold text-text-primary">Auctions</h2>
+                <h2 className="font-bold text-accent">Auctions</h2>
                 <Link href="/auctions" className="text-xs text-accent hover:underline">
                     View all →
                 </Link>
@@ -28,9 +28,9 @@ export function OngoingAuctions({ auctions }: OngoingAuctionsProps) {
             {auctions && auctions.length > 0 ? (
                 <ul className="divide-y divide-border">
                     {auctions.map((a) => (
-                        <li key={a.id} className="flex items-center justify-between gap-3 px-5 py-3.5 group">
+                        <li key={a.id} className="relative flex items-center justify-between gap-3 px-5 py-3.5 group hover:bg-surface-2 transition-colors cursor-pointer">
                             <div>
-                                <Link href={`/auctions/${a.id}`} className="text-sm font-medium text-text-primary hover:text-accent transition-colors">{a.title}</Link>
+                                <Link href={`/auctions/${a.id}`} className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors before:absolute before:inset-0">{a.title}</Link>
                                 <p className="text-xs text-text-muted">
                                     <LocalTime isoString={a.scheduled_at} format="long" />
                                 </p>

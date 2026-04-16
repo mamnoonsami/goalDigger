@@ -10,12 +10,13 @@ interface EditUserModalProps {
     onClose: () => void
 }
 
-const POSITIONS = ['goalkeeper', 'defender', 'midfielder', 'forward']
+const POSITIONS = ['goalkeeper', 'defender', 'midfielder', 'striker']
 const ROLES = ['admin', 'manager', 'player', 'viewer']
 
 export function EditUserModal({ user, onClose }: EditUserModalProps) {
     const [firstName, setFirstName] = useState(user.first_name)
     const [lastName, setLastName] = useState(user.last_name)
+    const [nickname, setNickname] = useState(user.nickname ?? '')
     const [role, setRole] = useState(user.role)
     const [position, setPosition] = useState(user.player_position ?? '')
     const [baseScore, setBaseScore] = useState(user.base_score)
@@ -34,6 +35,7 @@ export function EditUserModal({ user, onClose }: EditUserModalProps) {
             await updateUser(user.id, {
                 first_name: firstName,
                 last_name: lastName,
+                nickname: nickname || null,
                 role,
                 player_position: position || null,
                 base_score: baseScore,
@@ -92,6 +94,21 @@ export function EditUserModal({ user, onClose }: EditUserModalProps) {
                                     value={lastName}
                                     onChange={e => setLastName(e.target.value)}
                                     className="rounded-lg border border-border bg-surface-1 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
+                                />
+                            </label>
+                        </div>
+
+                        {/* Nickname */}
+                        <div>
+                            <label className="flex flex-col gap-1.5">
+                                <span className="text-xs font-medium text-text-muted">Nickname (max 12 characters)</span>
+                                <input
+                                    type="text"
+                                    value={nickname}
+                                    maxLength={12}
+                                    onChange={e => setNickname(e.target.value)}
+                                    className="rounded-lg border border-border bg-surface-1 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
+                                    placeholder="Leave empty for none"
                                 />
                             </label>
                         </div>

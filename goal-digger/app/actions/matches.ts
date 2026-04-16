@@ -82,6 +82,27 @@ export async function leaveMatch(matchId: string) {
     revalidatePath('/dashboard')
 }
 
+/** Player clicks "Can't Make It" from the UI */
+export async function declineMatch(matchId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { error } = await supabase
+        .from('match_signups')
+        .upsert(
+            { match_id: matchId, player_id: user.id, invitation_accepted: false },
+            { onConflict: 'match_id,player_id' }
+        )
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    revalidatePath(`/matches/${matchId}`)
+    revalidatePath('/dashboard')
+}
+
 /** Admin: batch-save all team assignments (replaces per-move writes) */
 export async function saveTeamAssignments(
     matchId: string,
@@ -159,8 +180,8 @@ export async function updateMatchPlayers(matchId: string, addIds: string[], remo
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
-    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
-    if (!profile?.is_admin) throw new Error('Not authorized')
+    const { data: profile } = await supabase.from('profiles').select('is_admin, is_king').eq('id', user.id).single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
 
     // Remove players
     if (removeIds.length > 0) {
@@ -180,13 +201,70 @@ export async function updateMatchPlayers(matchId: string, addIds: string[], remo
             .from('match_signups')
             .upsert(insertData, { onConflict: 'match_id,player_id' })
 
-        // Ignoring duplicate errors if any
+    // ignoring duplicate errors if any
         if (addError && addError.code !== '23505') throw new Error(addError.message)
     }
 
     revalidatePath(`/matches/${matchId}`)
     revalidatePath('/dashboard')
     revalidatePath('/matches')
+}
+
+/** Admin: Bulk add/remove players to/from declined list */
+export async function updateDeclinedPlayers(matchId: string, addIds: string[], removeIds: string[]) {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase.from('profiles').select('is_admin, is_king').eq('id', user.id).single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
+
+    // Remove players from declined list (back to neutral/uninvited state)
+    if (removeIds.length > 0) {
+        const { error: removeError } = await supabase
+            .from('match_signups')
+            .delete()
+            .eq('match_id', matchId)
+            .in('player_id', removeIds)
+
+        if (removeError) throw new Error(removeError.message)
+    }
+
+    // Add players to declined list (force false)
+    if (addIds.length > 0) {
+        const insertData = addIds.map(id => ({ match_id: matchId, player_id: id, invitation_accepted: false }))
+        const { error: addError } = await supabase
+            .from('match_signups')
+            .upsert(insertData, { onConflict: 'match_id,player_id' })
+
+        if (addError && addError.code !== '23505') throw new Error(addError.message)
+    }
+
+    revalidatePath(`/matches/${matchId}`)
+    revalidatePath('/dashboard')
+    revalidatePath('/matches')
+}
+
+/** Admin/King: Toggle paid status for a single player */
+export async function togglePaidStatus(matchId: string, playerId: string, isPaid: boolean) {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase.from('profiles').select('is_admin, is_king').eq('id', user.id).single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
+
+    const { error } = await supabase
+        .from('match_signups')
+        .update({ paid: isPaid })
+        .eq('match_id', matchId)
+        .eq('player_id', playerId)
+
+    if (error) throw new Error(error.message)
+
+    revalidatePath(`/matches/${matchId}`)
 }
 
 /** Admin: Send an email invitation directly to a player */
@@ -197,8 +275,8 @@ export async function sendMatchInvitation(matchId: string, playerId: string, loc
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
-    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
-    if (!profile?.is_admin) throw new Error('Not authorized')
+    const { data: profile } = await supabase.from('profiles').select('is_admin, is_king').eq('id', user.id).single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
 
     // 2. Fetch match details for the email content
     const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()
@@ -306,8 +384,8 @@ export async function sendMatchCostEmail(matchId: string, playerId: string, loca
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
-    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
-    if (!profile?.is_admin) throw new Error('Not authorized')
+    const { data: profile } = await supabase.from('profiles').select('is_admin, is_king').eq('id', user.id).single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
 
     // 2. Fetch match details
     const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()

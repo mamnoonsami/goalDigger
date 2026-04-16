@@ -62,7 +62,7 @@ BEGIN
 
   UPDATE profiles SET
     role = 'player', is_player = true, is_viewer = false,
-    player_position = 'forward', base_score = 80, goals = 18, matches_played = 22
+    player_position = 'striker', base_score = 80, goals = 18, matches_played = 22
   WHERE id = uid_p1;
 
   UPDATE profiles SET

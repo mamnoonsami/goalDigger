@@ -31,18 +31,17 @@ export default async function MatchDetailPage({ params }: PageProps) {
     if (!match) notFound()
 
     // Fetch profile for admin check
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user!.id)
-        .single()
+    const { data: profile } = user
+        ? await supabase.from('profiles').select('is_admin, is_king').eq('id', user.id).single()
+        : { data: null }
 
     // Fetch signups with player profile data
     const { data: signups } = await supabase
         .from('match_signups')
-        .select('player_id, team, invitation_accepted, profiles(first_name, last_name, base_score, goals, player_position, avatar_url)')
+        .select('player_id, team, invitation_accepted, paid, profiles(first_name, last_name, nickname, base_score, goals, player_position, avatar_url)')
         .eq('match_id', id)
         .order('signed_up_at', { ascending: true })
+        .order('player_id', { ascending: true })
 
     // Fetch all players for admin management
     const { data: allPlayers } = await supabase
@@ -54,7 +53,8 @@ export default async function MatchDetailPage({ params }: PageProps) {
     const notComingSignups = signups?.filter((s: any) => s.invitation_accepted === false) ?? []
 
     const hasJoined = comingSignups.some((s: { player_id: string }) => s.player_id === user!.id)
-    const isAdmin = profile?.is_admin ?? false
+    const hasDeclined = notComingSignups.some((s: { player_id: string }) => s.player_id === user!.id)
+    const isAdmin = profile?.is_admin || profile?.is_king || false
 
     return (
         <div className="flex flex-col gap-6">
@@ -95,6 +95,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                         matchId={id}
                         matchStatus={match.status}
                         hasJoined={hasJoined}
+                        hasDeclined={hasDeclined}
                     />
                 </div>
             </Card>
