@@ -9,6 +9,7 @@ import { MatchActionMenu } from './MatchActionMenu'
 import { SendInvitationsModal } from './SendInvitationsModal'
 import { SendMatchCostModal } from './SendMatchCostModal'
 import { ManageDeclinedPlayersModal } from './ManageDeclinedPlayersModal'
+import { SendRosterModal } from './SendRosterModal'
 import { useToast } from '../providers/ToastProvider'
 
 interface SignupPlayer {
@@ -61,6 +62,7 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
     const [isManageDeclinedOpen, setIsManageDeclinedOpen] = useState(false)
     const [isInvitationsOpen, setIsInvitationsOpen] = useState(false)
     const [isCostsOpen, setIsCostsOpen] = useState(false)
+    const [isSendRosterOpen, setIsSendRosterOpen] = useState(false)
 
     const toast = useToast()
 
@@ -201,43 +203,56 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
     return (
         <div className="flex flex-col gap-4">
             {/* Admin toolbar */}
-            {isAdmin && (
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex flex-wrap items-center gap-3">
-                        {/* Balance button — only when no teams assigned yet */}
-                        {signups.length >= 2 && !hasTeams && (
-                            <Button onClick={handleBalance} variant="secondary" size="sm">
-                                ⚖️ Balance Teams
-                            </Button>
-                        )}
-
-                        {/* Undo — resets DB and goes back to open state */}
-                        {hasTeams && (
-                            <Button onClick={handleUndo} isLoading={resetting} variant="danger" size="sm">
-                                ↩ Undo Balance
-                            </Button>
-                        )}
-
-                        {/* Save — persists to DB */}
+            {isAdmin && hasTeams && (
+                <div className="flex items-center justify-start sm:justify-center gap-3 mb-[-4px]">
+                    <div className="flex items-center gap-3">
+                        <p className="text-sm text-text-muted">
+                            Diff: <span className={`font-bold ${scoreDiff <= 5 ? 'text-success' : scoreDiff <= 15 ? 'text-warning' : 'text-danger'}`}>{scoreDiff}</span>
+                        </p>
                         {isDirty && (
-                            <Button onClick={handleSave} isLoading={saving} size="sm">
-                                💾 Save Teams
-                            </Button>
+                            <span className="text-xs font-medium text-warning bg-warning/10 px-2 py-0.5 rounded-full">
+                                Unsaved
+                            </span>
                         )}
                     </div>
-
-                    {hasTeams && (
-                        <div className="flex items-center gap-3">
-                            <p className="text-sm text-text-muted">
-                                Diff: <span className={`font-bold ${scoreDiff <= 5 ? 'text-success' : scoreDiff <= 15 ? 'text-warning' : 'text-danger'}`}>{scoreDiff}</span>
-                            </p>
-                            {isDirty && (
-                                <span className="text-xs font-medium text-warning bg-warning/10 px-2 py-0.5 rounded-full">
-                                    Unsaved
-                                </span>
+                    
+                    <div className="flex items-center gap-1 border-l border-border pl-3">
+                        <button 
+                            onClick={handleUndo} 
+                            disabled={resetting}
+                            title="Undo Balance"
+                            className="flex items-center justify-center w-8 h-8 rounded-full text-text-muted hover:text-danger hover:bg-danger/10 transition-colors disabled:opacity-50"
+                        >
+                            {resetting ? (
+                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
                             )}
-                        </div>
-                    )}
+                        </button>
+                        
+                        {isDirty && (
+                            <button 
+                                onClick={handleSave} 
+                                disabled={saving}
+                                title="Save Teams"
+                                className="flex items-center justify-center w-8 h-8 rounded-full text-text-muted hover:text-accent hover:bg-accent/10 transition-colors disabled:opacity-50"
+                            >
+                                {saving ? (
+                                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                                )}
+                            </button>
+                        )}
+                        <button
+                            onClick={() => setIsSendRosterOpen(true)}
+                            disabled={isDirty}
+                            title={isDirty ? "Save teams before broadcasting" : "Broadcast Team Roster"}
+                            className="flex items-center justify-center w-8 h-8 rounded-full text-text-muted hover:text-accent hover:bg-accent/10 transition-colors disabled:opacity-50"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -285,6 +300,15 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
                         </h2>
                         {isAdmin && (
                             <div className="flex items-center gap-1">
+                                {signups.length >= 2 && !hasTeams && (
+                                    <button
+                                        onClick={handleBalance}
+                                        title="Balance Teams"
+                                        className="flex items-center justify-center w-8 h-8 rounded-full text-text-muted hover:text-accent hover:bg-surface-3 transition-colors"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+                                    </button>
+                                )}
                                 <button
                                     onClick={handleCopyPlayers}
                                     title="Copy signed up players to clipboard"
@@ -402,6 +426,26 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
                     scheduledAt={scheduledAt}
                     signups={signups}
                     onClose={() => setIsCostsOpen(false)}
+                />
+            )}
+
+            {isSendRosterOpen && (
+                <SendRosterModal
+                    matchId={matchId}
+                    scheduledAt={scheduledAt}
+                    team1Ids={team1.map(s => s.player_id)}
+                    team2Ids={team2.map(s => s.player_id)}
+                    team1List={team1.map(s => ({
+                        id: s.player_id,
+                        name: s.profiles.nickname || `${s.profiles.first_name} ${s.profiles.last_name}`,
+                        pos: s.profiles.player_position || ''
+                    }))}
+                    team2List={team2.map(s => ({
+                        id: s.player_id,
+                        name: s.profiles.nickname || `${s.profiles.first_name} ${s.profiles.last_name}`,
+                        pos: s.profiles.player_position || ''
+                    }))}
+                    onClose={() => setIsSendRosterOpen(false)}
                 />
             )}
         </div>

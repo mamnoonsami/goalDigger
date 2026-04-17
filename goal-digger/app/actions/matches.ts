@@ -323,56 +323,14 @@ export async function sendMatchInvitation(matchId: string, playerId: string, loc
         },
     })
 
-    const matchDate = localizedTime || (match.scheduled_at
-        ? new Date(match.scheduled_at).toLocaleString()
-        : 'TBD')
+    const matchDate = localizedTime || (match.scheduled_at ? new Date(match.scheduled_at).toLocaleString() : 'TBD')
+    const html = generateInvitationEmailHtml(match, matchDate, acceptLink, declineLink)
 
     await transporter.sendMail({
         from: `"Saturday Soccer Match" <${process.env.SMTP_USER}>`,
         to: targetEmail,
         subject: `Invite: ${match.title}! ⚽`,
-        html: `
-            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-                <div style="text-align: center; margin-bottom: 24px;">
-                    <h1 style="color: #166534; margin: 0; font-size: 24px; font-weight: 800;">You're Needed!</h1>
-                    <p style="color: #475569; margin-top: 8px;">An admin has invited you to join a match.</p>
-                </div>
-
-                <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-                    <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Match Details</h2>
-                    
-                    <div style="margin-bottom: 12px;">
-                        <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; letter-spacing: 0.05em;">⚽ Match</span>
-                        <strong style="color: #0f172a; font-size: 16px;">${match.title}</strong>
-                    </div>
-
-                    <div style="margin-bottom: 12px;">
-                        <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; letter-spacing: 0.05em;">📅 Date & Time</span>
-                        <span style="color: #0f172a; font-size: 16px;">${matchDate}</span>
-                    </div>
-
-                    <div style="margin-bottom: 0;">
-                        <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; letter-spacing: 0.05em;">📍 Location</span>
-                        <span style="color: #0f172a; font-size: 16px;">${match.location || 'TBD'}</span>
-                    </div>
-                </div>
-
-                <div style="text-align: center; margin-bottom: 32px;">
-                    <a href="${acceptLink}" style="background-color: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin-right: 8px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.2);">
-                        Accept & Join
-                    </a>
-                    <a href="${declineLink}" style="background-color: #ef4444; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);">
-                        Decline
-                    </a>
-                     <p style="color: #475569; font-size: 14px; margin-bottom: 20px;"><b>Login not required.</b></p>
-                </div>
-
-                <footer style="text-align: center; border-top: 1px solid #e2e8f0; padding-top: 24px;">
-                    <p style="color: #94a3b8; font-size: 12px; margin: 0;">This invitation link expires in 5 days.</p>
-                    <p style="color: #94a3b8; font-size: 12px; margin-top: 4px;">You can also manage your status by logging into your account.</p>
-                </footer>
-            </div>
-        `
+        html
     })
 }
 
@@ -415,53 +373,305 @@ export async function sendMatchCostEmail(matchId: string, playerId: string, loca
     })
 
     const matchDate = localizedTime || (match.scheduled_at ? new Date(match.scheduled_at).toLocaleString() : 'TBD')
+    const html = generateCostEmailHtml(match, matchDate, costPerPerson)
 
     await transporter.sendMail({
         from: `"Goal Digger" <${process.env.SMTP_USER}>`,
         to: targetEmail,
         subject: `Interac e-Transfer Request: ${match.title}`,
-        html: `
-            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-                <div style="text-align: center; margin-bottom: 24px;">
-                    <h1 style="color: #d69302ff; margin: 0; font-size: 24px; font-weight: 800;">Payment Request</h1>
-                    <p style="color: #475569; margin-top: 8px;">Please send your e-Transfer for the soccer match.</p>
-                </div>
-
-                <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.05em;">Amount Due</span>
-                        <div style="font-size: 36px; font-weight: 900; color: #0f172a; margin-top: 4px;">
-                            $${costPerPerson.toFixed(2)}
-                        </div>
-
-                    <div style="text-align: center;">
-                        <p style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Please send an Interac e-Transfer to:</p>
-                        <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; display: inline-block;">
-                            <strong style="color: #0f172a; font-size: 18px; letter-spacing: 0.5px; user-select: all;">mamnoon909@gmail.com</strong>
-                        </div>
-                    </div>
-                    </div>
-
-                    <div style="border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: 16px 0; margin-bottom: 20px;">
-                        <div style="margin-bottom: 12px;">
-                            <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px;">Match</span>
-                            <strong style="color: #0f172a; font-size: 14px;">${match.title}</strong>
-                        </div>
-                        <div style="margin-bottom: 12px;">
-                            <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px;">Date & Time</span>
-                            <span style="color: #0f172a; font-size: 14px;">${matchDate}</span>
-                        </div>
-                        <div style="margin-bottom: 0;">
-                            <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px;">Location</span>
-                            <span style="color: #0f172a; font-size: 14px;">${match.location || 'TBD'}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <footer style="text-align: center; border-top: 1px solid #e2e8f0; padding-top: 24px;">
-                    <p style="color: #94a3b8; font-size: 12px; margin: 0;">Thank you for playing!</p>
-                </footer>
-            </div>
-        `
+        html
     })
+}
+
+/** Admin: Send team roster email to all assigned players */
+export async function sendTeamRosterEmail(
+    matchId: string,
+    playerIds: string[],
+    team1List: { name: string, pos: string }[],
+    team2List: { name: string, pos: string }[],
+    localizedTime?: string
+) {
+    const supabase = await createClient()
+
+    // 1. Verify caller is admin
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase.from('profiles').select('is_admin, is_king').eq('id', user.id).single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
+
+    // 2. Fetch match details
+    const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()
+    if (!match) throw new Error('Match not found')
+
+    const matchDate = localizedTime || (match.scheduled_at ? new Date(match.scheduled_at).toLocaleString() : 'TBD')
+
+    // 3. Fetch recipient emails
+    const { createClient: createPureClient } = await import('@supabase/supabase-js')
+    const adminClient = createPureClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const targetEmails: string[] = []
+
+    for (const playerId of playerIds) {
+        const { data: userData } = await adminClient.auth.admin.getUserById(playerId)
+        const email = userData?.user?.email
+        if (email) {
+            targetEmails.push(email)
+        }
+    }
+
+    if (targetEmails.length === 0) return
+
+    // 4. Send the email using Nodemailer
+    const nodemailer = await import('nodemailer')
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASSWORD,
+        },
+    })
+
+    const html = generateRosterEmailHtml(match, matchDate, team1List, team2List)
+
+    await transporter.sendMail({
+        from: `"Goal Digger" <${process.env.SMTP_USER}>`,
+        bcc: targetEmails,
+        subject: `Team Roster: ${match.title}`,
+        html
+    })
+}
+
+// === HELPER FUNCTIONS & PREVIEWS ===
+
+function generateInvitationEmailHtml(match: { title: string, location?: string | null }, matchDate: string, acceptLink: string, declineLink: string) {
+    return `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <h1 style="color: #166534; margin: 0; font-size: 24px; font-weight: 800;">You're Needed!</h1>
+                <p style="color: #475569; margin-top: 8px;">An admin has invited you to join a match.</p>
+            </div>
+
+            <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Match Details</h2>
+                
+                <div style="margin-bottom: 12px;">
+                    <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; letter-spacing: 0.05em;">⚽ Match</span>
+                    <strong style="color: #0f172a; font-size: 16px;">${match.title}</strong>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; letter-spacing: 0.05em;">📅 Date & Time</span>
+                    <span style="color: #0f172a; font-size: 16px;">${matchDate}</span>
+                </div>
+
+                <div style="margin-bottom: 0;">
+                    <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; letter-spacing: 0.05em;">📍 Location</span>
+                    <span style="color: #0f172a; font-size: 16px;">${match.location || 'TBD'}</span>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 32px;">
+                <a href="${acceptLink}" style="background-color: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin-right: 8px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.2);">
+                    Accept & Join
+                </a>
+                <a href="${declineLink}" style="background-color: #ef4444; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);">
+                    Decline
+                </a>
+                    <p style="color: #475569; font-size: 14px; margin-bottom: 20px;"><b>Login not required.</b></p>
+            </div>
+
+            <footer style="text-align: center; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+                <p style="color: #94a3b8; font-size: 12px; margin: 0;">This invitation link expires in 5 days.</p>
+                <p style="color: #94a3b8; font-size: 12px; margin-top: 4px;">You can also manage your status by logging into your account.</p>
+            </footer>
+        </div>
+    `
+}
+
+function generateCostEmailHtml(match: { title: string, location?: string | null }, matchDate: string, costPerPerson: number) {
+    return `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <h1 style="color: #d69302ff; margin: 0; font-size: 24px; font-weight: 800;">Payment Request</h1>
+                <p style="color: #475569; margin-top: 8px;">Please send your e-Transfer for the soccer match.</p>
+            </div>
+
+            <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.05em;">Amount Due</span>
+                    <div style="font-size: 36px; font-weight: 900; color: #0f172a; margin-top: 4px;">
+                        $${costPerPerson.toFixed(2)}
+                    </div>
+
+                <div style="text-align: center;">
+                    <p style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Please send an Interac e-Transfer to:</p>
+                    <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; display: inline-block;">
+                        <strong style="color: #0f172a; font-size: 18px; letter-spacing: 0.5px; user-select: all;">mamnoon909@gmail.com</strong>
+                    </div>
+                </div>
+                </div>
+
+                <div style="border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: 16px 0; margin-bottom: 20px;">
+                    <div style="margin-bottom: 12px;">
+                        <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px;">Match</span>
+                        <strong style="color: #0f172a; font-size: 14px;">${match.title}</strong>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px;">Date & Time</span>
+                        <span style="color: #0f172a; font-size: 14px;">${matchDate}</span>
+                    </div>
+                    <div style="margin-bottom: 0;">
+                        <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px;">Location</span>
+                        <span style="color: #0f172a; font-size: 14px;">${match.location || 'TBD'}</span>
+                    </div>
+                </div>
+            </div>
+
+            <footer style="text-align: center; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+                <p style="color: #94a3b8; font-size: 12px; margin: 0;">Thank you for playing!</p>
+            </footer>
+        </div>
+    `
+}
+
+function generateRosterEmailHtml(match: { title: string, location?: string | null }, matchDate: string, team1: { name: string, pos: string }[], team2: { name: string, pos: string }[]) {
+    const abbrevPos = (pos: string) => {
+        if (!pos) return ''
+        switch (pos.toLowerCase()) {
+            case 'striker': return 'STK'
+            case 'midfielder': return 'MID'
+            case 'defender': return 'DEF'
+            case 'goalkeeper': return 'GK'
+            default: return pos.substring(0, 3).toUpperCase()
+        }
+    }
+
+    const renderTeam = (team: { name: string, pos: string }[], color: string) => {
+        return team.map(p => `
+            <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 500; color: #334155; text-align: left; vertical-align: middle; line-height: 1.2;">
+                    ${p.name}
+                </td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 10px; font-weight: bold; color: ${color}; text-align: right; vertical-align: middle; line-height: 1.2;">
+                    ${abbrevPos(p.pos)}
+                </td>
+            </tr>
+        `).join('')
+    }
+
+    return `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <h1 style="color: #0f172a; margin: 0; font-size: 24px; font-weight: 800;">Match Roster</h1>
+                <p style="color: #475569; margin-top: 8px;">The teams have been finalized for the upcoming match.</p>
+            </div>
+
+            <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                <div style="margin-bottom: 12px;">
+                    <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px;">Match</span>
+                    <strong style="color: #0f172a; font-size: 16px;">${match.title}</strong>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px;">Date & Time</span>
+                    <span style="color: #0f172a; font-size: 16px;">${matchDate}</span>
+                </div>
+                <div style="margin-bottom: 0;">
+                    <span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px;">Location</span>
+                    <span style="color: #0f172a; font-size: 16px;">${match.location || 'TBD'}</span>
+                </div>
+            </div>
+
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+                <tr>
+                    <td width="48%" style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; vertical-align: top;">
+                        <h3 style="margin: 0 0 12px 0; color: #166534; font-size: 14px; font-weight: bold; border-bottom: 2px solid #bbf7d0; padding-bottom: 8px;">Team 1</h3>
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            ${renderTeam(team1, '#166534')}
+                        </table>
+                    </td>
+                    <td width="4%" style="font-size: 1px; line-height: 1px;">&nbsp;</td>
+                    <td width="48%" style="background-color: #fefce8; border: 1px solid #fef08a; border-radius: 8px; padding: 12px; vertical-align: top;">
+                        <h3 style="margin: 0 0 12px 0; color: #ca8a04; font-size: 14px; font-weight: bold; border-bottom: 2px solid #fef08a; padding-bottom: 8px;">Team 2</h3>
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            ${renderTeam(team2, '#ca8a04')}
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <footer style="text-align: center; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+                <p style="color: #94a3b8; font-size: 12px; margin: 0;">See you on the pitch! ⚽</p>
+            </footer>
+        </div>
+    `
+}
+
+export async function getEmailPreview(
+    type: 'invitation' | 'cost' | 'roster',
+    matchId: string,
+    playerIds: string[],
+    localizedTime?: string,
+    costPerPerson?: number,
+    team1List?: { name: string, pos: string }[],
+    team2List?: { name: string, pos: string }[]
+) {
+    const supabase = await createClient()
+
+    // 1. Verify caller is admin
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase.from('profiles').select('is_admin, is_king').eq('id', user.id).single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
+
+    // 2. Fetch match details
+    const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()
+    if (!match) throw new Error('Match not found')
+    
+    const matchDate = localizedTime || (match.scheduled_at ? new Date(match.scheduled_at).toLocaleString() : 'TBD')
+
+    // 3. Fetch recipient emails
+    const { createClient: createPureClient } = await import('@supabase/supabase-js')
+    const adminClient = createPureClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const recipients: { id: string, name: string, email: string }[] = []
+    
+    // We can fetch profiles to get names
+    const { data: profiles } = await supabase.from('profiles').select('id, first_name, last_name, nickname').in('id', playerIds)
+    const profileMap = new Map((profiles || []).map(p => [p.id, p]))
+
+    for (const playerId of playerIds) {
+        const { data: userData } = await adminClient.auth.admin.getUserById(playerId)
+        const email = userData?.user?.email
+        if (email) {
+            const p = profileMap.get(playerId)
+            const name = p ? (p.nickname || `${p.first_name} ${p.last_name}`) : 'Unknown Player'
+            recipients.push({ id: playerId, name, email })
+        }
+    }
+
+    // 4. Generate preview HTML
+    let html = ''
+    let subject = ''
+    if (type === 'invitation') {
+        subject = `Invite: ${match.title}! ⚽`
+        const acceptLink = '#'
+        const declineLink = '#'
+        html = generateInvitationEmailHtml(match, matchDate, acceptLink, declineLink)
+    } else if (type === 'cost') {
+        subject = `Interac e-Transfer Request: ${match.title}`
+        html = generateCostEmailHtml(match, matchDate, costPerPerson || 0)
+    } else if (type === 'roster') {
+        subject = `Team Roster: ${match.title}`
+        html = generateRosterEmailHtml(match, matchDate, team1List || [], team2List || [])
+    }
+
+    return { subject, html, recipients }
 }
