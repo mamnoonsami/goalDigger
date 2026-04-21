@@ -348,3 +348,46 @@ export async function deleteTeamFromTournament(tournamentId: string, teamId: str
 
     revalidatePath(`/tournaments/${tournamentId}`)
 }
+
+/* ── Assign Players to Team (Admin) ── */
+export async function assignPlayersToTeam(
+    tournamentId: string,
+    teamId: string,
+    playerIds: string[]
+) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin, is_king')
+        .eq('id', user.id)
+        .single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can assign players to teams')
+
+    // First, unassign all players currently on this team
+    const { error: unassignError } = await supabase
+        .from('tournament_players')
+        .update({ team_id: null })
+        .eq('tournament_id', tournamentId)
+        .eq('team_id', teamId)
+
+    if (unassignError) throw new Error(`Failed to unassign players: ${unassignError.message}`)
+
+    // Then assign the selected players to this team
+    if (playerIds.length > 0) {
+        for (const pid of playerIds) {
+            const { error } = await supabase
+                .from('tournament_players')
+                .update({ team_id: teamId })
+                .eq('tournament_id', tournamentId)
+                .eq('player_id', pid)
+
+            if (error) throw new Error(`Failed to assign player: ${error.message}`)
+        }
+    }
+
+    revalidatePath(`/tournaments/${tournamentId}`)
+}
+

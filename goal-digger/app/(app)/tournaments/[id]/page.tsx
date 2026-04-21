@@ -65,11 +65,11 @@ export default async function TournamentDetailPage({ params }: PageProps) {
 
     // Fetch all auctions for the edit dropdown + all players for add-player modal
     let allAuctions: { id: string; title: string; status: string }[] = []
-    let allDbPlayers: { id: string; first_name: string; last_name: string; player_position: string | null; base_score: number }[] = []
+    let allDbPlayers: { id: string; first_name: string; last_name: string; player_position: string | null; base_score: number; is_guest?: boolean }[] = []
     if (isAdmin) {
         const [auctionsRes, playersRes] = await Promise.all([
             supabase.from('auctions').select('id, title, status').order('created_at', { ascending: false }),
-            supabase.from('profiles').select('id, first_name, last_name, player_position, base_score').eq('is_player', true).order('first_name', { ascending: true }),
+            supabase.from('profiles').select('id, first_name, last_name, player_position, base_score, is_guest').eq('is_player', true).order('first_name', { ascending: true }),
         ])
         allAuctions = auctionsRes.data ?? []
         allDbPlayers = playersRes.data ?? []

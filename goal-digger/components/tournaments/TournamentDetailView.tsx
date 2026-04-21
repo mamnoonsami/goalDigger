@@ -13,6 +13,7 @@ import { AddPlayersModal } from './AddPlayersModal'
 import { CreateTeamModal } from './CreateTeamModal'
 import { ManageTeamsModal } from './ManageTeamsModal'
 import { EditTeamModal } from './EditTeamModal'
+import { AssignPlayersToTeamModal } from './AssignPlayersToTeamModal'
 
 interface Auction {
     id: string
@@ -56,7 +57,7 @@ interface Props {
     players: TournamentPlayer[]
     linkedAuction: { id: string; title: string; status: string } | null
     allAuctions: Auction[]
-    allDbPlayers?: { id: string; first_name: string; last_name: string; player_position: string | null; base_score: number }[]
+    allDbPlayers?: { id: string; first_name: string; last_name: string; player_position: string | null; base_score: number; is_guest?: boolean }[]
     isAdmin: boolean
     isPlayer?: boolean
     isManager?: boolean
@@ -74,7 +75,18 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
     const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false)
     const [isManageTeamsOpen, setIsManageTeamsOpen] = useState(false)
     const [editingTeamId, setEditingTeamId] = useState<string | null>(null)
+    const [assigningTeamId, setAssigningTeamId] = useState<string | null>(null)
+    const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set())
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+    function toggleTeamPlayers(teamId: string) {
+        setExpandedTeams(prev => {
+            const next = new Set(prev)
+            if (next.has(teamId)) next.delete(teamId)
+            else next.add(teamId)
+            return next
+        })
+    }
 
     return (
         <div className="flex flex-col gap-6 overflow-hidden">
@@ -292,15 +304,32 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                                         </div>
                                     )}
                                     {teamPlayers.length > 0 && (
-                                        <div className="flex flex-wrap gap-1">
-                                            {teamPlayers.map(tp => {
-                                                const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
-                                                return (
-                                                    <span key={tp.id} className="text-xs bg-surface-3 rounded-full px-2 py-0.5 text-text-muted">
-                                                        {p?.first_name} {p?.last_name}
-                                                    </span>
-                                                )
-                                            })}
+                                        <div className="mt-2">
+                                            <button 
+                                                onClick={() => toggleTeamPlayers(team.id)}
+                                                className="text-xs text-accent hover:text-accent-hover transition-colors font-medium mb-2"
+                                            >
+                                                {expandedTeams.has(team.id) ? 'Hide Players' : 'View Players'}
+                                            </button>
+                                            {expandedTeams.has(team.id) && (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {teamPlayers.map(tp => {
+                                                        const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
+                                                        return (
+                                                            <span key={tp.id} className="text-xs bg-surface-3 rounded-full px-2 py-0.5 text-text-muted">
+                                                                {p?.first_name} {p?.last_name}
+                                                            </span>
+                                                        )
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    {(isAdmin || (isManager && team.manager_id === currentUserId)) && (
+                                        <div className="mt-3 pt-3 border-t border-border flex justify-end">
+                                            <Button variant="secondary" size="sm" onClick={() => setAssigningTeamId(team.id)} className="text-xs py-1 h-auto">
+                                                Assign Players
+                                            </Button>
                                         </div>
                                     )}
                                 </Card>
@@ -441,6 +470,20 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                             number_of_players: team.number_of_players,
                         }}
                         onClose={() => setEditingTeamId(null)}
+                    />
+                )
+            })()}
+
+            {assigningTeamId && (() => {
+                const team = teams.find(t => t.id === assigningTeamId)
+                if (!team) return null
+                return (
+                    <AssignPlayersToTeamModal
+                        tournamentId={tournament.id}
+                        teamId={team.id}
+                        teamName={team.team_name}
+                        allTournamentPlayers={players}
+                        onClose={() => setAssigningTeamId(null)}
                     />
                 )
             })()}
