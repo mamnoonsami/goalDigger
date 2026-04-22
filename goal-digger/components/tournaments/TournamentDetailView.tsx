@@ -14,6 +14,8 @@ import { CreateTeamModal } from './CreateTeamModal'
 import { ManageTeamsModal } from './ManageTeamsModal'
 import { EditTeamModal } from './EditTeamModal'
 import { AssignPlayersToTeamModal } from './AssignPlayersToTeamModal'
+import { CreateTournamentMatchModal } from './CreateTournamentMatchModal'
+import { RecordMatchScoreModal } from './RecordMatchScoreModal'
 
 interface Auction {
     id: string
@@ -55,6 +57,8 @@ interface Props {
     tournament: Tournament
     teams: Team[]
     players: TournamentPlayer[]
+    matches?: any[]
+    matchStats?: any[]
     linkedAuction: { id: string; title: string; status: string } | null
     allAuctions: Auction[]
     allDbPlayers?: { id: string; first_name: string; last_name: string; player_position: string | null; base_score: number; is_guest?: boolean }[]
@@ -65,7 +69,7 @@ interface Props {
     currentUserId?: string | null
 }
 
-export function TournamentDetailView({ tournament, teams, players, linkedAuction, allAuctions, allDbPlayers = [], isAdmin, isPlayer = false, isManager = false, hasJoined = false, currentUserId = null }: Props) {
+export function TournamentDetailView({ tournament, teams, players, matches = [], matchStats = [], linkedAuction, allAuctions, allDbPlayers = [], isAdmin, isPlayer = false, isManager = false, hasJoined = false, currentUserId = null }: Props) {
     const router = useRouter()
     const toast = useToast()
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -78,6 +82,38 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
     const [assigningTeamId, setAssigningTeamId] = useState<string | null>(null)
     const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set())
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [leaderboardTab, setLeaderboardTab] = useState<'players' | 'teams' | 'matches'>('teams')
+    const [isCreateMatchOpen, setIsCreateMatchOpen] = useState(false)
+    const [recordScoreMatchId, setRecordScoreMatchId] = useState<string | null>(null)
+
+    // Compute stats
+    const completedMatches = matches.filter(m => m.status === 'completed')
+
+    const teamStats = teams.map(team => {
+        const teamMatches = completedMatches.filter(m => m.team_1_id === team.id || m.team_2_id === team.id)
+        let won = 0, drawn = 0, lost = 0, gf = 0, ga = 0
+        teamMatches.forEach(m => {
+            const isTeam1 = m.team_1_id === team.id
+            const myScore = isTeam1 ? m.team_1_score : m.team_2_score
+            const theirScore = isTeam1 ? m.team_2_score : m.team_1_score
+            gf += myScore
+            ga += theirScore
+            if (myScore > theirScore) won++
+            else if (myScore === theirScore) drawn++
+            else lost++
+        })
+        const gd = gf - ga
+        const points = won * 3 + drawn * 1
+        return { ...team, played: teamMatches.length, won, drawn, lost, gf, ga, gd, points }
+    }).sort((a, b) => b.points - a.points || b.gd - a.gd)
+
+    const playerStats = players.map(player => {
+        const pStats = matchStats.filter(ms => ms.player_id === player.player_id)
+        const goals = pStats.reduce((acc, curr) => acc + curr.goals, 0)
+        const team = teams.find(t => t.id === player.team_id)
+        const matchesPlayed = team ? completedMatches.filter(m => m.team_1_id === team.id || m.team_2_id === team.id).length : 0
+        return { ...player, goals, matchesPlayed }
+    }).sort((a, b) => b.goals - a.goals)
 
     function toggleTeamPlayers(teamId: string) {
         setExpandedTeams(prev => {
@@ -343,11 +379,11 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                 )}
             </div>
 
-            {/* Players Section */}
+            {/* Leaderboard Section */}
             <div>
                 <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-text-primary">⚽ Players ({players.length})</h3>
-                    {isAdmin && (
+                    <h3 className="text-lg font-semibold text-text-primary">🏆 Leaderboard</h3>
+                    {isAdmin && leaderboardTab === 'players' && (
                         <Button
                             size="sm"
                             onClick={() => setIsAddPlayersOpen(true)}
@@ -357,8 +393,90 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                         </Button>
                     )}
                 </div>
-                {players.length > 0 ? (
-                    <Card className="overflow-x-auto p-0">
+
+                <div className="flex items-center gap-4 border-b border-border mb-4">
+                    <button
+                        onClick={() => setLeaderboardTab('teams')}
+                        className={`pb-2 text-sm font-medium transition-colors relative ${leaderboardTab === 'teams' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                    >
+                        Teams ({teams.length})
+                        {leaderboardTab === 'teams' && (
+                            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setLeaderboardTab('players')}
+                        className={`pb-2 text-sm font-medium transition-colors relative ${leaderboardTab === 'players' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                    >
+                        Players ({players.length})
+                        {leaderboardTab === 'players' && (
+                            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setLeaderboardTab('matches')}
+                        className={`pb-2 text-sm font-medium transition-colors relative ${leaderboardTab === 'matches' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                    >
+                        Matches ({matches.length})
+                        {leaderboardTab === 'matches' && (
+                            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full" />
+                        )}
+                    </button>
+                </div>
+
+                {leaderboardTab === 'matches' ? (
+                    <div className="flex flex-col gap-4">
+                        {isAdmin && (
+                            <div className="flex justify-end">
+                                <Button size="sm" onClick={() => setIsCreateMatchOpen(true)}>+ Schedule Match</Button>
+                            </div>
+                        )}
+                        {matches.length > 0 ? (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                {matches.map(m => {
+                                    const t1 = teams.find(t => t.id === m.team_1_id)
+                                    const t2 = teams.find(t => t.id === m.team_2_id)
+                                    return (
+                                        <Card key={m.id} className="flex flex-col">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="text-xs text-text-muted">
+                                                    {new Date(m.match_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${m.status === 'completed' ? 'bg-surface-3 text-text-muted' : 'bg-accent/10 text-accent'}`}>
+                                                    {m.status}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between flex-1 mb-4">
+                                                <div className="flex flex-col items-center flex-1 text-center">
+                                                    <span className="font-semibold text-text-primary">{t1?.team_name || 'Unknown'}</span>
+                                                    {m.status === 'completed' && <span className="text-2xl font-bold mt-1 text-text-primary">{m.team_1_score}</span>}
+                                                </div>
+                                                <div className="px-4 text-xs font-medium text-text-muted">VS</div>
+                                                <div className="flex flex-col items-center flex-1 text-center">
+                                                    <span className="font-semibold text-text-primary">{t2?.team_name || 'Unknown'}</span>
+                                                    {m.status === 'completed' && <span className="text-2xl font-bold mt-1 text-text-primary">{m.team_2_score}</span>}
+                                                </div>
+                                            </div>
+                                            {isAdmin && (
+                                                <div className="mt-auto pt-3 border-t border-border flex justify-end">
+                                                    <Button variant="secondary" size="sm" className="text-xs h-auto py-1.5" onClick={() => setRecordScoreMatchId(m.id)}>
+                                                        {m.status === 'completed' ? 'Edit Score' : 'Record Score'}
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </Card>
+                                    )
+                                })}
+                            </div>
+                        ) : (
+                            <Card>
+                                <p className="py-6 text-center text-sm text-text-muted">No matches scheduled yet.</p>
+                            </Card>
+                        )}
+                    </div>
+                ) : leaderboardTab === 'players' ? (
+                    players.length > 0 ? (
+                        <Card className="overflow-x-auto p-0">
                         <table className="w-full text-left text-sm whitespace-nowrap">
                             <thead>
                                 <tr className="border-b border-border bg-surface-2/50 text-xs text-text-muted">
@@ -370,23 +488,29 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {players.map(tp => {
+                                {playerStats.map(tp => {
                                     const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
                                     const team = Array.isArray(tp.tournament_teams) ? tp.tournament_teams[0] : tp.tournament_teams
                                     return (
                                         <tr key={tp.id} className="hover:bg-surface-2/30 transition-colors">
                                             <td className="py-3 px-4 sticky left-0 bg-surface-2 z-10">
                                                 <div className="flex items-center gap-3">
+                                                    {/* Avatar: hidden on mobile */}
                                                     {p?.avatar_url ? (
                                                         // eslint-disable-next-line @next/next/no-img-element
-                                                        <img src={p.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover bg-surface-3 flex-shrink-0" />
+                                                        <img src={p.avatar_url} alt="" className="hidden sm:block h-8 w-8 rounded-full object-cover bg-surface-3 flex-shrink-0" />
                                                     ) : (
-                                                        <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent flex-shrink-0">
+                                                        <div className="hidden sm:flex h-8 w-8 rounded-full bg-accent/20 items-center justify-center text-xs font-bold text-accent flex-shrink-0">
                                                             {p?.first_name?.[0]}{p?.last_name?.[0]}
                                                         </div>
                                                     )}
-                                                    <span className="font-medium text-text-primary">
+                                                    {/* Full name on desktop */}
+                                                    <span className="hidden sm:inline font-medium text-text-primary">
                                                         {p?.first_name} {p?.last_name}
+                                                    </span>
+                                                    {/* Abbreviated name on mobile */}
+                                                    <span className="sm:hidden font-medium text-text-primary">
+                                                        {p?.first_name?.split(' ')[0]} {p?.last_name?.trim().charAt(0)}.
                                                     </span>
                                                 </div>
                                             </td>
@@ -399,8 +523,8 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                                                     <span className="text-xs text-text-muted italic">-</span>
                                                 )}
                                             </td>
-                                            <td className="py-3 px-4 text-center text-text-muted">0</td>
-                                            <td className="py-3 px-4 text-center text-text-muted">0</td>
+                                            <td className="py-3 px-4 text-center font-bold text-text-primary">{tp.goals}</td>
+                                            <td className="py-3 px-4 text-center text-text-muted">{tp.matchesPlayed}</td>
                                             <td className="py-3 px-4">
                                                 {p?.player_position ? (
                                                     <span className="text-xs text-text-muted capitalize">{p.player_position}</span>
@@ -418,6 +542,48 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                     <Card>
                         <p className="py-6 text-center text-sm text-text-muted">No players assigned yet.</p>
                     </Card>
+                )
+                ) : (
+                    teams.length > 0 ? (
+                        <Card className="overflow-x-auto p-0">
+                            <table className="w-full text-left text-sm whitespace-nowrap">
+                                <thead>
+                                    <tr className="border-b border-border bg-surface-2/50 text-xs text-text-muted">
+                                        <th className="py-3 px-4 font-medium text-center w-12">Rank</th>
+                                        <th className="py-3 px-4 font-medium sticky left-0 bg-surface-2 z-10">Team Name</th>
+                                        <th className="py-3 px-4 font-medium text-center">Played</th>
+                                        <th className="py-3 px-4 font-medium text-center">W</th>
+                                        <th className="py-3 px-4 font-medium text-center">D</th>
+                                        <th className="py-3 px-4 font-medium text-center">L</th>
+                                        <th className="py-3 px-4 font-medium text-center">GD</th>
+                                        <th className="py-3 px-4 font-medium text-center text-accent">Pts</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                    {teamStats.map((team, idx) => (
+                                        <tr key={team.id} className="hover:bg-surface-2/30 transition-colors">
+                                            <td className="py-3 px-4 text-center font-semibold text-text-muted">{idx + 1}</td>
+                                            <td className="py-3 px-4 sticky left-0 bg-surface-2 z-10">
+                                                <div className="font-medium text-text-primary">
+                                                    {team.team_name}
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-4 text-center text-text-muted">{team.played}</td>
+                                            <td className="py-3 px-4 text-center text-emerald-400">{team.won}</td>
+                                            <td className="py-3 px-4 text-center text-yellow-400">{team.drawn}</td>
+                                            <td className="py-3 px-4 text-center text-red-400">{team.lost}</td>
+                                            <td className="py-3 px-4 text-center text-text-muted">{team.gd > 0 ? `+${team.gd}` : team.gd}</td>
+                                            <td className="py-3 px-4 text-center font-bold text-accent">{team.points}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </Card>
+                    ) : (
+                        <Card>
+                            <p className="py-6 text-center text-sm text-text-muted">No teams added yet.</p>
+                        </Card>
+                    )
                 )}
             </div>
 
@@ -484,6 +650,50 @@ export function TournamentDetailView({ tournament, teams, players, linkedAuction
                         teamName={team.team_name}
                         allTournamentPlayers={players}
                         onClose={() => setAssigningTeamId(null)}
+                    />
+                )
+            })()}
+
+            {isCreateMatchOpen && (
+                <CreateTournamentMatchModal
+                    tournamentId={tournament.id}
+                    teams={teams}
+                    onClose={() => setIsCreateMatchOpen(false)}
+                />
+            )}
+
+            {recordScoreMatchId && (() => {
+                const match = matches.find(m => m.id === recordScoreMatchId)
+                if (!match) return null
+                const t1 = teams.find(t => t.id === match.team_1_id)
+                const t2 = teams.find(t => t.id === match.team_2_id)
+                if (!t1 || !t2) return null
+
+                const mapPlayer = (p: TournamentPlayer) => {
+                    const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles
+                    return {
+                        player_id: p.player_id,
+                        team_id: p.team_id,
+                        first_name: profile?.first_name || '',
+                        last_name: profile?.last_name || '',
+                        avatar_url: profile?.avatar_url || null
+                    }
+                }
+
+                const t1Players = players.filter(p => p.team_id === t1.id).map(mapPlayer)
+                const t2Players = players.filter(p => p.team_id === t2.id).map(mapPlayer)
+                const currentMatchStats = matchStats.filter(ms => ms.tournament_match_id === match.id)
+
+                return (
+                    <RecordMatchScoreModal
+                        tournamentId={tournament.id}
+                        match={match}
+                        team1={t1}
+                        team2={t2}
+                        team1Players={t1Players}
+                        team2Players={t2Players}
+                        initialStats={currentMatchStats}
+                        onClose={() => setRecordScoreMatchId(null)}
                     />
                 )
             })()}

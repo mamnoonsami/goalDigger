@@ -391,3 +391,99 @@ export async function assignPlayersToTeam(
     revalidatePath(`/tournaments/${tournamentId}`)
 }
 
+/* ── Create Tournament Match (Admin) ── */
+export async function createTournamentMatch(data: {
+    tournament_id: string
+    team_1_id: string
+    team_2_id: string
+    match_date: string
+}) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin, is_king')
+        .eq('id', user.id)
+        .single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can create tournament matches')
+
+    if (data.team_1_id === data.team_2_id) {
+        throw new Error('A team cannot play against itself')
+    }
+
+    const { error } = await supabase
+        .from('tournament_matches')
+        .insert({
+            tournament_id: data.tournament_id,
+            team_1_id: data.team_1_id,
+            team_2_id: data.team_2_id,
+            match_date: data.match_date,
+            status: 'scheduled'
+        })
+
+    if (error) throw new Error(`Failed to create match: ${error.message}`)
+
+    revalidatePath(`/tournaments/${data.tournament_id}`)
+}
+
+/* ── Record Tournament Match Score (Admin) ── */
+export async function recordTournamentMatchScore(
+    matchId: string,
+    tournamentId: string,
+    data: {
+        team_1_score: number
+        team_2_score: number
+        player_goals: { player_id: string, team_id: string, goals: number }[]
+        mark_completed?: boolean
+    }
+) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin, is_king')
+        .eq('id', user.id)
+        .single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can record match scores')
+
+    // 1. Update the match score and status
+    const { error: matchError } = await supabase
+        .from('tournament_matches')
+        .update({
+            team_1_score: data.team_1_score,
+            team_2_score: data.team_2_score,
+            ...(data.mark_completed ? { status: 'completed' } : {}),
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', matchId)
+
+    if (matchError) throw new Error(`Failed to update match score: ${matchError.message}`)
+
+    // 2. Clear existing stats for this match (if updating)
+    await supabase
+        .from('tournament_match_stats')
+        .delete()
+        .eq('tournament_match_id', matchId)
+
+    // 3. Insert new stats
+    const statsToInsert = data.player_goals.filter(p => p.goals > 0).map(p => ({
+        tournament_match_id: matchId,
+        player_id: p.player_id,
+        team_id: p.team_id,
+        goals: p.goals
+    }))
+
+    if (statsToInsert.length > 0) {
+        const { error: statsError } = await supabase
+            .from('tournament_match_stats')
+            .insert(statsToInsert)
+
+        if (statsError) throw new Error(`Failed to record player stats: ${statsError.message}`)
+    }
+
+    revalidatePath(`/tournaments/${tournamentId}`)
+}

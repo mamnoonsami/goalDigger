@@ -1,7 +1,7 @@
-import { createClient } from '../../../../lib/supabase/server'
+import { createClient } from '../../../lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { TournamentDetailView } from '../../../../components/tournaments/TournamentDetailView'
+import { TournamentDetailView } from '../../../components/tournaments/TournamentDetailView'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +18,7 @@ export default async function TournamentDetailPage({ params }: PageProps) {
         { data: tournament },
         { data: teams },
         { data: players },
+        { data: matches },
     ] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from('tournaments').select('*').eq('id', id).single(),
@@ -28,16 +29,27 @@ export default async function TournamentDetailPage({ params }: PageProps) {
         supabase.from('tournament_players')
             .select('id, player_id, team_id, profiles!player_id(first_name, last_name, player_position, avatar_url), tournament_teams!team_id(team_name)')
             .eq('tournament_id', id),
+        supabase.from('tournament_matches')
+            .select('*')
+            .eq('tournament_id', id)
+            .order('match_date', { ascending: false }),
     ])
 
     if (!tournament) notFound()
 
+    const matchIds = (matches ?? []).map(m => m.id)
+    let matchStats: any[] = []
+    if (matchIds.length > 0) {
+        const { data } = await supabase.from('tournament_match_stats').select('*').in('tournament_match_id', matchIds)
+        matchStats = data ?? []
+    }
+
     // Get user roles
     const { data: profile } = user
-        ? await supabase.from('profiles').select('is_admin, is_player, is_manager').eq('id', user.id).single()
+        ? await supabase.from('profiles').select('is_admin, is_king, is_player, is_manager').eq('id', user.id).single()
         : { data: null }
 
-    const isAdmin = profile?.is_admin ?? false
+    const isAdmin = (profile?.is_admin || profile?.is_king) ?? false
     const isPlayer = profile?.is_player ?? false
     const isManager = profile?.is_manager ?? false
 
@@ -88,6 +100,8 @@ export default async function TournamentDetailPage({ params }: PageProps) {
                 tournament={tournament}
                 teams={teams ?? []}
                 players={players ?? []}
+                matches={matches ?? []}
+                matchStats={matchStats}
                 linkedAuction={linkedAuction}
                 allAuctions={allAuctions}
                 allDbPlayers={allDbPlayers}
