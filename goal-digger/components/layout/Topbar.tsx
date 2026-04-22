@@ -90,6 +90,13 @@ export function Topbar({ profile, onMenuClick, isSidebarMinimized = false }: Top
 
                 <ThemeToggle />
 
+                {!profile && (
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <Link href="/login" className="text-sm font-medium text-text-primary hover:text-accent transition-colors">Sign in</Link>
+                        <Link href="/signup" className="hidden sm:inline-flex rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-hover transition-colors">Sign up</Link>
+                    </div>
+                )}
+
                 {profile && (
                     <div className="relative hidden md:block" ref={menuRef}>
                         <button

@@ -1,6 +1,6 @@
-import { createClient } from '../../../lib/supabase/server'
-import { Card } from '../../../components/ui/Card'
-import { TournamentStatusBadge } from '../../../components/tournaments/TournamentStatusBadge'
+import { createClient } from '../../lib/supabase/server'
+import { Card } from '../../components/ui/Card'
+import { TournamentStatusBadge } from '../../components/tournaments/TournamentStatusBadge'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -10,14 +10,15 @@ export default async function TournamentsPage() {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Check if admin
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user!.id)
-        .single()
-
-    const isAdmin = profile?.is_admin ?? false
+    let isAdmin = false
+    if (user) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', user.id)
+            .single()
+        isAdmin = profile?.is_admin ?? false
+    }
 
     // Fetch all tournaments
     const { data: tournaments } = await supabase

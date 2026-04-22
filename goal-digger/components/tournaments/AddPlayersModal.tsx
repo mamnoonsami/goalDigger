@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '../ui/Button'
 import { addPlayersToTournament, removePlayerFromTournament } from '../../app/actions/tournaments'
+import { createGuestProfile } from '../../app/actions/guests'
 import { useToast } from '../providers/ToastProvider'
 
 interface Player {
@@ -23,12 +24,29 @@ interface ManagePlayersModalProps {
     onClose: () => void
 }
 
+const POSITIONS = [
+    { value: '', label: 'No position' },
+    { value: 'goalkeeper', label: 'Goalkeeper' },
+    { value: 'defender', label: 'Defender' },
+    { value: 'midfielder', label: 'Midfielder' },
+    { value: 'striker', label: 'Striker' },
+    { value: 'forward', label: 'Forward' },
+]
+
 export function AddPlayersModal({ tournamentId, allPlayers, existingPlayerIds, auctionId = null, existingBasePrices = {}, onClose }: ManagePlayersModalProps) {
     const router = useRouter()
     const toast = useToast()
+    const [localPlayers, setLocalPlayers] = useState<Player[]>(allPlayers)
     const [selected, setSelected] = useState<Set<string>>(new Set(existingPlayerIds))
     const [searchQuery, setSearchQuery] = useState('')
     const [saving, setSaving] = useState(false)
+
+    // Guest creation state
+    const [showGuestForm, setShowGuestForm] = useState(false)
+    const [guestFirstName, setGuestFirstName] = useState('')
+    const [guestLastName, setGuestLastName] = useState('')
+    const [guestPosition, setGuestPosition] = useState('')
+    const [creatingGuest, setCreatingGuest] = useState(false)
 
     // Base price per player — initialized from existing auction_players or default 20
     const [basePrices, setBasePrices] = useState<Record<string, number>>(() => {
@@ -39,7 +57,7 @@ export function AddPlayersModal({ tournamentId, allPlayers, existingPlayerIds, a
         return initial
     })
 
-    const filtered = allPlayers.filter(p => {
+    const filtered = localPlayers.filter(p => {
         const name = `${p.first_name} ${p.last_name}`.toLowerCase()
         return name.includes(searchQuery.toLowerCase())
     })
@@ -71,6 +89,39 @@ export function AddPlayersModal({ tournamentId, allPlayers, existingPlayerIds, a
 
     function updateBasePrice(playerId: string, price: number) {
         setBasePrices(prev => ({ ...prev, [playerId]: price }))
+    }
+
+    async function handleCreateGuest() {
+        if (!guestFirstName.trim() || !guestLastName.trim()) {
+            toast.error('First and last name are required')
+            return
+        }
+
+        setCreatingGuest(true)
+        try {
+            const newGuest = await createGuestProfile({
+                first_name: guestFirstName.trim(),
+                last_name: guestLastName.trim(),
+                player_position: guestPosition || null,
+            })
+
+            // Add the new guest to local players list and auto-select them
+            setLocalPlayers(prev => [...prev, newGuest])
+            setSelected(prev => new Set(prev).add(newGuest.id))
+            setBasePrices(prev => ({ ...prev, [newGuest.id]: 20 }))
+
+            // Reset form
+            setGuestFirstName('')
+            setGuestLastName('')
+            setGuestPosition('')
+            setShowGuestForm(false)
+
+            toast.success(`Guest player "${newGuest.first_name} ${newGuest.last_name}" created!`)
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : 'Failed to create guest player')
+        } finally {
+            setCreatingGuest(false)
+        }
     }
 
     async function handleSave() {
@@ -144,14 +195,92 @@ export function AddPlayersModal({ tournamentId, allPlayers, existingPlayerIds, a
                 </div>
 
                 <div className="p-4 flex flex-col gap-3 overflow-hidden">
-                    {/* Search */}
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Search players..."
-                        className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/40"
-                    />
+                    {/* Search + Add Guest Button */}
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="Search players..."
+                            className="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowGuestForm(!showGuestForm)}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-200 whitespace-nowrap ${
+                                showGuestForm
+                                    ? 'border-accent bg-accent/10 text-accent'
+                                    : 'border-border bg-surface-2 text-text-muted hover:text-accent hover:border-accent/40'
+                            }`}
+                            title="Add Guest Player"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <line x1="19" y1="8" x2="19" y2="14" />
+                                <line x1="22" y1="11" x2="16" y2="11" />
+                            </svg>
+                            Guest
+                        </button>
+                    </div>
+
+                    {/* Inline Guest Creation Form */}
+                    {showGuestForm && (
+                        <div className="rounded-lg border border-accent/30 bg-accent/5 p-3 flex flex-col gap-2.5 animate-in">
+                            <div className="flex items-center gap-2 mb-0.5">
+                                <div className="h-5 w-5 rounded-full bg-amber-500/20 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                        <circle cx="9" cy="7" r="4" />
+                                        <line x1="19" y1="8" x2="19" y2="14" />
+                                        <line x1="22" y1="11" x2="16" y2="11" />
+                                    </svg>
+                                </div>
+                                <span className="text-xs font-semibold text-text-primary">New Guest Player</span>
+                                <span className="text-[10px] text-amber-400 bg-amber-500/10 rounded-full px-2 py-0.5">No account needed</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <input
+                                    type="text"
+                                    value={guestFirstName}
+                                    onChange={e => setGuestFirstName(e.target.value)}
+                                    placeholder="First name"
+                                    className="rounded-md border border-border bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                                    disabled={creatingGuest}
+                                />
+                                <input
+                                    type="text"
+                                    value={guestLastName}
+                                    onChange={e => setGuestLastName(e.target.value)}
+                                    placeholder="Last name"
+                                    className="rounded-md border border-border bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/40"
+                                    disabled={creatingGuest}
+                                />
+                            </div>
+                            <div className="flex gap-2 items-center">
+                                <select
+                                    value={guestPosition}
+                                    onChange={e => setGuestPosition(e.target.value)}
+                                    className="flex-1 rounded-md border border-border bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/40"
+                                    disabled={creatingGuest}
+                                >
+                                    {POSITIONS.map(pos => (
+                                        <option key={pos.value} value={pos.value}>{pos.label}</option>
+                                    ))}
+                                </select>
+                                <Button
+                                    size="sm"
+                                    onClick={handleCreateGuest}
+                                    disabled={creatingGuest || !guestFirstName.trim() || !guestLastName.trim()}
+                                    isLoading={creatingGuest}
+                                    className="text-xs h-[34px] px-4"
+                                >
+                                    {creatingGuest ? 'Creating...' : 'Create'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="flex items-center justify-between">
                         <span className="text-xs text-text-muted">
                             {selected.size} selected
@@ -176,6 +305,8 @@ export function AddPlayersModal({ tournamentId, allPlayers, existingPlayerIds, a
                             filtered.map(player => {
                                 const isSelected = selected.has(player.id)
                                 const wasExisting = existingPlayerIds.includes(player.id)
+                                // Check if this player is a locally-created guest (not in original allPlayers)
+                                const isNewGuest = !allPlayers.some(p => p.id === player.id)
                                 // Show visual indicator for changes
                                 let indicator = ''
                                 if (isSelected && !wasExisting) indicator = 'border-l-2 border-l-emerald-400'
@@ -198,6 +329,11 @@ export function AddPlayersModal({ tournamentId, allPlayers, existingPlayerIds, a
                                             <span className="text-sm font-medium text-text-primary">
                                                 {player.first_name} {player.last_name}
                                             </span>
+                                            {isNewGuest && (
+                                                <span className="ml-1.5 text-[10px] text-amber-400 bg-amber-500/10 rounded-full px-1.5 py-0.5 font-medium">
+                                                    Guest
+                                                </span>
+                                            )}
                                             <span className="ml-2 text-xs text-text-muted capitalize">
                                                 {player.player_position ?? 'N/A'} · Score: {player.base_score}
                                             </span>

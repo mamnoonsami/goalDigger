@@ -1,6 +1,6 @@
-import { createClient } from '../../../../lib/supabase/server'
+import { createClient } from '../../../lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { CreateTournamentForm } from '../../../../components/tournaments/CreateTournamentForm'
+import { CreateTournamentForm } from '../../../components/tournaments/CreateTournamentForm'
 
 export const dynamic = 'force-dynamic'
 
