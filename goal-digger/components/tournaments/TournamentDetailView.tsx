@@ -7,7 +7,7 @@ import { TournamentStatusBadge } from './TournamentStatusBadge'
 import { TournamentDetailActions } from './TournamentDetailActions'
 import { EditTournamentModal } from './EditTournamentModal'
 import { Button } from '../ui/Button'
-import { joinTournament, leaveTournament } from '../../app/actions/tournaments'
+import { deleteAllTournamentMatches, deleteTournamentMatch, joinTournament, leaveTournament } from '../../app/actions/tournaments'
 import { useToast } from '../providers/ToastProvider'
 import { AddPlayersModal } from './AddPlayersModal'
 import { CreateTeamModal } from './CreateTeamModal'
@@ -54,12 +54,31 @@ interface Tournament {
     updated_at: string
 }
 
+interface TournamentMatch {
+    id: string
+    tournament_id: string
+    team_1_id: string
+    team_2_id: string
+    team_1_score: number | string | null
+    team_2_score: number | string | null
+    match_date: string
+    status: string
+}
+
+interface TournamentMatchStat {
+    tournament_match_id: string
+    player_id: string
+    team_id: string
+    goals: number
+    assists?: number | null
+}
+
 interface Props {
     tournament: Tournament
     teams: Team[]
     players: TournamentPlayer[]
-    matches?: any[]
-    matchStats?: any[]
+    matches?: TournamentMatch[]
+    matchStats?: TournamentMatchStat[]
     linkedAuction: { id: string; title: string; status: string } | null
     allAuctions: Auction[]
     allDbPlayers?: { id: string; first_name: string; last_name: string; player_position: string | null; base_score: number; is_guest?: boolean }[]
@@ -68,6 +87,13 @@ interface Props {
     isManager?: boolean
     hasJoined?: boolean
     currentUserId?: string | null
+}
+
+function matchScoreOrZero(score: unknown) {
+    if (score === null || score === undefined || score === '') return 0
+
+    const numericScore = Number(score)
+    return Number.isFinite(numericScore) ? numericScore : 0
 }
 
 export function TournamentDetailView({ tournament, teams, players, matches = [], matchStats = [], linkedAuction, allAuctions, allDbPlayers = [], isAdmin, isPlayer = false, isManager = false, hasJoined = false, currentUserId = null }: Props) {
@@ -86,9 +112,18 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
     const [leaderboardTab, setLeaderboardTab] = useState<'players' | 'teams' | 'matches'>('teams')
     const [isCreateMatchOpen, setIsCreateMatchOpen] = useState(false)
     const [recordScoreMatchId, setRecordScoreMatchId] = useState<string | null>(null)
+    const [deleteMatchId, setDeleteMatchId] = useState<string | null>(null)
+    const [showDeleteAllMatchesConfirm, setShowDeleteAllMatchesConfirm] = useState(false)
+    const [isDeletingMatch, setIsDeletingMatch] = useState(false)
 
     // Compute stats
     const completedMatches = matches.filter(m => m.status === 'completed')
+    const displayMatches = [...matches].sort((a, b) => {
+        if (a.status === 'completed' && b.status !== 'completed') return 1
+        if (a.status !== 'completed' && b.status === 'completed') return -1
+
+        return new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
+    })
 
     const teamStats = teams.map(team => {
         const teamMatches = completedMatches.filter(m => m.team_1_id === team.id || m.team_2_id === team.id)
@@ -116,6 +151,36 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
         const matchesPlayed = team ? completedMatches.filter(m => m.team_1_id === team.id || m.team_2_id === team.id).length : 0
         return { ...player, goals, assists, matchesPlayed }
     }).sort((a, b) => b.goals - a.goals)
+
+    async function handleDeleteMatch() {
+        if (!deleteMatchId) return
+
+        setIsDeletingMatch(true)
+        try {
+            await deleteTournamentMatch(tournament.id, deleteMatchId)
+            toast.success('Match deleted')
+            setDeleteMatchId(null)
+            router.refresh()
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to delete match')
+        } finally {
+            setIsDeletingMatch(false)
+        }
+    }
+
+    async function handleDeleteAllMatches() {
+        setIsDeletingMatch(true)
+        try {
+            await deleteAllTournamentMatches(tournament.id)
+            toast.success('All matches deleted')
+            setShowDeleteAllMatchesConfirm(false)
+            router.refresh()
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to delete matches')
+        } finally {
+            setIsDeletingMatch(false)
+        }
+    }
 
     
 
@@ -407,13 +472,22 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                 {leaderboardTab === 'matches' ? (
                     <div className="flex flex-col gap-4">
                         {isAdmin && (
-                            <div className="flex justify-end">
+                            <div className="flex justify-end gap-2">
+                                {matches.length > 0 && (
+                                    <Button
+                                        variant="danger"
+                                        size="sm"
+                                        onClick={() => setShowDeleteAllMatchesConfirm(true)}
+                                    >
+                                        Delete All
+                                    </Button>
+                                )}
                                 <Button size="sm" onClick={() => setIsCreateMatchOpen(true)}>+ Schedule Match</Button>
                             </div>
                         )}
                         {matches.length > 0 ? (
                             <div className="grid gap-3 sm:grid-cols-2">
-                                {matches.map(m => {
+                                {displayMatches.map(m => {
                                     const t1 = teams.find(t => t.id === m.team_1_id)
                                     const t2 = teams.find(t => t.id === m.team_2_id)
                                     return (
@@ -440,6 +514,8 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                         const pProfile = Array.isArray(p?.profiles) ? p?.profiles[0] : p?.profiles
                                                         return `${pProfile?.first_name || 'Unknown'}${ms.goals > 1 ? `(${ms.goals})` : ''}`
                                                     }).join(', ')
+                                                    const team1Score = matchScoreOrZero(m.team_1_score)
+                                                    const team2Score = matchScoreOrZero(m.team_2_score)
 
                                                     return (
                                                         <div className="flex flex-col w-full">
@@ -458,15 +534,11 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
 
                                                                 {/* Score */}
                                                                 <div className="flex items-center gap-3">
-                                                                    {m.status === 'completed' ? (
-                                                                        <div className="flex items-center gap-3 text-2xl font-bold text-text-primary">
-                                                                            <span>{m.team_1_score}</span>
-                                                                            <span className="text-text-muted font-normal text-xl">-</span>
-                                                                            <span>{m.team_2_score}</span>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest bg-surface-3 px-2 py-1 rounded-md">VS</span>
-                                                                    )}
+                                                                    <div className="flex items-center gap-3 text-2xl font-bold text-text-primary">
+                                                                        <span>{team1Score}</span>
+                                                                        <span className="text-text-muted font-normal text-xl">-</span>
+                                                                        <span>{team2Score}</span>
+                                                                    </div>
                                                                 </div>
 
                                                                 {/* Team 2 */}
@@ -499,7 +571,15 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                 })()}
                                             </div>
                                             {isAdmin && (
-                                                <div className="mt-auto pt-3 border-t border-border flex justify-end">
+                                                <div className="mt-auto pt-3 border-t border-border flex justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-xs h-auto py-1.5 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                                                        onClick={() => setDeleteMatchId(m.id)}
+                                                    >
+                                                        Delete
+                                                    </Button>
                                                     <Button variant="secondary" size="sm" className="text-xs h-auto py-1.5" onClick={() => setRecordScoreMatchId(m.id)}>
                                                         {m.status === 'completed' ? 'Edit Score' : 'Record Score'}
                                                     </Button>
@@ -522,7 +602,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                             <thead>
                                 <tr className="border-b border-border bg-surface-2/50 text-xs text-text-muted">
                                     <th className="py-3 px-4 font-medium sticky left-0 bg-surface-2 z-10">Player Name</th>
-                                    <th className="py-3 px-4 font-medium">Team Name</th>
+                                    <th className="py-3 px-4 font-medium text-center">Team</th>
                                     <th className="py-3 px-4 font-medium text-center">Goals</th>
                                     <th className="py-3 px-4 font-medium text-center">Assists</th>
                                     <th className="py-3 px-4 font-medium text-center">Matches</th>
@@ -532,7 +612,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                             <tbody className="divide-y divide-border">
                                 {playerStats.map(tp => {
                                     const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
-                                    const team = Array.isArray(tp.tournament_teams) ? tp.tournament_teams[0] : tp.tournament_teams
+                                    const team = teams.find(t => t.id === tp.team_id)
                                     return (
                                         <tr key={tp.id} className="hover:bg-surface-2/30 transition-colors">
                                             <td className="py-3 px-4 sticky left-0 bg-surface-2 z-10">
@@ -558,11 +638,28 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                             </td>
                                             <td className="py-3 px-4">
                                                 {team ? (
-                                                    <span className="text-xs bg-accent/10 text-accent rounded-full px-2.5 py-1">
-                                                        {team.team_name}
-                                                    </span>
+                                                    <div className="flex justify-center">
+                                                        {team.logo_url ? (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img
+                                                                src={team.logo_url}
+                                                                alt={team.team_name}
+                                                                title={team.team_name}
+                                                                className="h-8 w-8 rounded-lg object-cover border border-border bg-surface-3"
+                                                            />
+                                                        ) : (
+                                                            <span
+                                                                title={team.team_name}
+                                                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface-3 text-[10px] font-bold text-text-muted"
+                                                            >
+                                                                {team.team_name.substring(0, 2).toUpperCase()}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 ) : (
-                                                    <span className="text-xs text-text-muted italic">-</span>
+                                                    <div className="flex justify-center">
+                                                        <span className="text-xs text-text-muted italic">-</span>
+                                                    </div>
                                                 )}
                                             </td>
                                             <td className="py-3 px-4 text-center font-bold text-text-primary">{tp.goals}</td>
@@ -677,6 +774,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                             team_name: team.team_name,
                             team_slogan: team.team_slogan ?? '',
                             number_of_players: team.number_of_players,
+                            logo_url: team.logo_url ?? null,
                         }}
                         onClose={() => setEditingTeamId(null)}
                     />
@@ -784,6 +882,46 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                     />
                 )
             })()}
+
+            {deleteMatchId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/50" onClick={() => !isDeletingMatch && setDeleteMatchId(null)} />
+                    <div className="relative z-10 w-full max-w-sm rounded-xl border border-border bg-surface-2 p-6 shadow-2xl">
+                        <h3 className="text-lg font-semibold text-text-primary">Delete Match</h3>
+                        <p className="mt-2 text-sm text-text-muted">
+                            Are you sure you want to delete this tournament match? This action cannot be undone.
+                        </p>
+                        <div className="mt-5 flex items-center justify-end gap-3">
+                            <Button variant="ghost" size="sm" onClick={() => setDeleteMatchId(null)} disabled={isDeletingMatch}>
+                                Cancel
+                            </Button>
+                            <Button variant="danger" size="sm" onClick={handleDeleteMatch} disabled={isDeletingMatch}>
+                                {isDeletingMatch ? 'Deleting...' : 'Delete'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showDeleteAllMatchesConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/50" onClick={() => !isDeletingMatch && setShowDeleteAllMatchesConfirm(false)} />
+                    <div className="relative z-10 w-full max-w-sm rounded-xl border border-border bg-surface-2 p-6 shadow-2xl">
+                        <h3 className="text-lg font-semibold text-text-primary">Delete All Matches</h3>
+                        <p className="mt-2 text-sm text-text-muted">
+                            Are you sure you want to delete all matches for this tournament? Recorded scores and player match stats will also be removed.
+                        </p>
+                        <div className="mt-5 flex items-center justify-end gap-3">
+                            <Button variant="ghost" size="sm" onClick={() => setShowDeleteAllMatchesConfirm(false)} disabled={isDeletingMatch}>
+                                Cancel
+                            </Button>
+                            <Button variant="danger" size="sm" onClick={handleDeleteAllMatches} disabled={isDeletingMatch}>
+                                {isDeletingMatch ? 'Deleting...' : 'Delete All'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

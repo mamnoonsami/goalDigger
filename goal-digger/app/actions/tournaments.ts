@@ -422,6 +422,87 @@ export async function createTournamentMatch(data: {
     revalidatePath(`/tournaments/${data.tournament_id}`)
 }
 
+/* ── Delete Tournament Match (Admin) ── */
+export async function deleteTournamentMatch(tournamentId: string, matchId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin, is_king')
+        .eq('id', user.id)
+        .single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can delete tournament matches')
+
+    const { data: match, error: matchLookupError } = await supabase
+        .from('tournament_matches')
+        .select('id')
+        .eq('id', matchId)
+        .eq('tournament_id', tournamentId)
+        .single()
+
+    if (matchLookupError || !match) throw new Error('Match not found for this tournament')
+
+    const { error: statsError } = await supabase
+        .from('tournament_match_stats')
+        .delete()
+        .eq('tournament_match_id', matchId)
+
+    if (statsError) throw new Error(`Failed to delete match stats: ${statsError.message}`)
+
+    const { error } = await supabase
+        .from('tournament_matches')
+        .delete()
+        .eq('id', matchId)
+        .eq('tournament_id', tournamentId)
+
+    if (error) throw new Error(`Failed to delete match: ${error.message}`)
+
+    revalidatePath(`/tournaments/${tournamentId}`)
+}
+
+/* ── Delete All Tournament Matches (Admin) ── */
+export async function deleteAllTournamentMatches(tournamentId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin, is_king')
+        .eq('id', user.id)
+        .single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can delete tournament matches')
+
+    const { data: existingMatches, error: fetchError } = await supabase
+        .from('tournament_matches')
+        .select('id')
+        .eq('tournament_id', tournamentId)
+
+    if (fetchError) throw new Error(`Failed to load tournament matches: ${fetchError.message}`)
+
+    const matchIds = existingMatches?.map(match => match.id) ?? []
+
+    if (matchIds.length > 0) {
+        const { error: statsError } = await supabase
+            .from('tournament_match_stats')
+            .delete()
+            .in('tournament_match_id', matchIds)
+
+        if (statsError) throw new Error(`Failed to delete match stats: ${statsError.message}`)
+    }
+
+    const { error } = await supabase
+        .from('tournament_matches')
+        .delete()
+        .eq('tournament_id', tournamentId)
+
+    if (error) throw new Error(`Failed to delete tournament matches: ${error.message}`)
+
+    revalidatePath(`/tournaments/${tournamentId}`)
+}
+
 /* ── Record Tournament Match Score (Admin) ── */
 export async function recordTournamentMatchScore(
     matchId: string,
@@ -482,5 +563,3 @@ export async function recordTournamentMatchScore(
 
     revalidatePath(`/tournaments/${tournamentId}`)
 }
-
-

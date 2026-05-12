@@ -26,7 +26,7 @@ export function EditTeamModal({ teamId, tournamentId, initialData, onClose }: Ed
 
     const [teamName, setTeamName] = useState(initialData.team_name)
     const [teamSlogan, setTeamSlogan] = useState(initialData.team_slogan)
-    const [logoUrl, setLogoUrl] = useState(initialData.logo_url || "")
+    const logoUrl = initialData.logo_url || ""
     const [logoFile, setLogoFile] = useState<File | null>(null)
     const [numberOfPlayers, setNumberOfPlayers] = useState(initialData.number_of_players)
     const [saving, setSaving] = useState(false)
@@ -41,14 +41,17 @@ export function EditTeamModal({ teamId, tournamentId, initialData, onClose }: Ed
             let finalLogoUrl = logoUrl;
             if (logoFile) {
                 let fileToUpload = logoFile;
-                // Do not compress if size is <= 1MB
-                if (logoFile.size > 1024 * 1024) {
+                if (logoFile.size > 300 * 1024) {
                     const options = {
-                        maxSizeMB: 1,
+                        maxSizeMB: 0.29,
                         maxWidthOrHeight: 400,
                         useWebWorker: true,
                     }
                     fileToUpload = await imageCompression(logoFile, options)
+                }
+
+                if (fileToUpload.size > 300 * 1024) {
+                    throw new Error('Team logo must be 300 KB or smaller. Please choose a smaller image.')
                 }
                 
                 const supabase = createClient()
@@ -71,12 +74,22 @@ export function EditTeamModal({ teamId, tournamentId, initialData, onClose }: Ed
                 finalLogoUrl = `${publicUrl}?t=${new Date().getTime()}`
             }
             
-            await updateTeamForTournament(teamId, tournamentId, {
+            const updateData: {
+                team_name: string
+                team_slogan: string
+                number_of_players: number
+                logo_url?: string | null
+            } = {
                 team_name: teamName.trim(),
                 team_slogan: teamSlogan.trim(),
                 number_of_players: numberOfPlayers,
-                logo_url: finalLogoUrl || null
-            })
+            }
+
+            if (logoFile) {
+                updateData.logo_url = finalLogoUrl || null
+            }
+
+            await updateTeamForTournament(teamId, tournamentId, updateData)
             toast.success('Team updated!')
             router.refresh()
             onClose()

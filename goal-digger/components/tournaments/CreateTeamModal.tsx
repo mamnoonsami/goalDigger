@@ -19,7 +19,7 @@ export function CreateTeamModal({ tournamentId, onClose }: CreateTeamModalProps)
 
     const [teamName, setTeamName] = useState('')
     const [teamSlogan, setTeamSlogan] = useState('')
-    const [logoUrl, setLogoUrl] = useState('')
+    const logoUrl = ''
     const [logoFile, setLogoFile] = useState<File | null>(null)
     const [numberOfPlayers, setNumberOfPlayers] = useState(5)
     const [saving, setSaving] = useState(false)
@@ -34,14 +34,17 @@ export function CreateTeamModal({ tournamentId, onClose }: CreateTeamModalProps)
             let finalLogoUrl = logoUrl;
             if (logoFile) {
                 let fileToUpload = logoFile;
-                // Do not compress if size is <= 1MB
-                if (logoFile.size > 1024 * 1024) {
+                if (logoFile.size > 300 * 1024) {
                     const options = {
-                        maxSizeMB: 1,
+                        maxSizeMB: 0.29,
                         maxWidthOrHeight: 400,
                         useWebWorker: true,
                     }
                     fileToUpload = await imageCompression(logoFile, options)
+                }
+
+                if (fileToUpload.size > 300 * 1024) {
+                    throw new Error('Team logo must be 300 KB or smaller. Please choose a smaller image.')
                 }
                 
                 const supabase = createClient()
