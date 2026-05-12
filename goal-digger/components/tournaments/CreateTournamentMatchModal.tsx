@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { useToast } from '../providers/ToastProvider'
@@ -24,6 +24,17 @@ export function CreateTournamentMatchModal({ tournamentId, teams, onClose }: Pro
     const [team2Id, setTeam2Id] = useState('')
     const [matchDate, setMatchDate] = useState('')
     const [matchTime, setMatchTime] = useState('')
+
+    const dateRef = useRef<HTMLInputElement>(null)
+    const timeRef = useRef<HTMLInputElement>(null)
+
+    function openPicker(ref: React.RefObject<HTMLInputElement | null>) {
+        try {
+            ref.current?.showPicker()
+        } catch {
+            ref.current?.focus()
+        }
+    }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
@@ -53,6 +64,8 @@ export function CreateTournamentMatchModal({ tournamentId, teams, onClose }: Pro
         }
     }
 
+    const fieldClass = "w-full bg-surface-3 border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent cursor-pointer"
+
     return (
         <Modal title="Schedule Match" onClose={onClose}>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -61,7 +74,7 @@ export function CreateTournamentMatchModal({ tournamentId, teams, onClose }: Pro
                     <select
                         value={team1Id}
                         onChange={e => setTeam1Id(e.target.value)}
-                        className="w-full bg-surface-3 border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent"
+                        className={fieldClass}
                         required
                     >
                         <option value="">Select Team</option>
@@ -78,7 +91,7 @@ export function CreateTournamentMatchModal({ tournamentId, teams, onClose }: Pro
                     <select
                         value={team2Id}
                         onChange={e => setTeam2Id(e.target.value)}
-                        className="w-full bg-surface-3 border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent"
+                        className={fieldClass}
                         required
                     >
                         <option value="">Select Team</option>
@@ -89,22 +102,34 @@ export function CreateTournamentMatchModal({ tournamentId, teams, onClose }: Pro
                 </div>
 
                 <div className="flex flex-col gap-1.5 mt-2">
-                    <label className="text-sm font-medium text-text-primary">Date & Time</label>
+                    <label className="text-sm font-medium text-text-primary">Date &amp; Time</label>
                     <div className="flex gap-2">
-                        <input
-                            type="date"
-                            value={matchDate}
-                            onChange={e => setMatchDate(e.target.value)}
-                            className="flex-1 bg-surface-3 border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent [color-scheme:dark]"
-                            required
-                        />
-                        <input
-                            type="time"
-                            value={matchTime}
-                            onChange={e => setMatchTime(e.target.value)}
-                            className="w-32 bg-surface-3 border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent [color-scheme:dark]"
-                            required
-                        />
+                        {/* Date picker — clicking anywhere on the field opens the calendar */}
+                        <div className="flex-1 relative">
+                            <input
+                                ref={dateRef}
+                                type="date"
+                                value={matchDate}
+                                onChange={e => setMatchDate(e.target.value)}
+                                className={`${fieldClass} w-full`}
+                                style={{ colorScheme: 'auto' }}
+                                required
+                                onClick={() => openPicker(dateRef)}
+                            />
+                        </div>
+                        {/* Time picker — clicking anywhere on the field opens the clock */}
+                        <div className="w-32 relative">
+                            <input
+                                ref={timeRef}
+                                type="time"
+                                value={matchTime}
+                                onChange={e => setMatchTime(e.target.value)}
+                                className={`${fieldClass} w-full`}
+                                style={{ colorScheme: 'auto' }}
+                                required
+                                onClick={() => openPicker(timeRef)}
+                            />
+                        </div>
                     </div>
                 </div>
 

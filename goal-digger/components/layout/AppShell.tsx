@@ -27,15 +27,17 @@ export function AppShell({ children, profile, isAdmin = false, isPlayer = false,
             <SessionTimeoutProvider>
                 <ChatProvider initialUnreadCount={initialUnreadCount} />
                 <div className="flex min-h-screen bg-surface-1">
-                    <Sidebar
-                        open={sidebarOpen}
-                        onClose={() => setSidebarOpen(false)}
-                        isMinimized={isSidebarMinimized}
-                        onToggleMinimize={() => setIsSidebarMinimized(!isSidebarMinimized)}
-                        isAdmin={isAdmin}
-                        isPlayer={isPlayer}
-                        isManager={isManager}
-                    />
+                    {profile && (
+                        <Sidebar
+                            open={sidebarOpen}
+                            onClose={() => setSidebarOpen(false)}
+                            isMinimized={isSidebarMinimized}
+                            onToggleMinimize={() => setIsSidebarMinimized(!isSidebarMinimized)}
+                            isAdmin={isAdmin}
+                            isPlayer={isPlayer}
+                            isManager={isManager}
+                        />
+                    )}
 
                     {/* Main content area */}
                     <div className="flex flex-1 flex-col min-w-0">

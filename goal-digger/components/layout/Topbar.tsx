@@ -45,17 +45,19 @@ export function Topbar({ profile, onMenuClick, isSidebarMinimized = false }: Top
     return (
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-border bg-surface-2/80 px-4 backdrop-blur-sm md:px-6">
             {/* Hamburger — mobile only */}
-            <button
-                onClick={onMenuClick}
-                aria-label="Open menu"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface-3 text-text-muted hover:text-text-primary transition-colors md:hidden"
-            >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <line x1="3" y1="12" x2="21" y2="12" />
-                    <line x1="3" y1="18" x2="21" y2="18" />
-                </svg>
-            </button>
+            {profile && (
+                <button
+                    onClick={onMenuClick}
+                    aria-label="Open menu"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface-3 text-text-muted hover:text-text-primary transition-colors md:hidden"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                </button>
+            )}
 
             {/* Mobile brand — centered */}
             <Link
@@ -73,20 +75,22 @@ export function Topbar({ profile, onMenuClick, isSidebarMinimized = false }: Top
 
             {/* Right controls */}
             <div className="flex items-center gap-2">
-                <Link
-                    href="/chat"
-                    className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface-3 text-text-muted hover:bg-surface-3/80 hover:text-accent transition-colors"
-                    title="Group Chat"
-                >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    {unreadCount > 0 && (
-                        <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-[var(--color-surface-2)]">
-                            {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                    )}
-                </Link>
+                {profile && (
+                    <Link
+                        href="/chat"
+                        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface-3 text-text-muted hover:bg-surface-3/80 hover:text-accent transition-colors"
+                        title="Group Chat"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        {unreadCount > 0 && (
+                            <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-[var(--color-surface-2)]">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                        )}
+                    </Link>
+                )}
 
                 <ThemeToggle />
 

@@ -23,7 +23,7 @@ export default async function TournamentDetailPage({ params }: PageProps) {
         supabase.auth.getUser(),
         supabase.from('tournaments').select('*').eq('id', id).single(),
         supabase.from('tournament_teams')
-            .select('id, team_name, team_slogan, number_of_players, manager_id, profiles!manager_id(first_name, last_name, avatar_url)')
+            .select('id, team_name, team_slogan, number_of_players, manager_id, logo_url, profiles!manager_id(first_name, last_name, avatar_url)')
             .eq('tournament_id', id)
             .order('created_at', { ascending: true }),
         supabase.from('tournament_players')
