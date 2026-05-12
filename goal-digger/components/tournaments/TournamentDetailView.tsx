@@ -125,13 +125,13 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
         return new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
     })
 
-    const teamStats = teams.map(team => {
+    const unsortedTeamStats = teams.map(team => {
         const teamMatches = completedMatches.filter(m => m.team_1_id === team.id || m.team_2_id === team.id)
         let won = 0, drawn = 0, lost = 0, gf = 0, ga = 0
         teamMatches.forEach(m => {
             const isTeam1 = m.team_1_id === team.id
-            const myScore = isTeam1 ? m.team_1_score : m.team_2_score
-            const theirScore = isTeam1 ? m.team_2_score : m.team_1_score
+            const myScore = matchScoreOrZero(isTeam1 ? m.team_1_score : m.team_2_score)
+            const theirScore = matchScoreOrZero(isTeam1 ? m.team_2_score : m.team_1_score)
             gf += myScore
             ga += theirScore
             if (myScore > theirScore) won++
@@ -141,7 +141,37 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
         const gd = gf - ga
         const points = won * 3 + drawn * 1
         return { ...team, played: teamMatches.length, won, drawn, lost, gf, ga, gd, points }
-    }).sort((a, b) => b.points - a.points || b.gd - a.gd)
+    })
+
+    function getHeadToHeadPoints(teamId: string, tiedTeamIds: string[]) {
+        return completedMatches.reduce((points, match) => {
+            const isTeam1 = match.team_1_id === teamId
+            const isTeam2 = match.team_2_id === teamId
+            if (!isTeam1 && !isTeam2) return points
+
+            const opponentId = isTeam1 ? match.team_2_id : match.team_1_id
+            if (!tiedTeamIds.includes(opponentId)) return points
+
+            const myScore = matchScoreOrZero(isTeam1 ? match.team_1_score : match.team_2_score)
+            const theirScore = matchScoreOrZero(isTeam1 ? match.team_2_score : match.team_1_score)
+
+            if (myScore > theirScore) return points + 3
+            if (myScore === theirScore) return points + 1
+            return points
+        }, 0)
+    }
+
+    const teamStats = [...unsortedTeamStats].sort((a, b) => {
+        const standingDifference = b.points - a.points || b.gd - a.gd || b.gf - a.gf
+        if (standingDifference !== 0) return standingDifference
+
+        const tiedTeamIds = unsortedTeamStats
+            .filter(team => team.points === a.points && team.gd === a.gd && team.gf === a.gf)
+            .map(team => team.id)
+
+        return getHeadToHeadPoints(b.id, tiedTeamIds) - getHeadToHeadPoints(a.id, tiedTeamIds)
+            || a.team_name.localeCompare(b.team_name)
+    })
 
     const playerStats = players.map(player => {
         const pStats = matchStats.filter(ms => ms.player_id === player.player_id)
@@ -150,7 +180,14 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
         const team = teams.find(t => t.id === player.team_id)
         const matchesPlayed = team ? completedMatches.filter(m => m.team_1_id === team.id || m.team_2_id === team.id).length : 0
         return { ...player, goals, assists, matchesPlayed }
-    }).sort((a, b) => b.goals - a.goals)
+    }).sort((a, b) => {
+        const goalOrAssistDifference = b.goals - a.goals || b.assists - a.assists
+        if (goalOrAssistDifference !== 0) return goalOrAssistDifference
+
+        const aProfile = Array.isArray(a.profiles) ? a.profiles[0] : a.profiles
+        const bProfile = Array.isArray(b.profiles) ? b.profiles[0] : b.profiles
+        return `${aProfile?.first_name ?? ''} ${aProfile?.last_name ?? ''}`.localeCompare(`${bProfile?.first_name ?? ''} ${bProfile?.last_name ?? ''}`)
+    })
 
     async function handleDeleteMatch() {
         if (!deleteMatchId) return
@@ -645,7 +682,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                                 src={team.logo_url}
                                                                 alt={team.team_name}
                                                                 title={team.team_name}
-                                                                className="h-8 w-8 rounded-lg object-cover border border-border bg-surface-3"
+                                                                className="h-8 w-8 rounded-lg object-contain"
                                                             />
                                                         ) : (
                                                             <span
@@ -696,6 +733,8 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                         <th className="py-3 px-4 font-medium text-center">D</th>
                                         <th className="py-3 px-4 font-medium text-center">L</th>
                                         <th className="py-3 px-4 font-medium text-center">GD</th>
+                                        <th className="py-3 px-4 font-medium text-center">GF</th>
+                                        <th className="py-3 px-4 font-medium text-center">GA</th>
                                         <th className="py-3 px-4 font-medium text-center text-accent">Pts</th>
                                     </tr>
                                 </thead>
@@ -713,6 +752,8 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                             <td className="py-3 px-4 text-center text-yellow-400">{team.drawn}</td>
                                             <td className="py-3 px-4 text-center text-red-400">{team.lost}</td>
                                             <td className="py-3 px-4 text-center text-text-muted">{team.gd > 0 ? `+${team.gd}` : team.gd}</td>
+                                            <td className="py-3 px-4 text-center text-text-muted">{team.gf}</td>
+                                            <td className="py-3 px-4 text-center text-text-muted">{team.ga}</td>
                                             <td className="py-3 px-4 text-center font-bold text-accent">{team.points}</td>
                                         </tr>
                                     ))}
