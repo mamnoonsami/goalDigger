@@ -341,7 +341,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                     )}
                                     {teamPlayers.length > 0 && (
                                         <div className="mt-2">
-                                            <button 
+                                            <button
                                                 onClick={() => toggleTeamPlayers(team.id)}
                                                 className="text-xs text-accent hover:text-accent-hover transition-colors font-medium mb-2"
                                             >
@@ -477,72 +477,72 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                 ) : leaderboardTab === 'players' ? (
                     players.length > 0 ? (
                         <Card className="overflow-x-auto p-0">
-                        <table className="w-full text-left text-sm whitespace-nowrap">
-                            <thead>
-                                <tr className="border-b border-border bg-surface-2/50 text-xs text-text-muted">
-                                    <th className="py-3 px-4 font-medium sticky left-0 bg-surface-2 z-10">Player Name</th>
-                                    <th className="py-3 px-4 font-medium">Team Name</th>
-                                    <th className="py-3 px-4 font-medium text-center">Goals</th>
-                                    <th className="py-3 px-4 font-medium text-center">Matches</th>
-                                    <th className="py-3 px-4 font-medium">Position</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {playerStats.map(tp => {
-                                    const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
-                                    const team = Array.isArray(tp.tournament_teams) ? tp.tournament_teams[0] : tp.tournament_teams
-                                    return (
-                                        <tr key={tp.id} className="hover:bg-surface-2/30 transition-colors">
-                                            <td className="py-3 px-4 sticky left-0 bg-surface-2 z-10">
-                                                <div className="flex items-center gap-3">
-                                                    {/* Avatar: hidden on mobile */}
-                                                    {p?.avatar_url ? (
-                                                        // eslint-disable-next-line @next/next/no-img-element
-                                                        <img src={p.avatar_url} alt="" className="hidden sm:block h-8 w-8 rounded-full object-cover bg-surface-3 flex-shrink-0" />
+                            <table className="w-full text-left text-sm whitespace-nowrap">
+                                <thead>
+                                    <tr className="border-b border-border bg-surface-2/50 text-xs text-text-muted">
+                                        <th className="py-3 px-4 font-medium sticky left-0 bg-surface-2 z-10">Player Name</th>
+                                        <th className="py-3 px-4 font-medium">Team Name</th>
+                                        <th className="py-3 px-4 font-medium text-center">Goals</th>
+                                        <th className="py-3 px-4 font-medium text-center">Matches</th>
+                                        <th className="py-3 px-4 font-medium">Position</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                    {playerStats.map(tp => {
+                                        const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
+                                        const team = Array.isArray(tp.tournament_teams) ? tp.tournament_teams[0] : tp.tournament_teams
+                                        return (
+                                            <tr key={tp.id} className="hover:bg-surface-2/30 transition-colors">
+                                                <td className="py-3 px-4 sticky left-0 bg-surface-2 z-10">
+                                                    <div className="flex items-center gap-3">
+                                                        {/* Avatar: hidden on mobile */}
+                                                        {p?.avatar_url ? (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img src={p.avatar_url} alt="" className="hidden sm:block h-8 w-8 rounded-full object-cover bg-surface-3 flex-shrink-0" />
+                                                        ) : (
+                                                            <div className="hidden sm:flex h-8 w-8 rounded-full bg-accent/20 items-center justify-center text-xs font-bold text-accent flex-shrink-0">
+                                                                {p?.first_name?.[0]}{p?.last_name?.[0]}
+                                                            </div>
+                                                        )}
+                                                        {/* Full name on desktop */}
+                                                        <span className="hidden sm:inline font-medium text-text-primary">
+                                                            {p?.first_name} {p?.last_name}
+                                                        </span>
+                                                        {/* Abbreviated name on mobile */}
+                                                        <span className="sm:hidden font-medium text-text-primary">
+                                                            {p?.first_name?.split(' ')[0]} {p?.last_name?.trim().charAt(0)}.
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    {team ? (
+                                                        <span className="text-xs bg-accent/10 text-accent rounded-full px-2.5 py-1">
+                                                            {team.team_name}
+                                                        </span>
                                                     ) : (
-                                                        <div className="hidden sm:flex h-8 w-8 rounded-full bg-accent/20 items-center justify-center text-xs font-bold text-accent flex-shrink-0">
-                                                            {p?.first_name?.[0]}{p?.last_name?.[0]}
-                                                        </div>
+                                                        <span className="text-xs text-text-muted italic">-</span>
                                                     )}
-                                                    {/* Full name on desktop */}
-                                                    <span className="hidden sm:inline font-medium text-text-primary">
-                                                        {p?.first_name} {p?.last_name}
-                                                    </span>
-                                                    {/* Abbreviated name on mobile */}
-                                                    <span className="sm:hidden font-medium text-text-primary">
-                                                        {p?.first_name?.split(' ')[0]} {p?.last_name?.trim().charAt(0)}.
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                {team ? (
-                                                    <span className="text-xs bg-accent/10 text-accent rounded-full px-2.5 py-1">
-                                                        {team.team_name}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-xs text-text-muted italic">-</span>
-                                                )}
-                                            </td>
-                                            <td className="py-3 px-4 text-center font-bold text-text-primary">{tp.goals}</td>
-                                            <td className="py-3 px-4 text-center text-text-muted">{tp.matchesPlayed}</td>
-                                            <td className="py-3 px-4">
-                                                {p?.player_position ? (
-                                                    <span className="text-xs text-text-muted capitalize">{p.player_position}</span>
-                                                ) : (
-                                                    <span className="text-xs text-text-muted italic">-</span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </Card>
-                ) : (
-                    <Card>
-                        <p className="py-6 text-center text-sm text-text-muted">No players assigned yet.</p>
-                    </Card>
-                )
+                                                </td>
+                                                <td className="py-3 px-4 text-center font-bold text-text-primary">{tp.goals}</td>
+                                                <td className="py-3 px-4 text-center text-text-muted">{tp.matchesPlayed}</td>
+                                                <td className="py-3 px-4">
+                                                    {p?.player_position ? (
+                                                        <span className="text-xs text-text-muted capitalize">{p.player_position}</span>
+                                                    ) : (
+                                                        <span className="text-xs text-text-muted italic">-</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </Card>
+                    ) : (
+                        <Card>
+                            <p className="py-6 text-center text-sm text-text-muted">No players assigned yet.</p>
+                        </Card>
+                    )
                 ) : (
                     teams.length > 0 ? (
                         <Card className="overflow-x-auto p-0">
@@ -692,7 +692,11 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                         team2={t2}
                         team1Players={t1Players}
                         team2Players={t2Players}
-                        initialStats={currentMatchStats}
+                        initialStats={currentMatchStats.map(stat => ({
+                            player_id: stat.player_id,
+                            goals: stat.goals,
+                            assists: stat.assists || 0
+                        }))}
                         onClose={() => setRecordScoreMatchId(null)}
                     />
                 )
