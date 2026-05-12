@@ -908,7 +908,13 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
 
                 const t1Players = players.filter(p => p.team_id === t1.id).map(mapPlayer)
                 const t2Players = players.filter(p => p.team_id === t2.id).map(mapPlayer)
-                const currentMatchStats = matchStats.filter(ms => ms.tournament_match_id === match.id)
+                const currentMatchStats = matchStats
+                    .filter(ms => ms.tournament_match_id === match.id)
+                    .map(ms => ({
+                        player_id: ms.player_id,
+                        goals: ms.goals,
+                        assists: ms.assists ?? 0,
+                    }))
 
                 return (
                     <RecordMatchScoreModal
