@@ -29,6 +29,7 @@ interface Team {
     team_slogan: string | null
     number_of_players: number
     manager_id: string | null
+    logo_url?: string | null
     profiles: { first_name: string; last_name: string; avatar_url: string | null } | { first_name: string; last_name: string; avatar_url: string | null }[] | null
 }
 
@@ -80,7 +81,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
     const [isManageTeamsOpen, setIsManageTeamsOpen] = useState(false)
     const [editingTeamId, setEditingTeamId] = useState<string | null>(null)
     const [assigningTeamId, setAssigningTeamId] = useState<string | null>(null)
-    const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set())
+    const [viewingTeamPlayersId, setViewingTeamPlayersId] = useState<string | null>(null)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [leaderboardTab, setLeaderboardTab] = useState<'players' | 'teams' | 'matches'>('teams')
     const [isCreateMatchOpen, setIsCreateMatchOpen] = useState(false)
@@ -110,19 +111,13 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
     const playerStats = players.map(player => {
         const pStats = matchStats.filter(ms => ms.player_id === player.player_id)
         const goals = pStats.reduce((acc, curr) => acc + curr.goals, 0)
+        const assists = pStats.reduce((acc, curr) => acc + (curr.assists || 0), 0)
         const team = teams.find(t => t.id === player.team_id)
         const matchesPlayed = team ? completedMatches.filter(m => m.team_1_id === team.id || m.team_2_id === team.id).length : 0
-        return { ...player, goals, matchesPlayed }
+        return { ...player, goals, assists, matchesPlayed }
     }).sort((a, b) => b.goals - a.goals)
 
-    function toggleTeamPlayers(teamId: string) {
-        setExpandedTeams(prev => {
-            const next = new Set(prev)
-            if (next.has(teamId)) next.delete(teamId)
-            else next.add(teamId)
-            return next
-        })
-    }
+    
 
     return (
         <div className="flex flex-col gap-6 overflow-hidden">
@@ -270,114 +265,99 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
             </Card>
 
             {/* Teams Section */}
-            <div>
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-text-primary">🏆 Teams ({teams.length})</h3>
-                    <div className="flex items-center gap-2">
-                        {(isAdmin || isManager) && (
-                            <Button
-                                size="sm"
-                                onClick={() => setIsCreateTeamOpen(true)}
-                                className="text-xs"
-                            >
-                                + Create Team
-                            </Button>
-                        )}
-                        {isAdmin && teams.length > 0 && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setIsManageTeamsOpen(true)}
-                                className="text-xs"
-                            >
-                                Manage Teams
-                            </Button>
-                        )}
+            {currentUserId && (
+                <div>
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-text-primary">🏆 Teams ({teams.length})</h3>
+                        <div className="flex items-center gap-2">
+                            {(isAdmin || isManager) && (
+                                <Button
+                                    size="sm"
+                                    onClick={() => setIsCreateTeamOpen(true)}
+                                    className="text-xs"
+                                >
+                                    + Create Team
+                                </Button>
+                            )}
+                            {(isAdmin || isManager) && teams.length > 0 && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setIsManageTeamsOpen(true)}
+                                    className="text-xs"
+                                >
+                                    Manage Teams
+                                </Button>
+                            )}
+                        </div>
                     </div>
-                </div>
-                {teams.length > 0 ? (
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 min-w-0">
-                        {teams.map(team => {
-                            const teamPlayers = players.filter(p => p.team_id === team.id)
-                            const profile = Array.isArray(team.profiles) ? team.profiles[0] : team.profiles
-                            return (
-                                <Card key={team.id}>
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div>
-                                            <h4 className="font-semibold text-text-primary">{team.team_name}</h4>
-                                            {team.team_slogan && (
-                                                <p className="text-xs text-text-muted italic">&ldquo;{team.team_slogan}&rdquo;</p>
-                                            )}
+                    {teams.length > 0 ? (
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 min-w-0">
+                            {teams.map(team => {
+                                const teamPlayers = players.filter(p => p.team_id === team.id)
+                                const profile = Array.isArray(team.profiles) ? team.profiles[0] : team.profiles
+                                return (
+                                    <Card key={team.id}>
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                {team.logo_url ? (
+                                                    <img src={team.logo_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-border flex-shrink-0" />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-lg bg-surface-3 flex items-center justify-center border border-border text-xs font-bold text-text-muted flex-shrink-0">
+                                                        {team.team_name.substring(0,2).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <div className="min-w-0">
+                                                    <h4 className="font-semibold text-text-primary truncate">{team.team_name}</h4>
+                                                    {team.team_slogan && (
+                                                        <p className="text-xs text-text-muted italic truncate">&ldquo;{team.team_slogan}&rdquo;</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-xs text-text-muted bg-surface-3 rounded-full px-2 py-0.5">
+                                                    {teamPlayers.length} players
+                                                </span>
+                                                {(isAdmin || isManager) && (
+                                                    <button
+                                                        onClick={() => setEditingTeamId(team.id)}
+                                                        className="p-1 rounded hover:bg-accent/10 text-accent hover:text-accent-hover transition-colors"
+                                                        title="Edit Team"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-xs text-text-muted bg-surface-3 rounded-full px-2 py-0.5">
-                                                {teamPlayers.length} players
-                                            </span>
-                                            {(isAdmin || (isManager && team.manager_id === currentUserId)) && (
-                                                <button
-                                                    onClick={() => setEditingTeamId(team.id)}
-                                                    className="p-1 rounded hover:bg-accent/10 text-accent hover:text-accent-hover transition-colors"
-                                                    title="Edit Team"
+                                        
+                                        {teamPlayers.length > 0 && (
+                                            <div className="mt-2">
+                                                <button 
+                                                    onClick={() => setViewingTeamPlayersId(team.id)}
+                                                    className="text-xs text-accent hover:text-accent-hover transition-colors font-medium mb-2"
                                                 >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                                                    View Players
                                                 </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {profile && (
-                                        <div className="flex items-center gap-2 mb-3">
-                                            {profile.avatar_url ? (
-                                                // eslint-disable-next-line @next/next/no-img-element
-                                                <img src={profile.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover bg-surface-3" />
-                                            ) : (
-                                                <div className="h-6 w-6 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">
-                                                    {profile.first_name?.[0]}{profile.last_name?.[0]}
-                                                </div>
-                                            )}
-                                            <span className="text-xs text-text-muted">
-                                                Manager: <span className="text-text-primary font-medium">{profile.first_name} {profile.last_name}</span>
-                                            </span>
-                                        </div>
-                                    )}
-                                    {teamPlayers.length > 0 && (
-                                        <div className="mt-2">
-                                            <button 
-                                                onClick={() => toggleTeamPlayers(team.id)}
-                                                className="text-xs text-accent hover:text-accent-hover transition-colors font-medium mb-2"
-                                            >
-                                                {expandedTeams.has(team.id) ? 'Hide Players' : 'View Players'}
-                                            </button>
-                                            {expandedTeams.has(team.id) && (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {teamPlayers.map(tp => {
-                                                        const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
-                                                        return (
-                                                            <span key={tp.id} className="text-xs bg-surface-3 rounded-full px-2 py-0.5 text-text-muted">
-                                                                {p?.first_name} {p?.last_name}
-                                                            </span>
-                                                        )
-                                                    })}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    {(isAdmin || (isManager && team.manager_id === currentUserId)) && (
-                                        <div className="mt-3 pt-3 border-t border-border flex justify-end">
-                                            <Button variant="secondary" size="sm" onClick={() => setAssigningTeamId(team.id)} className="text-xs py-1 h-auto">
-                                                Assign Players
-                                            </Button>
-                                        </div>
-                                    )}
-                                </Card>
-                            )
-                        })}
-                    </div>
-                ) : (
-                    <Card>
-                        <p className="py-6 text-center text-sm text-text-muted">No teams added yet.</p>
-                    </Card>
-                )}
-            </div>
+                                            </div>
+                                        )}
+                                        {(isAdmin || isManager) && (
+                                            <div className="mt-3 pt-3 border-t border-border flex justify-end">
+                                                <Button variant="secondary" size="sm" onClick={() => setAssigningTeamId(team.id)} className="text-xs py-1 h-auto">
+                                                    Assign Players
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </Card>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <Card>
+                            <p className="py-6 text-center text-sm text-text-muted">No teams added yet.</p>
+                        </Card>
+                    )}
+                </div>
+            )}
 
             {/* Leaderboard Section */}
             <div>
@@ -447,15 +427,76 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                 </span>
                                             </div>
                                             <div className="flex items-center justify-between flex-1 mb-4">
-                                                <div className="flex flex-col items-center flex-1 text-center">
-                                                    <span className="font-semibold text-text-primary">{t1?.team_name || 'Unknown'}</span>
-                                                    {m.status === 'completed' && <span className="text-2xl font-bold mt-1 text-text-primary">{m.team_1_score}</span>}
-                                                </div>
-                                                <div className="px-4 text-xs font-medium text-text-muted">VS</div>
-                                                <div className="flex flex-col items-center flex-1 text-center">
-                                                    <span className="font-semibold text-text-primary">{t2?.team_name || 'Unknown'}</span>
-                                                    {m.status === 'completed' && <span className="text-2xl font-bold mt-1 text-text-primary">{m.team_2_score}</span>}
-                                                </div>
+                                                {(() => {
+                                                    const matchScorers = matchStats.filter(ms => ms.tournament_match_id === m.id && ms.goals > 0)
+                                                    const t1Scorers = matchScorers.filter(ms => ms.team_id === t1?.id).map(ms => {
+                                                        const p = players.find(player => player.player_id === ms.player_id)
+                                                        const pProfile = Array.isArray(p?.profiles) ? p?.profiles[0] : p?.profiles
+                                                        return `${pProfile?.first_name || 'Unknown'}${ms.goals > 1 ? `(${ms.goals})` : ''}`
+                                                    }).join(', ')
+                                                    
+                                                    const t2Scorers = matchScorers.filter(ms => ms.team_id === t2?.id).map(ms => {
+                                                        const p = players.find(player => player.player_id === ms.player_id)
+                                                        const pProfile = Array.isArray(p?.profiles) ? p?.profiles[0] : p?.profiles
+                                                        return `${pProfile?.first_name || 'Unknown'}${ms.goals > 1 ? `(${ms.goals})` : ''}`
+                                                    }).join(', ')
+
+                                                    return (
+                                                        <div className="flex flex-col w-full">
+                                                            <div className="flex items-center justify-between gap-4 w-full mb-2">
+                                                                {/* Team 1 */}
+                                                                <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                                                                    {t1?.logo_url ? (
+                                                                        <img src={t1.logo_url} alt="" className="h-12 w-12 rounded object-contain" />
+                                                                    ) : (
+                                                                        <div className="h-12 w-12 rounded bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
+                                                                            {t1?.team_name?.substring(0,2).toUpperCase()}
+                                                                        </div>
+                                                                    )}
+                                                                    <span className="text-xs font-semibold text-text-primary truncate w-full text-center">{t1?.team_name || 'Unknown'}</span>
+                                                                </div>
+
+                                                                {/* Score */}
+                                                                <div className="flex items-center gap-3">
+                                                                    {m.status === 'completed' ? (
+                                                                        <div className="flex items-center gap-3 text-2xl font-bold text-text-primary">
+                                                                            <span>{m.team_1_score}</span>
+                                                                            <span className="text-text-muted font-normal text-xl">-</span>
+                                                                            <span>{m.team_2_score}</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest bg-surface-3 px-2 py-1 rounded-md">VS</span>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Team 2 */}
+                                                                <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                                                                    {t2?.logo_url ? (
+                                                                        <img src={t2.logo_url} alt="" className="h-12 w-12 rounded object-contain" />
+                                                                    ) : (
+                                                                        <div className="h-12 w-12 rounded bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
+                                                                            {t2?.team_name?.substring(0,2).toUpperCase()}
+                                                                        </div>
+                                                                    )}
+                                                                    <span className="text-xs font-semibold text-text-primary truncate w-full text-center">{t2?.team_name || 'Unknown'}</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Scorers Section (FIFA style) */}
+                                                            {m.status === 'completed' && (t1Scorers || t2Scorers) && (
+                                                                <div className="mt-3 pt-3 border-t border-border/50 flex items-start justify-center gap-4">
+                                                                    <div className="flex-1 flex flex-col items-end text-[10px] text-text-muted gap-0.5 leading-tight">
+                                                                        {t1Scorers.split(', ').filter(Boolean).map((s, idx) => <span key={idx}>{s}</span>)}
+                                                                    </div>
+                                                                    <span className="text-[10px] text-text-muted opacity-50 mt-0.5">⚽</span>
+                                                                    <div className="flex-1 flex flex-col items-start text-[10px] text-text-muted gap-0.5 leading-tight">
+                                                                        {t2Scorers.split(', ').filter(Boolean).map((s, idx) => <span key={idx}>{s}</span>)}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )
+                                                })()}
                                             </div>
                                             {isAdmin && (
                                                 <div className="mt-auto pt-3 border-t border-border flex justify-end">
@@ -483,6 +524,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                     <th className="py-3 px-4 font-medium sticky left-0 bg-surface-2 z-10">Player Name</th>
                                     <th className="py-3 px-4 font-medium">Team Name</th>
                                     <th className="py-3 px-4 font-medium text-center">Goals</th>
+                                    <th className="py-3 px-4 font-medium text-center">Assists</th>
                                     <th className="py-3 px-4 font-medium text-center">Matches</th>
                                     <th className="py-3 px-4 font-medium">Position</th>
                                 </tr>
@@ -524,6 +566,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                 )}
                                             </td>
                                             <td className="py-3 px-4 text-center font-bold text-text-primary">{tp.goals}</td>
+                                            <td className="py-3 px-4 text-center font-bold text-text-primary">{tp.assists}</td>
                                             <td className="py-3 px-4 text-center text-text-muted">{tp.matchesPlayed}</td>
                                             <td className="py-3 px-4">
                                                 {p?.player_position ? (
@@ -651,6 +694,50 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                         allTournamentPlayers={players}
                         onClose={() => setAssigningTeamId(null)}
                     />
+                )
+            })()}
+
+            {viewingTeamPlayersId && (() => {
+                const team = teams.find(t => t.id === viewingTeamPlayersId)
+                if (!team) return null
+                const teamPlayers = players.filter(p => p.team_id === team.id)
+                return (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                        <div className="bg-surface-2 border border-border rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
+                            <div className="flex items-center justify-between p-4 border-b border-border">
+                                <h2 className="text-lg font-bold text-text-primary">{team.team_name} Players</h2>
+                                <button onClick={() => setViewingTeamPlayersId(null)} className="p-2 -mr-2 text-text-muted hover:text-text-primary transition-colors">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                            <div className="p-4 overflow-y-auto">
+                                {teamPlayers.length === 0 ? (
+                                    <p className="text-sm text-text-muted text-center py-4">No players in this team yet.</p>
+                                ) : (
+                                    <div className="flex flex-col gap-2">
+                                        {teamPlayers.map(tp => {
+                                            const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
+                                            return (
+                                                <div key={tp.id} className="flex items-center gap-3 bg-surface-3 p-3 rounded-lg">
+                                                    {p?.avatar_url ? (
+                                                        <img src={p.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent">
+                                                            {p?.first_name?.[0]}{p?.last_name?.[0]}
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <div className="font-medium text-text-primary">{p?.first_name} {p?.last_name}</div>
+                                                        {p?.player_position && <div className="text-xs text-text-muted capitalize">{p.player_position}</div>}
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 )
             })()}
 

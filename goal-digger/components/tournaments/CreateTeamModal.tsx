@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '../ui/Button'
+import imageCompression from 'browser-image-compression'
+import { createClient } from '../../lib/supabase/client'
 import { createTeamForTournament } from '../../app/actions/tournaments'
 import { useToast } from '../providers/ToastProvider'
 
@@ -17,6 +19,8 @@ export function CreateTeamModal({ tournamentId, onClose }: CreateTeamModalProps)
 
     const [teamName, setTeamName] = useState('')
     const [teamSlogan, setTeamSlogan] = useState('')
+    const [logoUrl, setLogoUrl] = useState('')
+    const [logoFile, setLogoFile] = useState<File | null>(null)
     const [numberOfPlayers, setNumberOfPlayers] = useState(5)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -27,11 +31,45 @@ export function CreateTeamModal({ tournamentId, onClose }: CreateTeamModalProps)
         setSaving(true)
         setError(null)
         try {
+            let finalLogoUrl = logoUrl;
+            if (logoFile) {
+                let fileToUpload = logoFile;
+                // Do not compress if size is <= 1MB
+                if (logoFile.size > 1024 * 1024) {
+                    const options = {
+                        maxSizeMB: 1,
+                        maxWidthOrHeight: 400,
+                        useWebWorker: true,
+                    }
+                    fileToUpload = await imageCompression(logoFile, options)
+                }
+                
+                const supabase = createClient()
+                const { data: { user } } = await supabase.auth.getUser()
+                if (!user) throw new Error('Not authenticated')
+                const filePath = `${user.id}/team-logos/${Date.now()}-${fileToUpload.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+                const { error: uploadError } = await supabase.storage
+                    .from('GoalDiggerProfilePictures')
+                    .upload(filePath, fileToUpload, {
+                        upsert: true,
+                        contentType: fileToUpload.type,
+                    })
+                
+                if (uploadError) throw uploadError
+                
+                const { data: { publicUrl } } = supabase.storage
+                    .from('GoalDiggerProfilePictures')
+                    .getPublicUrl(filePath)
+                
+                finalLogoUrl = `${publicUrl}?t=${new Date().getTime()}`
+            }
+            
             await createTeamForTournament({
                 tournament_id: tournamentId,
                 team_name: teamName.trim(),
                 team_slogan: teamSlogan.trim(),
                 number_of_players: numberOfPlayers,
+                logo_url: finalLogoUrl || null
             })
             toast.success(`Team "${teamName.trim()}" created!`)
             router.refresh()
@@ -88,6 +126,37 @@ export function CreateTeamModal({ tournamentId, onClose }: CreateTeamModalProps)
                                 onChange={e => setNumberOfPlayers(Number(e.target.value))}
                                 className={inputClass}
                             />
+                        </label>
+                    
+                        <label className="flex flex-col gap-1.5">
+                            <span className="text-sm font-medium text-text-muted">Team Logo (Optional)</span>
+                            <div className="flex items-center gap-3">
+                                {(logoFile || logoUrl) ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img 
+                                        src={logoFile ? URL.createObjectURL(logoFile) : logoUrl} 
+                                        alt="Logo Preview" 
+                                        className="w-12 h-12 rounded-lg object-cover bg-surface-3 border border-border" 
+                                    />
+                                ) : (
+                                    <div className="w-12 h-12 rounded-lg bg-surface-3 border border-border flex items-center justify-center text-text-muted">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                    </div>
+                                )}
+                                <label className="cursor-pointer text-xs bg-surface-2 hover:bg-surface-3 border border-border px-3 py-1.5 rounded-md font-medium transition-colors">
+                                    {logoFile || logoUrl ? 'Change Logo' : 'Upload Logo'}
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        className="hidden" 
+                                        onChange={e => {
+                                            if (e.target.files && e.target.files[0]) {
+                                                setLogoFile(e.target.files[0])
+                                            }
+                                        }}
+                                    />
+                                </label>
+                            </div>
                         </label>
                     </form>
 

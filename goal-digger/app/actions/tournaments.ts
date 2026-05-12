@@ -252,6 +252,7 @@ export async function createTeamForTournament(data: {
     team_name: string
     team_slogan: string
     number_of_players: number
+    logo_url?: string | null
 }) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -272,6 +273,7 @@ export async function createTeamForTournament(data: {
             team_slogan: data.team_slogan || null,
             number_of_players: data.number_of_players,
             manager_id: user.id,
+            logo_url: data.logo_url || null,
         })
 
     if (error) throw new Error(`Failed to create team: ${error.message}`)
@@ -287,6 +289,7 @@ export async function updateTeamForTournament(
         team_name: string
         team_slogan: string
         number_of_players: number
+        logo_url?: string | null
     }
 ) {
     const supabase = await createClient()
@@ -301,22 +304,13 @@ export async function updateTeamForTournament(
 
     if (!profile?.is_admin && !profile?.is_king && !profile?.is_manager) throw new Error('Not authorized')
 
-    // Non-admin managers can only update their own teams
-    if (!profile.is_admin && !profile.is_king) {
-        const { data: team } = await supabase
-            .from('tournament_teams')
-            .select('manager_id')
-            .eq('id', teamId)
-            .single()
-        if (team?.manager_id !== user.id) throw new Error('You can only edit your own team')
-    }
-
     const { error } = await supabase
         .from('tournament_teams')
         .update({
             team_name: data.team_name,
             team_slogan: data.team_slogan || null,
             number_of_players: data.number_of_players,
+            logo_url: data.logo_url !== undefined ? data.logo_url : undefined,
         })
         .eq('id', teamId)
 
@@ -333,10 +327,10 @@ export async function deleteTeamFromTournament(tournamentId: string, teamId: str
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin, is_king')
+        .select('is_admin, is_king, is_manager')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can delete teams')
+    if (!profile?.is_admin && !profile?.is_king && !profile?.is_manager) throw new Error('Only admins and managers can delete teams')
 
     const { error } = await supabase
         .from('tournament_teams')
@@ -361,10 +355,10 @@ export async function assignPlayersToTeam(
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin, is_king')
+        .select('is_admin, is_king, is_manager')
         .eq('id', user.id)
         .single()
-    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can assign players to teams')
+    if (!profile?.is_admin && !profile?.is_king && !profile?.is_manager) throw new Error('Only admins and managers can assign players to teams')
 
     // First, unassign all players currently on this team
     const { error: unassignError } = await supabase
@@ -435,7 +429,7 @@ export async function recordTournamentMatchScore(
     data: {
         team_1_score: number
         team_2_score: number
-        player_goals: { player_id: string, team_id: string, goals: number }[]
+        player_stats: { player_id: string, team_id: string, goals: number, assists: number }[]
         mark_completed?: boolean
     }
 ) {
@@ -470,11 +464,12 @@ export async function recordTournamentMatchScore(
         .eq('tournament_match_id', matchId)
 
     // 3. Insert new stats
-    const statsToInsert = data.player_goals.filter(p => p.goals > 0).map(p => ({
+    const statsToInsert = data.player_stats.filter(p => p.goals > 0 || p.assists > 0).map(p => ({
         tournament_match_id: matchId,
         player_id: p.player_id,
         team_id: p.team_id,
-        goals: p.goals
+        goals: p.goals,
+        assists: p.assists
     }))
 
     if (statsToInsert.length > 0) {
@@ -487,3 +482,5 @@ export async function recordTournamentMatchScore(
 
     revalidatePath(`/tournaments/${tournamentId}`)
 }
+
+
