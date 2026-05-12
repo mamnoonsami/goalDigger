@@ -918,7 +918,11 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                         team2={t2}
                         team1Players={t1Players}
                         team2Players={t2Players}
-                        initialStats={currentMatchStats}
+                        initialStats={currentMatchStats.map(stat => ({
+                            player_id: stat.player_id,
+                            goals: stat.goals,
+                            assists: stat.assists || 0
+                        }))}
                         onClose={() => setRecordScoreMatchId(null)}
                     />
                 )
