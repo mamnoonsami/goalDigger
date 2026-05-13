@@ -134,7 +134,6 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
     const router = useRouter()
     const toast = useToast()
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-    const [isMinimized, setIsMinimized] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [isAddPlayersOpen, setIsAddPlayersOpen] = useState(false)
     const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false)
@@ -337,126 +336,123 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
         <div className="flex flex-col gap-6 overflow-hidden">
             {/* Tournament Header Card */}
             <Card>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
-                                <button
-                                    onClick={() => setIsMinimized(!isMinimized)}
-                                    className="p-1 rounded hover:bg-surface-3 text-text-muted transition-colors flex items-center justify-center flex-shrink-0"
-                                    title={isMinimized ? "Expand Details" : "Minimize Details"}
-                                >
-                                    {isMinimized ? (
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-                                    ) : (
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-                                    )}
-                                </button>
-                                <div className="flex items-center gap-2">
-                                    <h1 className="text-lg sm:text-2xl font-bold text-text-primary truncate">{tournament.name}</h1>
-                                </div>
-                                <div className="hidden sm:block">
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                            <h1 className="min-w-0 text-xl font-bold leading-tight text-text-primary sm:text-2xl">
+                                <span>
+                                    {tournament.name}
+                                </span>
+                                <span className="ml-2 inline-flex align-middle">
                                     <TournamentStatusBadge status={tournament.status} />
-                                </div>
-                            </div>
+                                </span>
+                            </h1>
+                        </div>
 
-                            {/* Desktop actions */}
-                            <div className="hidden sm:flex items-center gap-2">
-                                {isPlayer && tournament.status !== 'completed' && (
-                                    <>
-                                        {hasJoined ? (
-                                            <Button variant="ghost" size="sm" onClick={async () => { setIsProcessing(true); try { await leaveTournament(tournament.id); toast.warning('Left the tournament'); router.refresh() } catch { toast.error('Failed to leave tournament') } finally { setIsProcessing(false) } }} disabled={isProcessing} className="text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8">
-                                                {isProcessing ? 'Leaving...' : 'Leave'}
-                                            </Button>
-                                        ) : (
-                                            <Button variant="primary" size="sm" onClick={async () => { setIsProcessing(true); try { await joinTournament(tournament.id); toast.success('Joined tournament!'); router.refresh() } catch { toast.error('Failed to join tournament') } finally { setIsProcessing(false) } }} disabled={isProcessing} className="text-xs bg-emerald-500 hover:bg-emerald-600 text-white border-0 h-8 px-4">
-                                                {isProcessing ? 'Joining...' : 'Join'}
-                                            </Button>
-                                        )}
-                                    </>
-                                )}
-                                {isAdmin && (
-                                    <>
-                                        <Button variant="ghost" size="sm" onClick={() => setIsEditModalOpen(true)} className="text-accent hover:text-accent-hover hover:bg-accent/10" title="Edit Tournament">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                        {/* Desktop actions */}
+                        <div className="hidden shrink-0 items-center gap-2 sm:flex">
+                            {isPlayer && tournament.status !== 'completed' && (
+                                <>
+                                    {hasJoined ? (
+                                        <Button variant="ghost" size="sm" onClick={async () => { setIsProcessing(true); try { await leaveTournament(tournament.id); toast.warning('Left the tournament'); router.refresh() } catch { toast.error('Failed to leave tournament') } finally { setIsProcessing(false) } }} disabled={isProcessing} className="text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8">
+                                            {isProcessing ? 'Leaving...' : 'Leave'}
                                         </Button>
-                                        <TournamentDetailActions tournamentId={tournament.id} />
-                                    </>
-                                )}
-                            </div>
-
-                            {/* Mobile 3-dot menu */}
-                            {((isPlayer && tournament.status !== 'completed') || isAdmin) && (
-                                <div className="relative sm:hidden">
-                                    <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-1.5 rounded-lg hover:bg-surface-3 text-text-muted transition-colors">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
-                                    </button>
-                                    {mobileMenuOpen && (
-                                        <>
-                                            <div className="fixed inset-0 z-40" onClick={() => setMobileMenuOpen(false)} />
-                                            <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border border-border bg-surface-2 shadow-xl py-1">
-                                                {isPlayer && tournament.status !== 'completed' && (
-                                                    hasJoined ? (
-                                                        <button onClick={async () => { setMobileMenuOpen(false); setIsProcessing(true); try { await leaveTournament(tournament.id); toast.warning('Left the tournament'); router.refresh() } catch { toast.error('Failed to leave tournament') } finally { setIsProcessing(false) } }} disabled={isProcessing} className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-surface-3 transition-colors">
-                                                            Leave Tournament
-                                                        </button>
-                                                    ) : (
-                                                        <button onClick={async () => { setMobileMenuOpen(false); setIsProcessing(true); try { await joinTournament(tournament.id); toast.success('Joined tournament!'); router.refresh() } catch { toast.error('Failed to join tournament') } finally { setIsProcessing(false) } }} disabled={isProcessing} className="w-full text-left px-4 py-2.5 text-sm text-accent hover:bg-surface-3 transition-colors">
-                                                            Join Tournament
-                                                        </button>
-                                                    )
-                                                )}
-                                                {isAdmin && (
-                                                    <>
-                                                        <button onClick={() => { setIsEditModalOpen(true); setMobileMenuOpen(false) }} className="w-full text-left px-4 py-2.5 text-sm text-text-primary hover:bg-surface-3 transition-colors">
-                                                            Edit Tournament
-                                                        </button>
-                                                        <div className="border-t border-border my-1" />
-                                                        <TournamentDetailActions tournamentId={tournament.id} variant="menu" />
-                                                    </>
-                                                )}
-                                            </div>
-                                        </>
+                                    ) : (
+                                        <Button variant="primary" size="sm" onClick={async () => { setIsProcessing(true); try { await joinTournament(tournament.id); toast.success('Joined tournament!'); router.refresh() } catch { toast.error('Failed to join tournament') } finally { setIsProcessing(false) } }} disabled={isProcessing} className="text-xs bg-emerald-500 hover:bg-emerald-600 text-white border-0 h-8 px-4">
+                                            {isProcessing ? 'Joining...' : 'Join'}
+                                        </Button>
                                     )}
-                                </div>
+                                </>
+                            )}
+                            {isAdmin && (
+                                <>
+                                    <Button variant="ghost" size="sm" onClick={() => setIsEditModalOpen(true)} className="text-accent hover:text-accent-hover hover:bg-accent/10" title="Edit Tournament">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                                    </Button>
+                                    <TournamentDetailActions tournamentId={tournament.id} />
+                                </>
                             )}
                         </div>
 
-                        {/* Mobile status badge */}
-                        <div className="sm:hidden mt-2 pl-8">
-                            <TournamentStatusBadge status={tournament.status} />
-                        </div>
+                        {/* Mobile 3-dot menu */}
+                        {((isPlayer && tournament.status !== 'completed') || isAdmin) && (
+                            <div className="relative shrink-0 sm:hidden">
+                                <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="rounded-full border border-border bg-surface-2 p-2 text-text-muted shadow-sm transition-colors hover:bg-surface-3">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
+                                </button>
+                                {mobileMenuOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setMobileMenuOpen(false)} />
+                                        <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border border-border bg-surface-2 shadow-xl py-1">
+                                            {isPlayer && tournament.status !== 'completed' && (
+                                                hasJoined ? (
+                                                    <button onClick={async () => { setMobileMenuOpen(false); setIsProcessing(true); try { await leaveTournament(tournament.id); toast.warning('Left the tournament'); router.refresh() } catch { toast.error('Failed to leave tournament') } finally { setIsProcessing(false) } }} disabled={isProcessing} className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-surface-3 transition-colors">
+                                                        Leave Tournament
+                                                    </button>
+                                                ) : (
+                                                    <button onClick={async () => { setMobileMenuOpen(false); setIsProcessing(true); try { await joinTournament(tournament.id); toast.success('Joined tournament!'); router.refresh() } catch { toast.error('Failed to join tournament') } finally { setIsProcessing(false) } }} disabled={isProcessing} className="w-full text-left px-4 py-2.5 text-sm text-accent hover:bg-surface-3 transition-colors">
+                                                        Join Tournament
+                                                    </button>
+                                                )
+                                            )}
+                                            {isAdmin && (
+                                                <>
+                                                    <button onClick={() => { setIsEditModalOpen(true); setMobileMenuOpen(false) }} className="w-full text-left px-4 py-2.5 text-sm text-text-primary hover:bg-surface-3 transition-colors">
+                                                        Edit Tournament
+                                                    </button>
+                                                    <div className="border-t border-border my-1" />
+                                                    <TournamentDetailActions tournamentId={tournament.id} variant="menu" />
+                                                </>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
-                        {!isMinimized && (
-                            <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-text-muted pl-1 sm:pl-10">
-                                {tournament.start_date && (
-                                    <span className="flex items-center gap-1.5">
-                                        📅 {new Date(tournament.start_date + 'T00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    <div className="space-y-2 text-xs text-text-muted sm:flex sm:flex-wrap sm:gap-2 sm:space-y-0 sm:text-sm">
+                        <div className="flex min-w-0 items-center gap-2 sm:contents">
+                            {tournament.start_date && (
+                                <span className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded-xl border border-border/70 bg-surface-2/70 px-2 py-2 sm:flex-none sm:justify-start sm:gap-1.5 sm:px-3">
+                                    <span className="shrink-0">📅</span>
+                                    <span className="min-w-0 truncate">
+                                        {new Date(tournament.start_date + 'T00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                         {tournament.end_date && tournament.end_date !== tournament.start_date
                                             ? ` – ${new Date(tournament.end_date + 'T00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
                                             : `, ${new Date(tournament.start_date + 'T00:00').getFullYear()}`
                                         }
                                     </span>
-                                )}
-                                {tournament.location && (
-                                    <span className="flex items-center gap-1.5">📍 {tournament.location}</span>
-                                )}
-                                {linkedAuction && (
-                                    <a href={`/auctions/${linkedAuction.id}`} className="flex items-center gap-1.5 text-accent hover:text-accent-hover transition-colors">
-                                        🔨 {linkedAuction.title}
-                                    </a>
-                                )}
-                                <span className="flex items-center gap-1.5">🏆 {teams.length} teams</span>
-                                <span className="flex items-center gap-1.5">⚽ {players.length} players</span>
-                            </div>
+                                </span>
+                            )}
+                            <span className="flex shrink-0 items-center justify-center gap-1 rounded-xl border border-border/70 bg-surface-2/70 px-2 py-2 sm:justify-start sm:gap-1.5 sm:px-3">
+                                <span className="shrink-0">🏆</span>
+                                <span>{teams.length} teams</span>
+                            </span>
+                            <span className="flex shrink-0 items-center justify-center gap-1 rounded-xl border border-border/70 bg-surface-2/70 px-2 py-2 sm:justify-start sm:gap-1.5 sm:px-3">
+                                <span className="shrink-0">⚽</span>
+                                <span>{players.length} players</span>
+                            </span>
+                        </div>
+                        {tournament.location && (
+                            <span className="flex min-w-0 items-center gap-1.5 rounded-xl border border-border/70 bg-surface-2/70 px-3 py-2 sm:max-w-xs">
+                                <span className="shrink-0">📍</span>
+                                <span className="min-w-0 truncate">{tournament.location}</span>
+                            </span>
+                        )}
+                        {linkedAuction && (
+                            <a href={`/auctions/${linkedAuction.id}`} className="flex min-w-0 items-center gap-1.5 rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-accent transition-colors hover:text-accent-hover sm:max-w-xs">
+                                <span className="shrink-0">🔨</span>
+                                <span className="min-w-0 truncate">{linkedAuction.title}</span>
+                            </a>
                         )}
                     </div>
                 </div>
 
                 {/* Description */}
-                {!isMinimized && tournament.description && (
-                    <div className="mt-4 text-sm text-text-muted pl-1 sm:pl-10">
-                        <p className="whitespace-pre-wrap"><span className="text-text-primary mr-1">📋</span>{tournament.description}</p>
+                {tournament.description && (
+                    <div className="mt-4 rounded-xl border border-border/70 bg-surface-2/60 px-3 py-3 text-sm text-text-muted">
+                        <p className="whitespace-pre-wrap leading-relaxed"><span className="text-text-primary mr-1">📋</span>{tournament.description}</p>
                     </div>
                 )}
 
@@ -695,12 +691,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                     const t1 = teams.find(t => t.id === m.team_1_id)
                                     const t2 = teams.find(t => t.id === m.team_2_id)
                                     return (
-                                        <Card key={m.id} className="flex flex-col">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <span className="text-xs text-text-muted">
+                                        <Card key={m.id} padding="none" className="flex flex-col p-3 sm:p-5">
+                                            <div className="mb-2 flex items-center justify-between sm:mb-4">
+                                                <span className="text-[11px] text-text-muted sm:text-xs">
                                                     {new Date(m.match_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                 </span>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1.5 sm:gap-2">
                                                     {m.is_final && (
                                                         <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
                                                             Final
@@ -748,7 +744,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="flex items-center justify-between flex-1 mb-4">
+                                            <div className="mb-2 flex flex-1 items-center justify-between sm:mb-4">
                                                 {(() => {
                                                     const matchScorers = matchStats.filter(ms => ms.tournament_match_id === m.id && ms.goals > 0)
                                                     const t1Scorers = matchScorers.filter(ms => ms.team_id === t1?.id).map(ms => {
@@ -767,51 +763,51 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
 
                                                     return (
                                                         <div className="flex flex-col w-full">
-                                                            <div className="flex items-center justify-between gap-4 w-full mb-2">
+                                                            <div className="mb-1.5 flex w-full items-center justify-between gap-3 sm:mb-2 sm:gap-4">
                                                                 {/* Team 1 */}
-                                                                <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                                                                <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
                                                                     {t1?.logo_url ? (
-                                                                        <img src={t1.logo_url} alt="" className="h-12 w-12 rounded object-contain" />
+                                                                        <img src={t1.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
                                                                     ) : (
-                                                                        <div className="h-12 w-12 rounded bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
+                                                                        <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
                                                                             {t1?.team_name?.substring(0,2).toUpperCase()}
                                                                         </div>
                                                                     )}
-                                                                    <span className="text-xs font-semibold text-text-primary truncate w-full text-center">{t1?.team_name || 'Unknown'}</span>
+                                                                    <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t1?.team_name || 'Unknown'}</span>
                                                                 </div>
 
                                                                 {/* Score */}
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="flex items-center gap-3 text-2xl font-bold text-text-primary">
+                                                                <div className="flex items-center gap-2 sm:gap-3">
+                                                                    <div className="flex items-center gap-2 text-xl font-bold text-text-primary sm:gap-3 sm:text-2xl">
                                                                         <span>{team1Score}</span>
-                                                                        <span className="text-text-muted font-normal text-xl">-</span>
+                                                                        <span className="text-lg font-normal text-text-muted sm:text-xl">-</span>
                                                                         <span>{team2Score}</span>
                                                                     </div>
                                                                 </div>
 
                                                                 {/* Team 2 */}
-                                                                <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                                                                <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
                                                                     {t2?.logo_url ? (
-                                                                        <img src={t2.logo_url} alt="" className="h-12 w-12 rounded object-contain" />
+                                                                        <img src={t2.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
                                                                     ) : (
-                                                                        <div className="h-12 w-12 rounded bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
+                                                                        <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
                                                                             {t2?.team_name?.substring(0,2).toUpperCase()}
                                                                         </div>
                                                                     )}
-                                                                    <span className="text-xs font-semibold text-text-primary truncate w-full text-center">{t2?.team_name || 'Unknown'}</span>
+                                                                    <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t2?.team_name || 'Unknown'}</span>
                                                                 </div>
                                                             </div>
 
                                                             {/* Scorers Section (FIFA style) */}
                                                             {m.status === 'completed' && (t1Scorers || t2Scorers) && (
-                                                                <div className="mt-3 pt-3 border-t border-border/50 flex items-start justify-center gap-4">
-                                                                    <div className="flex-1 flex flex-col items-end text-[10px] text-text-muted gap-0.5 leading-tight">
-                                                                        {t1Scorers.split(', ').filter(Boolean).map((s, idx) => <span key={idx}>{s}</span>)}
-                                                                    </div>
-                                                                    <span className="text-[10px] text-text-muted opacity-50 mt-0.5">⚽</span>
-                                                                    <div className="flex-1 flex flex-col items-start text-[10px] text-text-muted gap-0.5 leading-tight">
-                                                                        {t2Scorers.split(', ').filter(Boolean).map((s, idx) => <span key={idx}>{s}</span>)}
-                                                                    </div>
+                                                                <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-1.5 border-t border-border/50 pt-2 text-[10px] leading-snug text-text-muted sm:mt-3 sm:gap-2 sm:pt-3 sm:text-[11px]">
+                                                                    <span className="min-w-0 whitespace-normal break-words text-right">
+                                                                        {t1Scorers}
+                                                                    </span>
+                                                                    <span className="opacity-50">⚽</span>
+                                                                    <span className="min-w-0 whitespace-normal break-words text-left">
+                                                                        {t2Scorers}
+                                                                    </span>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -819,16 +815,16 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                 })()}
                                             </div>
                                             {isAdmin && (
-                                                <div className="mt-auto pt-3 border-t border-border flex justify-end gap-2">
+                                                <div className="mt-auto flex justify-end gap-2 border-t border-border pt-2 sm:pt-3">
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="text-xs h-auto py-1.5 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                                                        className="h-auto py-1 text-[11px] text-red-500 hover:bg-red-500/10 hover:text-red-400 sm:py-1.5 sm:text-xs"
                                                         onClick={() => setDeleteMatchId(m.id)}
                                                     >
                                                         Delete
                                                     </Button>
-                                                    <Button variant="secondary" size="sm" className="text-xs h-auto py-1.5" onClick={() => setRecordScoreMatchId(m.id)}>
+                                                    <Button variant="secondary" size="sm" className="h-auto py-1 text-[11px] sm:py-1.5 sm:text-xs" onClick={() => setRecordScoreMatchId(m.id)}>
                                                         {m.status === 'completed' ? 'Edit Score' : 'Record Score'}
                                                     </Button>
                                                 </div>
