@@ -7,7 +7,7 @@ import { TournamentStatusBadge } from './TournamentStatusBadge'
 import { TournamentDetailActions } from './TournamentDetailActions'
 import { EditTournamentModal } from './EditTournamentModal'
 import { Button } from '../ui/Button'
-import { deleteAllTournamentMatches, deleteTournamentMatch, joinTournament, leaveTournament } from '../../app/actions/tournaments'
+import { deleteAllTournamentMatches, deleteTournamentMatch, joinTournament, leaveTournament, markTournamentMatchAsFinal, unmarkTournamentMatchAsFinal } from '../../app/actions/tournaments'
 import { useToast } from '../providers/ToastProvider'
 import { AddPlayersModal } from './AddPlayersModal'
 import { CreateTeamModal } from './CreateTeamModal'
@@ -63,6 +63,7 @@ interface TournamentMatch {
     team_2_score: number | string | null
     match_date: string
     status: string
+    is_final?: boolean | null
 }
 
 interface TournamentMatchStat {
@@ -72,6 +73,31 @@ interface TournamentMatchStat {
     goals: number
     assists?: number | null
 }
+
+interface FixtureMatchRow {
+    type: 'match'
+    id: string
+    time: string
+    team1Name: string
+    team2Name: string
+    score: string
+    winner: string
+    isCompleted: boolean
+    isFinal: boolean
+}
+
+interface FixtureFinalRow {
+    type: 'final'
+    id: 'final'
+    time: 'TBD'
+    match: 'Top 2 teams from leaderboard'
+    score: '-'
+    winner: '-'
+    isCompleted: false
+    isFinal: true
+}
+
+type FixtureRow = FixtureMatchRow | FixtureFinalRow
 
 interface Props {
     tournament: Tournament
@@ -96,6 +122,14 @@ function matchScoreOrZero(score: unknown) {
     return Number.isFinite(numericScore) ? numericScore : 0
 }
 
+function formatFixtureTime(matchDate: string) {
+    return new Date(matchDate).toLocaleTimeString(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+    })
+}
+
 export function TournamentDetailView({ tournament, teams, players, matches = [], matchStats = [], linkedAuction, allAuctions, allDbPlayers = [], isAdmin, isPlayer = false, isManager = false, hasJoined = false, currentUserId = null }: Props) {
     const router = useRouter()
     const toast = useToast()
@@ -115,6 +149,10 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
     const [deleteMatchId, setDeleteMatchId] = useState<string | null>(null)
     const [showDeleteAllMatchesConfirm, setShowDeleteAllMatchesConfirm] = useState(false)
     const [isDeletingMatch, setIsDeletingMatch] = useState(false)
+    const [matchActionMenuId, setMatchActionMenuId] = useState<string | null>(null)
+    const [finalMatchConfirmId, setFinalMatchConfirmId] = useState<string | null>(null)
+    const [unmarkFinalConfirmId, setUnmarkFinalConfirmId] = useState<string | null>(null)
+    const [isMarkingFinal, setIsMarkingFinal] = useState(false)
 
     // Compute stats
     const completedMatches = matches.filter(m => m.status === 'completed')
@@ -188,6 +226,80 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
         const bProfile = Array.isArray(b.profiles) ? b.profiles[0] : b.profiles
         return `${aProfile?.first_name ?? ''} ${aProfile?.last_name ?? ''}`.localeCompare(`${bProfile?.first_name ?? ''} ${bProfile?.last_name ?? ''}`)
     })
+
+    const finalMatch = matches.find(match => match.is_final)
+    const normalFixtureMatches = matches
+        .filter(match => !match.is_final)
+        .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+
+    function getFixtureMatchRow(match: TournamentMatch): FixtureMatchRow {
+        const team1 = teams.find(team => team.id === match.team_1_id)
+        const team2 = teams.find(team => team.id === match.team_2_id)
+        const team1Score = matchScoreOrZero(match.team_1_score)
+        const team2Score = matchScoreOrZero(match.team_2_score)
+        const isCompleted = match.status === 'completed'
+        const winner = !isCompleted
+            ? '-'
+            : team1Score > team2Score
+                ? team1?.team_name ?? 'Team 1'
+                : team2Score > team1Score
+                    ? team2?.team_name ?? 'Team 2'
+                    : '-'
+
+        return {
+            type: 'match',
+            id: match.id,
+            time: formatFixtureTime(match.match_date),
+            team1Name: team1?.team_name ?? 'Unknown',
+            team2Name: team2?.team_name ?? 'Unknown',
+            score: isCompleted ? `${team1Score} - ${team2Score}` : '-',
+            winner,
+            isCompleted,
+            isFinal: !!match.is_final,
+        }
+    }
+
+    const orderedFixtureRows: FixtureRow[] = [
+        ...(finalMatch ? [getFixtureMatchRow(finalMatch)] : []),
+        ...normalFixtureMatches.map(getFixtureMatchRow),
+        ...(matches.length > 0 && !finalMatch
+            ? [{ type: 'final', id: 'final', time: 'TBD', match: 'Top 2 teams from leaderboard', score: '-', winner: '-', isCompleted: false, isFinal: true } as FixtureFinalRow]
+            : []),
+    ]
+
+    async function handleMarkFinalMatch() {
+        if (!finalMatchConfirmId) return
+
+        setIsMarkingFinal(true)
+        try {
+            await markTournamentMatchAsFinal(tournament.id, finalMatchConfirmId)
+            toast.success('Final match marked')
+            setFinalMatchConfirmId(null)
+            setMatchActionMenuId(null)
+            router.refresh()
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to mark final match')
+        } finally {
+            setIsMarkingFinal(false)
+        }
+    }
+
+    async function handleUnmarkFinalMatch() {
+        if (!unmarkFinalConfirmId) return
+
+        setIsMarkingFinal(true)
+        try {
+            await unmarkTournamentMatchAsFinal(tournament.id, unmarkFinalConfirmId)
+            toast.success('Final match removed')
+            setUnmarkFinalConfirmId(null)
+            setMatchActionMenuId(null)
+            router.refresh()
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to remove final match')
+        } finally {
+            setIsMarkingFinal(false)
+        }
+    }
 
     async function handleDeleteMatch() {
         if (!deleteMatchId) return
@@ -461,6 +573,61 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                 </div>
             )}
 
+            {/* Fixture Section */}
+            <div>
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-text-primary">📅 Fixture</h3>
+                </div>
+                {orderedFixtureRows.length > 0 ? (
+                    <Card className="overflow-x-auto p-0">
+                        <table className="w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
+                            <thead>
+                                <tr className="border-b border-border bg-surface-2/50 text-[10px] sm:text-xs text-text-muted">
+                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium">Time</th>
+                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium">Match</th>
+                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Score</th>
+                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium">Winner</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                                {orderedFixtureRows.map(row => (
+                                    <tr
+                                        key={row.id}
+                                        className={`transition-colors ${row.isCompleted ? 'bg-emerald-500/5 hover:bg-emerald-500/10' : 'hover:bg-surface-2/30'}`}
+                                    >
+                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-text-muted">{row.time}</td>
+                                        <td className="py-2 px-2 sm:py-3 sm:px-4">
+                                            <div className="flex items-center gap-1.5 sm:gap-3">
+                                                {row.type === 'match' ? (
+                                                    <span className="block max-w-[9rem] truncate font-medium text-text-primary sm:max-w-none">
+                                                        {row.team1Name} <span className="font-black text-accent">vs</span> {row.team2Name}
+                                                    </span>
+                                                ) : (
+                                                    <span className="block max-w-[11rem] truncate font-semibold text-accent sm:max-w-none">{row.match}</span>
+                                                )}
+                                                {row.isFinal && (
+                                                    <span className="rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] sm:px-2.5 sm:py-1 sm:text-[10px] font-bold uppercase tracking-wide text-accent">
+                                                        Final
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-mono font-semibold text-text-primary">{row.score}</td>
+                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-text-primary">
+                                            <span className="block max-w-[5rem] truncate sm:max-w-none">{row.winner}</span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </Card>
+                ) : (
+                    <Card>
+                        <p className="py-6 text-center text-sm text-text-muted">No fixture yet.</p>
+                    </Card>
+                )}
+            </div>
+
             {/* Leaderboard Section */}
             <div>
                 <div className="flex items-center justify-between mb-3">
@@ -533,9 +700,53 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                 <span className="text-xs text-text-muted">
                                                     {new Date(m.match_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                 </span>
-                                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${m.status === 'completed' ? 'bg-surface-3 text-text-muted' : 'bg-accent/10 text-accent'}`}>
-                                                    {m.status}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    {m.is_final && (
+                                                        <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                                                            Final
+                                                        </span>
+                                                    )}
+                                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${m.status === 'completed' ? 'bg-surface-3 text-text-muted' : 'bg-accent/10 text-accent'}`}>
+                                                        {m.status}
+                                                    </span>
+                                                    {isAdmin && (
+                                                        <div className="relative">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setMatchActionMenuId(matchActionMenuId === m.id ? null : m.id)}
+                                                                className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-3 hover:text-text-primary"
+                                                                title="Match actions"
+                                                            >
+                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                                    <circle cx="12" cy="5" r="2" />
+                                                                    <circle cx="12" cy="12" r="2" />
+                                                                    <circle cx="12" cy="19" r="2" />
+                                                                </svg>
+                                                            </button>
+                                                            {matchActionMenuId === m.id && (
+                                                                <>
+                                                                    <div className="fixed inset-0 z-40" onClick={() => setMatchActionMenuId(null)} />
+                                                                    <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-surface-2 py-1 shadow-xl">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                if (m.is_final) {
+                                                                                    setUnmarkFinalConfirmId(m.id)
+                                                                                } else {
+                                                                                    setFinalMatchConfirmId(m.id)
+                                                                                }
+                                                                                setMatchActionMenuId(null)
+                                                                            }}
+                                                                            className="w-full px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                                        >
+                                                                            {m.is_final ? 'Undo final match' : 'Mark as final match'}
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                             <div className="flex items-center justify-between flex-1 mb-4">
                                                 {(() => {
@@ -635,15 +846,15 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                 ) : leaderboardTab === 'players' ? (
                     players.length > 0 ? (
                         <Card className="overflow-x-auto p-0">
-                        <table className="w-full text-left text-sm whitespace-nowrap">
+                        <table className="w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
                             <thead>
-                                <tr className="border-b border-border bg-surface-2/50 text-xs text-text-muted">
-                                    <th className="py-3 px-4 font-medium sticky left-0 bg-surface-2 z-10">Player Name</th>
-                                    <th className="py-3 px-4 font-medium text-center">Team</th>
-                                    <th className="py-3 px-4 font-medium text-center">Goals</th>
-                                    <th className="py-3 px-4 font-medium text-center">Assists</th>
-                                    <th className="py-3 px-4 font-medium text-center">Matches</th>
-                                    <th className="py-3 px-4 font-medium">Position</th>
+                                <tr className="border-b border-border bg-surface-2/50 text-[10px] sm:text-xs text-text-muted">
+                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium sticky left-0 bg-surface-2 z-10">Player</th>
+                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Team</th>
+                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Goals</th>
+                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Assists</th>
+                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Matches</th>
+                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium">Position</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
@@ -652,8 +863,8 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                     const team = teams.find(t => t.id === tp.team_id)
                                     return (
                                         <tr key={tp.id} className="hover:bg-surface-2/30 transition-colors">
-                                            <td className="py-3 px-4 sticky left-0 bg-surface-2 z-10">
-                                                <div className="flex items-center gap-3">
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 sticky left-0 bg-surface-2 z-10">
+                                                <div className="flex items-center gap-1.5 sm:gap-3">
                                                     {/* Avatar: hidden on mobile */}
                                                     {p?.avatar_url ? (
                                                         // eslint-disable-next-line @next/next/no-img-element
@@ -668,12 +879,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                         {p?.first_name} {p?.last_name}
                                                     </span>
                                                     {/* Abbreviated name on mobile */}
-                                                    <span className="sm:hidden font-medium text-text-primary">
+                                                    <span className="sm:hidden block max-w-[4.5rem] truncate font-medium text-text-primary">
                                                         {p?.first_name?.split(' ')[0]} {p?.last_name?.trim().charAt(0)}.
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="py-3 px-4">
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4">
                                                 {team ? (
                                                     <div className="flex justify-center">
                                                         {team.logo_url ? (
@@ -682,12 +893,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                                 src={team.logo_url}
                                                                 alt={team.team_name}
                                                                 title={team.team_name}
-                                                                className="h-8 w-8 rounded-lg object-contain"
+                                                                className="h-6 w-6 rounded-lg object-contain sm:h-8 sm:w-8"
                                                             />
                                                         ) : (
                                                             <span
                                                                 title={team.team_name}
-                                                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface-3 text-[10px] font-bold text-text-muted"
+                                                                className="flex h-6 w-6 items-center justify-center rounded-lg border border-border bg-surface-3 text-[9px] font-bold text-text-muted sm:h-8 sm:w-8 sm:text-[10px]"
                                                             >
                                                                 {team.team_name.substring(0, 2).toUpperCase()}
                                                             </span>
@@ -695,18 +906,18 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                     </div>
                                                 ) : (
                                                     <div className="flex justify-center">
-                                                        <span className="text-xs text-text-muted italic">-</span>
+                                                        <span className="text-[10px] sm:text-xs text-text-muted italic">-</span>
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="py-3 px-4 text-center font-bold text-text-primary">{tp.goals}</td>
-                                            <td className="py-3 px-4 text-center font-bold text-text-primary">{tp.assists}</td>
-                                            <td className="py-3 px-4 text-center text-text-muted">{tp.matchesPlayed}</td>
-                                            <td className="py-3 px-4">
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-text-primary">{tp.goals}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-text-primary">{tp.assists}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{tp.matchesPlayed}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4">
                                                 {p?.player_position ? (
-                                                    <span className="text-xs text-text-muted capitalize">{p.player_position}</span>
+                                                    <span className="text-[10px] sm:text-xs text-text-muted capitalize">{p.player_position}</span>
                                                 ) : (
-                                                    <span className="text-xs text-text-muted italic">-</span>
+                                                    <span className="text-[10px] sm:text-xs text-text-muted italic">-</span>
                                                 )}
                                             </td>
                                         </tr>
@@ -723,38 +934,38 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                 ) : (
                     teams.length > 0 ? (
                         <Card className="overflow-x-auto p-0">
-                            <table className="w-full text-left text-sm whitespace-nowrap">
+                            <table className="w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
                                 <thead>
-                                    <tr className="border-b border-border bg-surface-2/50 text-xs text-text-muted">
-                                        <th className="py-3 px-4 font-medium text-center w-12">Rank</th>
-                                        <th className="py-3 px-4 font-medium sticky left-0 bg-surface-2 z-10">Team Name</th>
-                                        <th className="py-3 px-4 font-medium text-center">Played</th>
-                                        <th className="py-3 px-4 font-medium text-center">W</th>
-                                        <th className="py-3 px-4 font-medium text-center">D</th>
-                                        <th className="py-3 px-4 font-medium text-center">L</th>
-                                        <th className="py-3 px-4 font-medium text-center">GD</th>
-                                        <th className="py-3 px-4 font-medium text-center">GF</th>
-                                        <th className="py-3 px-4 font-medium text-center">GA</th>
-                                        <th className="py-3 px-4 font-medium text-center text-accent">Pts</th>
+                                    <tr className="border-b border-border bg-surface-2/50 text-[10px] sm:text-xs text-text-muted">
+                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center w-8 sm:w-12">Rank</th>
+                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium sticky left-0 bg-surface-2 z-10">Team</th>
+                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">P</th>
+                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">W</th>
+                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">D</th>
+                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">L</th>
+                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">GD</th>
+                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">GF</th>
+                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">GA</th>
+                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center text-accent">Pts</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
                                     {teamStats.map((team, idx) => (
                                         <tr key={team.id} className="hover:bg-surface-2/30 transition-colors">
-                                            <td className="py-3 px-4 text-center font-semibold text-text-muted">{idx + 1}</td>
-                                            <td className="py-3 px-4 sticky left-0 bg-surface-2 z-10">
-                                                <div className="font-medium text-text-primary">
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-semibold text-text-muted">{idx + 1}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 sticky left-0 bg-surface-2 z-10">
+                                                <div className="max-w-[6rem] truncate font-medium text-text-primary sm:max-w-none">
                                                     {team.team_name}
                                                 </div>
                                             </td>
-                                            <td className="py-3 px-4 text-center text-text-muted">{team.played}</td>
-                                            <td className="py-3 px-4 text-center text-emerald-400">{team.won}</td>
-                                            <td className="py-3 px-4 text-center text-yellow-400">{team.drawn}</td>
-                                            <td className="py-3 px-4 text-center text-red-400">{team.lost}</td>
-                                            <td className="py-3 px-4 text-center text-text-muted">{team.gd > 0 ? `+${team.gd}` : team.gd}</td>
-                                            <td className="py-3 px-4 text-center text-text-muted">{team.gf}</td>
-                                            <td className="py-3 px-4 text-center text-text-muted">{team.ga}</td>
-                                            <td className="py-3 px-4 text-center font-bold text-accent">{team.points}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.played}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-emerald-400">{team.won}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-yellow-400">{team.drawn}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-red-400">{team.lost}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.gd > 0 ? `+${team.gd}` : team.gd}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.gf}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.ga}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-accent">{team.points}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -968,6 +1179,46 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                             </Button>
                             <Button variant="danger" size="sm" onClick={handleDeleteAllMatches} disabled={isDeletingMatch}>
                                 {isDeletingMatch ? 'Deleting...' : 'Delete All'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {finalMatchConfirmId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/50" onClick={() => !isMarkingFinal && setFinalMatchConfirmId(null)} />
+                    <div className="relative z-10 w-full max-w-sm rounded-xl border border-border bg-surface-2 p-6 shadow-2xl">
+                        <h3 className="text-lg font-semibold text-text-primary">Mark Final Match</h3>
+                        <p className="mt-2 text-sm text-text-muted">
+                            Are you sure you want to mark this match as the final? It will replace the default final row in the fixture.
+                        </p>
+                        <div className="mt-5 flex items-center justify-end gap-3">
+                            <Button variant="ghost" size="sm" onClick={() => setFinalMatchConfirmId(null)} disabled={isMarkingFinal}>
+                                Cancel
+                            </Button>
+                            <Button variant="primary" size="sm" onClick={handleMarkFinalMatch} disabled={isMarkingFinal}>
+                                {isMarkingFinal ? 'Marking...' : 'Yes, Mark Final'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {unmarkFinalConfirmId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/50" onClick={() => !isMarkingFinal && setUnmarkFinalConfirmId(null)} />
+                    <div className="relative z-10 w-full max-w-sm rounded-xl border border-border bg-surface-2 p-6 shadow-2xl">
+                        <h3 className="text-lg font-semibold text-text-primary">Undo Final Match</h3>
+                        <p className="mt-2 text-sm text-text-muted">
+                            Are you sure you want to remove the final marker from this match? The fixture will show the default final placeholder again.
+                        </p>
+                        <div className="mt-5 flex items-center justify-end gap-3">
+                            <Button variant="ghost" size="sm" onClick={() => setUnmarkFinalConfirmId(null)} disabled={isMarkingFinal}>
+                                Cancel
+                            </Button>
+                            <Button variant="primary" size="sm" onClick={handleUnmarkFinalMatch} disabled={isMarkingFinal}>
+                                {isMarkingFinal ? 'Removing...' : 'Yes, Undo'}
                             </Button>
                         </div>
                     </div>

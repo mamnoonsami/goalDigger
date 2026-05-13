@@ -503,6 +503,72 @@ export async function deleteAllTournamentMatches(tournamentId: string) {
     revalidatePath(`/tournaments/${tournamentId}`)
 }
 
+/* ── Mark Tournament Match as Final (Admin) ── */
+export async function markTournamentMatchAsFinal(tournamentId: string, matchId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin, is_king')
+        .eq('id', user.id)
+        .single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can mark tournament finals')
+
+    const { data: match, error: matchLookupError } = await supabase
+        .from('tournament_matches')
+        .select('id')
+        .eq('id', matchId)
+        .eq('tournament_id', tournamentId)
+        .single()
+
+    if (matchLookupError || !match) throw new Error('Match not found for this tournament')
+
+    const { error: clearError } = await supabase
+        .from('tournament_matches')
+        .update({ is_final: false, updated_at: new Date().toISOString() })
+        .eq('tournament_id', tournamentId)
+        .eq('is_final', true)
+
+    if (clearError) throw new Error(`Failed to clear existing final: ${clearError.message}`)
+
+    const { error } = await supabase
+        .from('tournament_matches')
+        .update({ is_final: true, updated_at: new Date().toISOString() })
+        .eq('id', matchId)
+        .eq('tournament_id', tournamentId)
+
+    if (error) throw new Error(`Failed to mark final match: ${error.message}`)
+
+    revalidatePath(`/tournaments/${tournamentId}`)
+}
+
+/* ── Unmark Tournament Match as Final (Admin) ── */
+export async function unmarkTournamentMatchAsFinal(tournamentId: string, matchId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin, is_king')
+        .eq('id', user.id)
+        .single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can update tournament finals')
+
+    const { error } = await supabase
+        .from('tournament_matches')
+        .update({ is_final: false, updated_at: new Date().toISOString() })
+        .eq('id', matchId)
+        .eq('tournament_id', tournamentId)
+        .eq('is_final', true)
+
+    if (error) throw new Error(`Failed to remove final match: ${error.message}`)
+
+    revalidatePath(`/tournaments/${tournamentId}`)
+}
+
 /* ── Record Tournament Match Score (Admin) ── */
 export async function recordTournamentMatchScore(
     matchId: string,

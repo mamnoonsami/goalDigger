@@ -49,16 +49,17 @@ export function CreateTournamentMatchModal({ tournamentId, teams, onClose }: Pro
 
         setIsSubmitting(true)
         try {
+            const selectedLocalDateTime = new Date(`${matchDate}T${matchTime}`)
             await createTournamentMatch({
                 tournament_id: tournamentId,
                 team_1_id: team1Id,
                 team_2_id: team2Id,
-                match_date: `${matchDate}T${matchTime}`
+                match_date: selectedLocalDateTime.toISOString()
             })
             toast.success('Match scheduled successfully')
             onClose()
-        } catch (error: any) {
-            toast.error(error.message)
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to schedule match')
         } finally {
             setIsSubmitting(false)
         }
