@@ -1003,7 +1003,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                         <table className="w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
                             <thead>
                                 <tr className="border-b border-border bg-surface-2/50 text-[10px] sm:text-xs text-text-muted">
-                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium sticky left-0 bg-surface-2 z-10">Player</th>
+                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium">Player</th>
                                     <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Team</th>
                                     <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Goals</th>
                                     <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Assists</th>
@@ -1016,10 +1016,9 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                     const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
                                     const team = teams.find(t => t.id === tp.team_id)
                                     const isEven = idx % 2 === 0
-                                    const stripeColorClass = isEven ? 'bg-[#1a2436] light:bg-[#fdf3e3]' : 'bg-surface-2'
                                     return (
-                                        <tr key={tp.id} className="group transition-colors">
-                                            <td className={`py-2 px-2 sm:py-3 sm:px-4 sticky left-0 z-10 transition-colors ${stripeColorClass} group-hover:bg-surface-3/30`}>
+                                        <tr key={tp.id} className={`group transition-colors ${isEven ? 'bg-surface-1/30' : ''} hover:bg-surface-1/50`}>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4">
                                                 <div className="flex items-center gap-1.5 sm:gap-3">
                                                     {/* Avatar: hidden on mobile */}
                                                     {p?.avatar_url ? (
@@ -1040,7 +1039,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className={`py-2 px-2 sm:py-3 sm:px-4 transition-colors ${isEven ? 'bg-surface-1/30' : '' } group-hover:bg-surface-1/50`}>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4">
                                                 {team ? (
                                                     <div className="flex justify-center">
                                                         {team.logo_url ? (
@@ -1066,10 +1065,10 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-text-primary transition-colors ${isEven ? 'bg-surface-1/30' : '' } group-hover:bg-surface-1/50`}>{tp.goals}</td>
-                                            <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-text-primary transition-colors ${isEven ? 'bg-surface-1/30' : '' } group-hover:bg-surface-1/50`}>{tp.assists}</td>
-                                            <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted transition-colors ${isEven ? 'bg-surface-1/30' : '' } group-hover:bg-surface-1/50`}>{tp.matchesPlayed}</td>
-                                            <td className={`py-2 px-2 sm:py-3 sm:px-4 transition-colors ${isEven ? 'bg-surface-1/30' : '' } group-hover:bg-surface-1/50`}>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-text-primary">{tp.goals}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-text-primary">{tp.assists}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{tp.matchesPlayed}</td>
+                                            <td className="py-2 px-2 sm:py-3 sm:px-4">
                                                 {p?.player_position ? (
                                                     <span className="text-[10px] sm:text-xs text-text-muted capitalize">{p.player_position}</span>
                                                 ) : (
@@ -1094,7 +1093,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                 <thead>
                                     <tr className="border-b border-border bg-surface-2/50 text-[10px] sm:text-xs text-text-muted">
                                         <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center w-8 sm:w-12">Rank</th>
-                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium sticky left-0 bg-surface-2 z-10">Team</th>
+                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium">Team</th>
                                         <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">P</th>
                                         <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">W</th>
                                         <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">D</th>
@@ -1108,11 +1107,10 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                 <tbody className="divide-y divide-border">
                                     {teamStats.map((team, idx) => {
                                         const isEven = idx % 2 === 0
-                                        const stripeColorClass = isEven ? 'bg-[#1a2436] light:bg-[#fdf3e3]' : 'bg-surface-2'
                                         return (
-                                            <tr key={team.id} className="group transition-colors">
-                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center font-semibold text-text-muted transition-colors ${isEven ? 'bg-[#1a2436] light:bg-[#fdf3e3]' : ''} group-hover:bg-surface-1/50`}>{idx + 1}</td>
-                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 sticky left-0 z-10 transition-colors ${stripeColorClass} group-hover:bg-surface-3/30`}>
+                                            <tr key={team.id} className={`group transition-colors ${isEven ? 'bg-surface-1/30' : ''} hover:bg-surface-1/50`}>
+                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-semibold text-text-muted">{idx + 1}</td>
+                                                <td className="py-2 px-2 sm:py-3 sm:px-4">
                                                     <div className="flex items-center gap-2">
                                                         {team.logo_url ? (
                                                             // eslint-disable-next-line @next/next/no-img-element
@@ -1127,14 +1125,14 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.played}</td>
-                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-emerald-400 transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.won}</td>
-                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-yellow-400 transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.drawn}</td>
-                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-red-400 transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.lost}</td>
-                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.gd > 0 ? `+${team.gd}` : team.gd}</td>
-                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.gf}</td>
-                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.ga}</td>
-                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-accent transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.points}</td>
+                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.played}</td>
+                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-emerald-400">{team.won}</td>
+                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-yellow-400">{team.drawn}</td>
+                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-red-400">{team.lost}</td>
+                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.gd > 0 ? `+${team.gd}` : team.gd}</td>
+                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.gf}</td>
+                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.ga}</td>
+                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-accent">{team.points}</td>
                                             </tr>
                                         )
                                     })}
