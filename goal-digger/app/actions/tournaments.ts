@@ -422,6 +422,44 @@ export async function createTournamentMatch(data: {
     revalidatePath(`/tournaments/${data.tournament_id}`)
 }
 
+/* ── Update Tournament Match (Admin) ── */
+export async function updateTournamentMatch(data: {
+    match_id: string
+    tournament_id: string
+    team_1_id: string
+    team_2_id: string
+    match_date: string
+}) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin, is_king')
+        .eq('id', user.id)
+        .single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can update tournament matches')
+
+    if (data.team_1_id === data.team_2_id) {
+        throw new Error('A team cannot play against itself')
+    }
+
+    const { error } = await supabase
+        .from('tournament_matches')
+        .update({
+            team_1_id: data.team_1_id,
+            team_2_id: data.team_2_id,
+            match_date: data.match_date,
+        })
+        .eq('id', data.match_id)
+
+    if (error) throw new Error(`Failed to update match: ${error.message}`)
+
+    revalidatePath(`/tournaments/${data.tournament_id}`)
+}
+
+
 /* ── Delete Tournament Match (Admin) ── */
 export async function deleteTournamentMatch(tournamentId: string, matchId: string) {
     const supabase = await createClient()
@@ -499,6 +537,62 @@ export async function deleteAllTournamentMatches(tournamentId: string) {
         .eq('tournament_id', tournamentId)
 
     if (error) throw new Error(`Failed to delete tournament matches: ${error.message}`)
+
+    revalidatePath(`/tournaments/${tournamentId}`)
+}
+
+/* ── Mark Tournament Match as Ongoing (Admin) ── */
+export async function markTournamentMatchAsOngoing(tournamentId: string, matchId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin, is_king')
+        .eq('id', user.id)
+        .single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can mark ongoing matches')
+
+    // Clear any existing ongoing match in this tournament
+    await supabase
+        .from('tournament_matches')
+        .update({ status: 'scheduled', updated_at: new Date().toISOString() })
+        .eq('tournament_id', tournamentId)
+        .eq('status', 'ongoing')
+
+    const { error } = await supabase
+        .from('tournament_matches')
+        .update({ status: 'ongoing', updated_at: new Date().toISOString() })
+        .eq('id', matchId)
+        .eq('tournament_id', tournamentId)
+
+    if (error) throw new Error(`Failed to mark match as ongoing: ${error.message}`)
+
+    revalidatePath(`/tournaments/${tournamentId}`)
+}
+
+/* ── Unmark Tournament Match as Ongoing (Admin) ── */
+export async function unmarkTournamentMatchAsOngoing(tournamentId: string, matchId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin, is_king')
+        .eq('id', user.id)
+        .single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can update match status')
+
+    const { error } = await supabase
+        .from('tournament_matches')
+        .update({ status: 'scheduled', updated_at: new Date().toISOString() })
+        .eq('id', matchId)
+        .eq('tournament_id', tournamentId)
+        .eq('status', 'ongoing')
+
+    if (error) throw new Error(`Failed to unmark ongoing match: ${error.message}`)
 
     revalidatePath(`/tournaments/${tournamentId}`)
 }

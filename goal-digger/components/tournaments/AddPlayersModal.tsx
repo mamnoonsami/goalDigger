@@ -92,8 +92,8 @@ export function AddPlayersModal({ tournamentId, allPlayers, existingPlayerIds, a
     }
 
     async function handleCreateGuest() {
-        if (!guestFirstName.trim() || !guestLastName.trim()) {
-            toast.error('First and last name are required')
+        if (!guestFirstName.trim()) {
+            toast.error('First name is required')
             return
         }
 
@@ -101,7 +101,7 @@ export function AddPlayersModal({ tournamentId, allPlayers, existingPlayerIds, a
         try {
             const newGuest = await createGuestProfile({
                 first_name: guestFirstName.trim(),
-                last_name: guestLastName.trim(),
+                last_name: guestLastName.trim() || '',
                 player_position: guestPosition || null,
             })
 
@@ -116,7 +116,7 @@ export function AddPlayersModal({ tournamentId, allPlayers, existingPlayerIds, a
             setGuestPosition('')
             setShowGuestForm(false)
 
-            toast.success(`Guest player "${newGuest.first_name} ${newGuest.last_name}" created!`)
+            toast.success(`Guest player "${newGuest.first_name}${newGuest.last_name ? ' ' + newGuest.last_name : ''}" created!`)
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : 'Failed to create guest player')
         } finally {
@@ -252,7 +252,7 @@ export function AddPlayersModal({ tournamentId, allPlayers, existingPlayerIds, a
                                     type="text"
                                     value={guestLastName}
                                     onChange={e => setGuestLastName(e.target.value)}
-                                    placeholder="Last name"
+                                    placeholder="Last name (optional)"
                                     className="rounded-md border border-border bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/40"
                                     disabled={creatingGuest}
                                 />
@@ -271,7 +271,7 @@ export function AddPlayersModal({ tournamentId, allPlayers, existingPlayerIds, a
                                 <Button
                                     size="sm"
                                     onClick={handleCreateGuest}
-                                    disabled={creatingGuest || !guestFirstName.trim() || !guestLastName.trim()}
+                                    disabled={creatingGuest || !guestFirstName.trim()}
                                     isLoading={creatingGuest}
                                     className="text-xs h-[34px] px-4"
                                 >
