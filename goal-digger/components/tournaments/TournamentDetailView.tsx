@@ -7,7 +7,7 @@ import { TournamentStatusBadge } from './TournamentStatusBadge'
 import { TournamentDetailActions } from './TournamentDetailActions'
 import { EditTournamentModal } from './EditTournamentModal'
 import { Button } from '../ui/Button'
-import { deleteAllTournamentMatches, deleteTournamentMatch, joinTournament, leaveTournament, markTournamentMatchAsFinal, unmarkTournamentMatchAsFinal } from '../../app/actions/tournaments'
+import { deleteAllTournamentMatches, deleteTournamentMatch, joinTournament, leaveTournament, markTournamentMatchAsFinal, unmarkTournamentMatchAsFinal, markTournamentMatchAsOngoing, unmarkTournamentMatchAsOngoing } from '../../app/actions/tournaments'
 import { useToast } from '../providers/ToastProvider'
 import { AddPlayersModal } from './AddPlayersModal'
 import { CreateTeamModal } from './CreateTeamModal'
@@ -16,6 +16,7 @@ import { EditTeamModal } from './EditTeamModal'
 import { AssignPlayersToTeamModal } from './AssignPlayersToTeamModal'
 import { CreateTournamentMatchModal } from './CreateTournamentMatchModal'
 import { RecordMatchScoreModal } from './RecordMatchScoreModal'
+import { EditTournamentMatchModal } from './EditTournamentMatchModal'
 
 interface Auction {
     id: string
@@ -152,6 +153,10 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
     const [finalMatchConfirmId, setFinalMatchConfirmId] = useState<string | null>(null)
     const [unmarkFinalConfirmId, setUnmarkFinalConfirmId] = useState<string | null>(null)
     const [isMarkingFinal, setIsMarkingFinal] = useState(false)
+    const [editingMatchId, setEditingMatchId] = useState<string | null>(null)
+    const [ongoingConfirmId, setOngoingConfirmId] = useState<string | null>(null)
+    const [unmarkOngoingConfirmId, setUnmarkOngoingConfirmId] = useState<string | null>(null)
+    const [isMarkingOngoing, setIsMarkingOngoing] = useState(false)
 
     // Compute stats
     const completedMatches = matches.filter(m => m.status === 'completed')
@@ -330,7 +335,37 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
         }
     }
 
-    
+    async function handleMarkOngoing() {
+        if (!ongoingConfirmId) return
+        setIsMarkingOngoing(true)
+        try {
+            await markTournamentMatchAsOngoing(tournament.id, ongoingConfirmId)
+            toast.success('Match marked as ongoing')
+            setOngoingConfirmId(null)
+            setMatchActionMenuId(null)
+            router.refresh()
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to mark ongoing')
+        } finally {
+            setIsMarkingOngoing(false)
+        }
+    }
+
+    async function handleUnmarkOngoing() {
+        if (!unmarkOngoingConfirmId) return
+        setIsMarkingOngoing(true)
+        try {
+            await unmarkTournamentMatchAsOngoing(tournament.id, unmarkOngoingConfirmId)
+            toast.success('Match marked as scheduled')
+            setUnmarkOngoingConfirmId(null)
+            setMatchActionMenuId(null)
+            router.refresh()
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to update match')
+        } finally {
+            setIsMarkingOngoing(false)
+        }
+    }
 
     return (
         <div className="flex flex-col gap-6 overflow-hidden">
@@ -576,44 +611,143 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                 </div>
                 {orderedFixtureRows.length > 0 ? (
                     <Card className="overflow-x-auto p-0">
-                        <table className="w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
+                        <table className="w-full text-left text-[11px] sm:text-sm">
                             <thead>
                                 <tr className="border-b border-border bg-surface-2/50 text-[10px] sm:text-xs text-text-muted">
-                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium">Time</th>
-                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium">Match</th>
-                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Score</th>
-                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium">Winner</th>
+                                    <th className="py-2 px-3 sm:py-3 sm:px-4 font-medium text-center">Match</th>
+                                    <th className="py-2 px-3 sm:py-3 sm:px-4 font-medium text-center">Score</th>
+                                    <th className="py-2 px-3 sm:py-3 sm:px-4 font-medium text-center">Winner</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {orderedFixtureRows.map(row => (
-                                    <tr
-                                        key={row.id}
-                                        className={`transition-colors ${row.isCompleted ? 'bg-emerald-500/5 hover:bg-emerald-500/10' : 'hover:bg-surface-2/30'}`}
-                                    >
-                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-text-muted">{row.time}</td>
-                                        <td className="py-2 px-2 sm:py-3 sm:px-4">
-                                            <div className="flex items-center gap-1.5 sm:gap-3">
+                                {orderedFixtureRows.map(row => {
+                                    const matchObj = row.type === 'match' ? matches.find(m => m.id === row.id) : null
+                                    const t1 = matchObj ? teams.find(t => t.id === matchObj.team_1_id) : null
+                                    const t2 = matchObj ? teams.find(t => t.id === matchObj.team_2_id) : null
+
+                                    // Ongoing indicator: driven by status field
+                                    const isOngoing = matchObj && matchObj.status === 'ongoing'
+
+                                    return (
+                                        <tr
+                                            key={row.id}
+                                            className="group transition-colors"
+                                        >
+                                            <td className={`py-2.5 px-3 sm:py-3 sm:px-4 transition-colors ${
+                                                row.isCompleted
+                                                    ? 'bg-emerald-500/5 group-hover:bg-emerald-500/10'
+                                                    : orderedFixtureRows.indexOf(row) % 2 === 0
+                                                        ? 'bg-surface-1/30 group-hover:bg-surface-1/50'
+                                                        : 'group-hover:bg-surface-2/30'
+                                            }`}>
                                                 {row.type === 'match' ? (
-                                                    <span className="block max-w-[9rem] truncate font-medium text-text-primary sm:max-w-none">
-                                                        {row.team1Name} <span className="font-black text-accent">vs</span> {row.team2Name}
-                                                    </span>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        {/* Team layout: logo + name — VS — logo + name (tighter spacing) */}
+                                                        <div className="flex items-center gap-1">
+                                                            {/* Team 1 */}
+                                                            <div className="flex items-center gap-1 flex-1 min-w-0 justify-end">
+                                                                <span className="font-medium text-text-primary truncate text-right text-[11px] sm:text-sm">{t1?.team_name ?? row.team1Name}</span>
+                                                                {t1?.logo_url ? (
+                                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                                    <img src={t1.logo_url} alt="" className="h-5 w-5 sm:h-6 sm:w-6 rounded object-contain flex-shrink-0" />
+                                                                ) : (
+                                                                    <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">
+                                                                        {(t1?.team_name ?? row.team1Name).substring(0,2).toUpperCase()}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            {/* VS anchor */}
+                                                            <span className="shrink-0 w-7 text-center text-[10px] sm:text-xs font-black text-accent">VS</span>
+                                                            {/* Team 2 */}
+                                                            <div className="flex items-center gap-1 flex-1 min-w-0 justify-start">
+                                                                {t2?.logo_url ? (
+                                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                                    <img src={t2.logo_url} alt="" className="h-5 w-5 sm:h-6 sm:w-6 rounded object-contain flex-shrink-0" />
+                                                                ) : (
+                                                                    <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">
+                                                                        {(t2?.team_name ?? row.team2Name).substring(0,2).toUpperCase()}
+                                                                    </div>
+                                                                )}
+                                                                <span className="font-medium text-text-primary truncate text-[11px] sm:text-sm">{t2?.team_name ?? row.team2Name}</span>
+                                                            </div>
+                                                        </div>
+                                                        {/* Date + time + ongoing — centered below, anchored to VS position */}
+                                                        <div className="flex items-center gap-1">
+                                                            {/* spacer matching team-1 side — leave empty */}
+                                                            <div className="flex-1" />
+                                                            <div className="flex items-center justify-center gap-1 w-7">
+                                                                {isOngoing ? (
+                                                                    <span className="relative flex h-1.5 w-1.5">
+                                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                                                                    </span>
+                                                                ) : null}
+                                                            </div>
+                                                            <div className="flex-1" />
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <div className="flex-1" />
+                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                <span className="text-[10px] sm:text-[11px] text-text-muted">
+                                                                    {new Date(matchObj!.match_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                                    {' · '}
+                                                                    {new Date(matchObj!.match_date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                                                </span>
+                                                                {isOngoing && (
+                                                                    <span className="text-[10px] font-bold text-red-400">· Ongoing</span>
+                                                                )}
+                                                                {row.isFinal && (
+                                                                    <span className="rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] sm:px-2 sm:text-[10px] font-bold uppercase tracking-wide text-accent">Final</span>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1" />
+                                                        </div>
+                                                    </div>
                                                 ) : (
-                                                    <span className="block max-w-[11rem] truncate font-semibold text-accent sm:max-w-none">{row.match}</span>
+                                                    // Final placeholder row — styled like a match row with VS layout
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <div className="flex items-center gap-1">
+                                                            {/* Left side: Top team */}
+                                                            <div className="flex items-center gap-1 flex-1 min-w-0 justify-end">
+                                                                <span className="font-medium text-text-muted truncate text-right text-[11px] sm:text-sm">Top team</span>
+                                                                <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">1st</div>
+                                                            </div>
+                                                            {/* VS anchor */}
+                                                            <span className="shrink-0 w-7 text-center text-[10px] sm:text-xs font-black text-accent">VS</span>
+                                                            {/* Right side: 2nd team */}
+                                                            <div className="flex items-center gap-1 flex-1 min-w-0 justify-start">
+                                                                <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">2nd</div>
+                                                                <span className="font-medium text-text-muted truncate text-[11px] sm:text-sm">2nd team</span>
+                                                            </div>
+                                                        </div>
+                                                        {/* TBD metadata row anchored below VS */}
+                                                        <div className="flex items-center gap-1">
+                                                            <div className="flex-1" />
+                                                            <span className="w-7 text-center text-[10px] sm:text-[11px] text-text-muted/50 italic">TBD</span>
+                                                            <div className="flex-1" />
+                                                        </div>
+                                                    </div>
                                                 )}
-                                                {row.isFinal && (
-                                                    <span className="rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] sm:px-2.5 sm:py-1 sm:text-[10px] font-bold uppercase tracking-wide text-accent">
-                                                        Final
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-mono font-semibold text-text-primary">{row.score}</td>
-                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-text-primary">
-                                            <span className="block max-w-[5rem] truncate sm:max-w-none">{row.winner}</span>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td className={`py-2 px-3 sm:py-3 sm:px-4 text-center font-mono font-semibold text-text-primary whitespace-nowrap transition-colors ${
+                                                row.isCompleted
+                                                    ? 'bg-emerald-500/5 group-hover:bg-emerald-500/10'
+                                                    : orderedFixtureRows.indexOf(row) % 2 === 0
+                                                        ? 'bg-surface-1/30 group-hover:bg-surface-1/50'
+                                                        : 'group-hover:bg-surface-2/30'
+                                            }`}>{row.score}</td>
+                                            <td className={`py-2 px-3 sm:py-3 sm:px-4 text-center whitespace-nowrap transition-colors ${
+                                                row.isCompleted
+                                                    ? 'bg-emerald-500/5 group-hover:bg-emerald-500/10'
+                                                    : orderedFixtureRows.indexOf(row) % 2 === 0
+                                                        ? 'bg-surface-1/30 group-hover:bg-surface-1/50'
+                                                        : 'group-hover:bg-surface-2/30'
+                                            }`}>
+                                                <span className="text-text-primary">{row.winner}</span>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </Card>
@@ -723,6 +857,30 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                                 <>
                                                                     <div className="fixed inset-0 z-40" onClick={() => setMatchActionMenuId(null)} />
                                                                     <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-surface-2 py-1 shadow-xl">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setEditingMatchId(m.id)
+                                                                                setMatchActionMenuId(null)
+                                                                            }}
+                                                                            className="w-full px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                                        >
+                                                                            Edit Match
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                if (m.status === 'ongoing') {
+                                                                                    setUnmarkOngoingConfirmId(m.id)
+                                                                                } else {
+                                                                                    setOngoingConfirmId(m.id)
+                                                                                }
+                                                                                setMatchActionMenuId(null)
+                                                                            }}
+                                                                            className="w-full px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                                        >
+                                                                            {m.status === 'ongoing' ? 'Undo ongoing' : 'Mark as ongoing'}
+                                                                        </button>
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => {
@@ -854,12 +1012,14 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {playerStats.map(tp => {
+                                {playerStats.map((tp, idx) => {
                                     const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
                                     const team = teams.find(t => t.id === tp.team_id)
+                                    const isEven = idx % 2 === 0
+                                    const stripeColorClass = isEven ? 'bg-[#1a2436] light:bg-[#fdf3e3]' : 'bg-surface-2'
                                     return (
-                                        <tr key={tp.id} className="hover:bg-surface-2/30 transition-colors">
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 sticky left-0 bg-surface-2 z-10">
+                                        <tr key={tp.id} className="group transition-colors">
+                                            <td className={`py-2 px-2 sm:py-3 sm:px-4 sticky left-0 z-10 transition-colors ${stripeColorClass} group-hover:bg-surface-3/30`}>
                                                 <div className="flex items-center gap-1.5 sm:gap-3">
                                                     {/* Avatar: hidden on mobile */}
                                                     {p?.avatar_url ? (
@@ -880,7 +1040,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4">
+                                            <td className={`py-2 px-2 sm:py-3 sm:px-4 transition-colors ${isEven ? 'bg-surface-1/30' : '' } group-hover:bg-surface-1/50`}>
                                                 {team ? (
                                                     <div className="flex justify-center">
                                                         {team.logo_url ? (
@@ -906,10 +1066,10 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-text-primary">{tp.goals}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-text-primary">{tp.assists}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{tp.matchesPlayed}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4">
+                                            <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-text-primary transition-colors ${isEven ? 'bg-surface-1/30' : '' } group-hover:bg-surface-1/50`}>{tp.goals}</td>
+                                            <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-text-primary transition-colors ${isEven ? 'bg-surface-1/30' : '' } group-hover:bg-surface-1/50`}>{tp.assists}</td>
+                                            <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted transition-colors ${isEven ? 'bg-surface-1/30' : '' } group-hover:bg-surface-1/50`}>{tp.matchesPlayed}</td>
+                                            <td className={`py-2 px-2 sm:py-3 sm:px-4 transition-colors ${isEven ? 'bg-surface-1/30' : '' } group-hover:bg-surface-1/50`}>
                                                 {p?.player_position ? (
                                                     <span className="text-[10px] sm:text-xs text-text-muted capitalize">{p.player_position}</span>
                                                 ) : (
@@ -946,24 +1106,38 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
-                                    {teamStats.map((team, idx) => (
-                                        <tr key={team.id} className="hover:bg-surface-2/30 transition-colors">
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-semibold text-text-muted">{idx + 1}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 sticky left-0 bg-surface-2 z-10">
-                                                <div className="max-w-[6rem] truncate font-medium text-text-primary sm:max-w-none">
-                                                    {team.team_name}
-                                                </div>
-                                            </td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.played}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-emerald-400">{team.won}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-yellow-400">{team.drawn}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-red-400">{team.lost}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.gd > 0 ? `+${team.gd}` : team.gd}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.gf}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.ga}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-accent">{team.points}</td>
-                                        </tr>
-                                    ))}
+                                    {teamStats.map((team, idx) => {
+                                        const isEven = idx % 2 === 0
+                                        const stripeColorClass = isEven ? 'bg-[#1a2436] light:bg-[#fdf3e3]' : 'bg-surface-2'
+                                        return (
+                                            <tr key={team.id} className="group transition-colors">
+                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center font-semibold text-text-muted transition-colors ${isEven ? 'bg-[#1a2436] light:bg-[#fdf3e3]' : ''} group-hover:bg-surface-1/50`}>{idx + 1}</td>
+                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 sticky left-0 z-10 transition-colors ${stripeColorClass} group-hover:bg-surface-3/30`}>
+                                                    <div className="flex items-center gap-2">
+                                                        {team.logo_url ? (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img src={team.logo_url} alt="" className="h-6 w-6 sm:h-7 sm:w-7 rounded object-contain flex-shrink-0" />
+                                                        ) : (
+                                                            <div className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded bg-surface-3 text-[9px] font-bold text-text-muted flex-shrink-0">
+                                                                {team.team_name.substring(0,2).toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                        <div className="max-w-[6rem] truncate font-medium text-text-primary sm:max-w-none">
+                                                            {team.team_name}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.played}</td>
+                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-emerald-400 transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.won}</td>
+                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-yellow-400 transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.drawn}</td>
+                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-red-400 transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.lost}</td>
+                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.gd > 0 ? `+${team.gd}` : team.gd}</td>
+                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.gf}</td>
+                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.ga}</td>
+                                                <td className={`py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-accent transition-colors ${isEven ? 'bg-surface-1/30' : ''} group-hover:bg-surface-1/50`}>{team.points}</td>
+                                            </tr>
+                                        )
+                                    })}
                                 </tbody>
                             </table>
                         </Card>
@@ -1095,6 +1269,25 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                 />
             )}
 
+            {editingMatchId && (() => {
+                const match = matches.find(m => m.id === editingMatchId)
+                if (!match) return null
+                return (
+                    <EditTournamentMatchModal
+                        match={{
+                            id: match.id,
+                            tournament_id: tournament.id,
+                            team_1_id: match.team_1_id,
+                            team_2_id: match.team_2_id,
+                            match_date: match.match_date,
+                        }}
+                        teams={teams}
+                        onClose={() => setEditingMatchId(null)}
+                    />
+                )
+            })()}
+
+
             {recordScoreMatchId && (() => {
                 const match = matches.find(m => m.id === recordScoreMatchId)
                 if (!match) return null
@@ -1215,6 +1408,46 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                             </Button>
                             <Button variant="primary" size="sm" onClick={handleUnmarkFinalMatch} disabled={isMarkingFinal}>
                                 {isMarkingFinal ? 'Removing...' : 'Yes, Undo'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {ongoingConfirmId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/50" onClick={() => !isMarkingOngoing && setOngoingConfirmId(null)} />
+                    <div className="relative z-10 w-full max-w-sm rounded-xl border border-border bg-surface-2 p-6 shadow-2xl">
+                        <h3 className="text-lg font-semibold text-text-primary">Mark as Ongoing</h3>
+                        <p className="mt-2 text-sm text-text-muted">
+                            Mark this match as currently ongoing? It will show a pulsing dot in the fixture. Any previously marked ongoing match will be reverted.
+                        </p>
+                        <div className="mt-5 flex items-center justify-end gap-3">
+                            <Button variant="ghost" size="sm" onClick={() => setOngoingConfirmId(null)} disabled={isMarkingOngoing}>
+                                Cancel
+                            </Button>
+                            <Button variant="primary" size="sm" onClick={handleMarkOngoing} disabled={isMarkingOngoing}>
+                                {isMarkingOngoing ? 'Marking...' : 'Yes, Mark Ongoing'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {unmarkOngoingConfirmId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/50" onClick={() => !isMarkingOngoing && setUnmarkOngoingConfirmId(null)} />
+                    <div className="relative z-10 w-full max-w-sm rounded-xl border border-border bg-surface-2 p-6 shadow-2xl">
+                        <h3 className="text-lg font-semibold text-text-primary">Undo Ongoing</h3>
+                        <p className="mt-2 text-sm text-text-muted">
+                            Revert this match back to scheduled? The pulsing dot will be removed from the fixture.
+                        </p>
+                        <div className="mt-5 flex items-center justify-end gap-3">
+                            <Button variant="ghost" size="sm" onClick={() => setUnmarkOngoingConfirmId(null)} disabled={isMarkingOngoing}>
+                                Cancel
+                            </Button>
+                            <Button variant="primary" size="sm" onClick={handleUnmarkOngoing} disabled={isMarkingOngoing}>
+                                {isMarkingOngoing ? 'Reverting...' : 'Yes, Undo'}
                             </Button>
                         </div>
                     </div>
