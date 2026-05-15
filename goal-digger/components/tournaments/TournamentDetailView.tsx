@@ -147,6 +147,8 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
     const [assigningTeamId, setAssigningTeamId] = useState<string | null>(null)
     const [viewingTeamPlayersId, setViewingTeamPlayersId] = useState<string | null>(null)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [teamsSectionMenuOpen, setTeamsSectionMenuOpen] = useState(false)
+    const [matchesSectionMenuOpen, setMatchesSectionMenuOpen] = useState(false)
     const [leaderboardTab, setLeaderboardTab] = useState<'players' | 'teams' | 'matches'>('teams')
     const [isCreateMatchOpen, setIsCreateMatchOpen] = useState(false)
     const [recordScoreMatchId, setRecordScoreMatchId] = useState<string | null>(null)
@@ -571,29 +573,58 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                 {currentUserId && (
                     <div ref={teamsPanelRef} className="min-w-0 max-w-full">
                         <div className="min-w-0 max-w-full lg:rounded-xl lg:border lg:border-border lg:bg-surface-2 lg:p-5">
-                    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <h3 className="text-lg font-semibold text-accent">🏆 Teams ({teams.length})</h3>
-                        <div className="flex flex-wrap items-center gap-2">
-                            {(isAdmin || isManager) && (
-                                <Button
-                                    size="sm"
-                                    onClick={() => setIsCreateTeamOpen(true)}
-                                    className="h-auto px-2 py-1 text-[11px] sm:px-3 sm:py-1.5 sm:text-xs"
+                    <div className="mb-3 flex items-center justify-between gap-2 border-b border-border/70 pb-2">
+                        <h3 className="flex min-w-0 items-center gap-2 text-lg font-semibold text-accent">
+                            <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                            <span className="truncate">Teams ({teams.length})</span>
+                        </h3>
+                        {(isAdmin || isManager) && (
+                            <div className="relative shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => setTeamsSectionMenuOpen(!teamsSectionMenuOpen)}
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-3 hover:text-text-primary"
+                                    title="Team actions"
                                 >
-                                    + Create Team
-                                </Button>
-                            )}
-                            {(isAdmin || isManager) && teams.length > 0 && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setIsManageTeamsOpen(true)}
-                                    className="h-auto px-2 py-1 text-[11px] sm:px-3 sm:py-1.5 sm:text-xs"
-                                >
-                                    Manage Teams
-                                </Button>
-                            )}
-                        </div>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <circle cx="12" cy="5" r="2" />
+                                        <circle cx="12" cy="12" r="2" />
+                                        <circle cx="12" cy="19" r="2" />
+                                    </svg>
+                                </button>
+                                {teamsSectionMenuOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setTeamsSectionMenuOpen(false)} />
+                                        <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-surface-2 py-1 shadow-xl sm:left-auto sm:right-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsCreateTeamOpen(true)
+                                                    setTeamsSectionMenuOpen(false)
+                                                }}
+                                                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                            >
+                                                <svg className="h-4 w-4 shrink-0 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+                                                <span>Create team</span>
+                                            </button>
+                                            {teams.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setIsManageTeamsOpen(true)
+                                                        setTeamsSectionMenuOpen(false)
+                                                    }}
+                                                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                >
+                                                    <svg className="h-4 w-4 shrink-0 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                                                    <span>Manage teams</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
                     </div>
                     {teams.length > 0 ? (
                         <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 min-w-0">
@@ -669,8 +700,11 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                     className="flex h-full min-w-0 max-w-full flex-col lg:rounded-xl lg:border lg:border-border lg:bg-surface-2 lg:p-5"
                     style={fixturePanelHeight ? { height: fixturePanelHeight } : undefined}
                 >
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-accent">📅 Fixture</h3>
+                <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
+                        <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /></svg>
+                        <span>Fixture</span>
+                    </h3>
                 </div>
                 {orderedFixtureRows.length > 0 ? (
                     <div className="scrollbar-thin min-h-0 w-full max-w-full min-w-0 flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-border [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50">
@@ -824,8 +858,11 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
 
             {/* Leaderboard Section */}
             <div>
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-accent">🏆 Leaderboard</h3>
+                <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
+                        <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
+                        <span>Leaderboard</span>
+                    </h3>
                     {isAdmin && leaderboardTab === 'players' && (
                         <Button
                             size="sm"
@@ -1215,20 +1252,56 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
 
             {/* Matches Section */}
             <div>
-                <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-accent">⚽ Matches ({matches.length})</h3>
+                <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
+                        <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m12 3 3.5 6.5L22 10" /><path d="m12 3-3.5 6.5L2 10" /><path d="m4.5 18 4-5.5L12 21" /><path d="m19.5 18-4-5.5L12 21" /><path d="m8.5 9.5 3.5 2.5 3.5-2.5" /></svg>
+                        <span>Matches ({matches.length})</span>
+                    </h3>
                     {isAdmin && (
-                        <div className="flex justify-end gap-2">
-                            {matches.length > 0 && (
-                                <Button
-                                    variant="danger"
-                                    size="sm"
-                                    onClick={() => setShowDeleteAllMatchesConfirm(true)}
-                                >
-                                    Delete All
-                                </Button>
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setMatchesSectionMenuOpen(!matchesSectionMenuOpen)}
+                                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-3 hover:text-text-primary"
+                                title="Match section actions"
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <circle cx="12" cy="5" r="2" />
+                                    <circle cx="12" cy="12" r="2" />
+                                    <circle cx="12" cy="19" r="2" />
+                                </svg>
+                            </button>
+                            {matchesSectionMenuOpen && (
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setMatchesSectionMenuOpen(false)} />
+                                    <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-lg border border-border bg-surface-2 py-1 shadow-xl">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsCreateMatchOpen(true)
+                                                setMatchesSectionMenuOpen(false)
+                                            }}
+                                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                        >
+                                            <svg className="h-4 w-4 shrink-0 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /><path d="M12 14v4" /><path d="M10 16h4" /></svg>
+                                            <span>Schedule match</span>
+                                        </button>
+                                        {matches.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setShowDeleteAllMatchesConfirm(true)
+                                                    setMatchesSectionMenuOpen(false)
+                                                }}
+                                                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-400 transition-colors hover:bg-surface-3"
+                                            >
+                                                <svg className="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
+                                                <span>Delete all matches</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </>
                             )}
-                            <Button size="sm" onClick={() => setIsCreateMatchOpen(true)}>+ Schedule Match</Button>
                         </div>
                     )}
                 </div>
@@ -1339,6 +1412,17 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                                     <svg className="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" /><path d="M3 21v-5h5" /></svg>
                                                                     <span>Reset this match</span>
                                                                 </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setDeleteMatchId(m.id)
+                                                                        setMatchActionMenuId(null)
+                                                                    }}
+                                                                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-400 transition-colors hover:bg-surface-3"
+                                                                >
+                                                                    <svg className="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
+                                                                    <span>Delete match</span>
+                                                                </button>
                                                             </div>
                                                         </>
                                                     )}
@@ -1397,14 +1481,6 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
 
                                     {isAdmin && (
                                         <div className="mt-auto flex justify-end gap-2 border-t border-border pt-2 sm:pt-3">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-auto py-1 text-[11px] text-red-500 hover:bg-red-500/10 hover:text-red-400 sm:py-1.5 sm:text-xs"
-                                                onClick={() => setDeleteMatchId(m.id)}
-                                            >
-                                                Delete
-                                            </Button>
                                             <Button variant="secondary" size="sm" className="h-auto py-1 text-[11px] sm:py-1.5 sm:text-xs" onClick={() => setRecordScoreMatchId(m.id)}>
                                                 {m.status === 'completed' ? 'Edit Score' : 'Record Score'}
                                             </Button>
