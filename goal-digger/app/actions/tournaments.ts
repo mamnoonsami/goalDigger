@@ -541,6 +541,51 @@ export async function deleteAllTournamentMatches(tournamentId: string) {
     revalidatePath(`/tournaments/${tournamentId}`)
 }
 
+/* ── Reset Tournament Match (Admin) ── */
+export async function resetTournamentMatch(tournamentId: string, matchId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin, is_king')
+        .eq('id', user.id)
+        .single()
+    if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can reset tournament matches')
+
+    const { data: match, error: matchLookupError } = await supabase
+        .from('tournament_matches')
+        .select('id')
+        .eq('id', matchId)
+        .eq('tournament_id', tournamentId)
+        .single()
+
+    if (matchLookupError || !match) throw new Error('Match not found for this tournament')
+
+    const { error: statsError } = await supabase
+        .from('tournament_match_stats')
+        .delete()
+        .eq('tournament_match_id', matchId)
+
+    if (statsError) throw new Error(`Failed to reset match stats: ${statsError.message}`)
+
+    const { error } = await supabase
+        .from('tournament_matches')
+        .update({
+            team_1_score: 0,
+            team_2_score: 0,
+            status: 'scheduled',
+            updated_at: new Date().toISOString(),
+        })
+        .eq('id', matchId)
+        .eq('tournament_id', tournamentId)
+
+    if (error) throw new Error(`Failed to reset match: ${error.message}`)
+
+    revalidatePath(`/tournaments/${tournamentId}`)
+}
+
 /* ── Mark Tournament Match as Ongoing (Admin) ── */
 export async function markTournamentMatchAsOngoing(tournamentId: string, matchId: string) {
     const supabase = await createClient()
@@ -691,7 +736,7 @@ export async function recordTournamentMatchScore(
         .update({
             team_1_score: data.team_1_score,
             team_2_score: data.team_2_score,
-            ...(data.mark_completed ? { status: 'completed' } : {}),
+            status: data.mark_completed ? 'completed' : 'scheduled',
             updated_at: new Date().toISOString()
         })
         .eq('id', matchId)

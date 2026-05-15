@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '../ui/Card'
 import { TournamentStatusBadge } from './TournamentStatusBadge'
 import { TournamentDetailActions } from './TournamentDetailActions'
 import { EditTournamentModal } from './EditTournamentModal'
 import { Button } from '../ui/Button'
-import { deleteAllTournamentMatches, deleteTournamentMatch, joinTournament, leaveTournament, markTournamentMatchAsFinal, unmarkTournamentMatchAsFinal, markTournamentMatchAsOngoing, unmarkTournamentMatchAsOngoing } from '../../app/actions/tournaments'
+import { deleteAllTournamentMatches, deleteTournamentMatch, joinTournament, leaveTournament, markTournamentMatchAsFinal, resetTournamentMatch, unmarkTournamentMatchAsFinal, markTournamentMatchAsOngoing, unmarkTournamentMatchAsOngoing } from '../../app/actions/tournaments'
 import { useToast } from '../providers/ToastProvider'
 import { AddPlayersModal } from './AddPlayersModal'
 import { CreateTeamModal } from './CreateTeamModal'
@@ -82,7 +82,7 @@ interface FixtureMatchRow {
     team1Name: string
     team2Name: string
     score: string
-    winner: string
+    winningTeam: 'team1' | 'team2' | null
     isCompleted: boolean
     isFinal: boolean
 }
@@ -93,12 +93,14 @@ interface FixtureFinalRow {
     time: 'TBD'
     match: 'Top 2 teams from leaderboard'
     score: '-'
-    winner: '-'
+    winningTeam: null
     isCompleted: false
     isFinal: true
 }
 
 type FixtureRow = FixtureMatchRow | FixtureFinalRow
+
+const DATE_TIME_LOCALE = 'en-US'
 
 interface Props {
     tournament: Tournament
@@ -124,7 +126,7 @@ function matchScoreOrZero(score: unknown) {
 }
 
 function formatFixtureTime(matchDate: string) {
-    return new Date(matchDate).toLocaleTimeString(undefined, {
+    return new Date(matchDate).toLocaleTimeString(DATE_TIME_LOCALE, {
         hour: '2-digit',
         minute: '2-digit',
         hour12: true,
@@ -134,7 +136,9 @@ function formatFixtureTime(matchDate: string) {
 export function TournamentDetailView({ tournament, teams, players, matches = [], matchStats = [], linkedAuction, allAuctions, allDbPlayers = [], isAdmin, isPlayer = false, isManager = false, hasJoined = false, currentUserId = null }: Props) {
     const router = useRouter()
     const toast = useToast()
+    const teamsPanelRef = useRef<HTMLDivElement>(null)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [fixturePanelHeight, setFixturePanelHeight] = useState<number | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [isAddPlayersOpen, setIsAddPlayersOpen] = useState(false)
     const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false)
@@ -149,6 +153,8 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
     const [deleteMatchId, setDeleteMatchId] = useState<string | null>(null)
     const [showDeleteAllMatchesConfirm, setShowDeleteAllMatchesConfirm] = useState(false)
     const [isDeletingMatch, setIsDeletingMatch] = useState(false)
+    const [resetMatchConfirmId, setResetMatchConfirmId] = useState<string | null>(null)
+    const [isResettingMatch, setIsResettingMatch] = useState(false)
     const [matchActionMenuId, setMatchActionMenuId] = useState<string | null>(null)
     const [finalMatchConfirmId, setFinalMatchConfirmId] = useState<string | null>(null)
     const [unmarkFinalConfirmId, setUnmarkFinalConfirmId] = useState<string | null>(null)
@@ -157,6 +163,40 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
     const [ongoingConfirmId, setOngoingConfirmId] = useState<string | null>(null)
     const [unmarkOngoingConfirmId, setUnmarkOngoingConfirmId] = useState<string | null>(null)
     const [isMarkingOngoing, setIsMarkingOngoing] = useState(false)
+
+    useEffect(() => {
+        if (!currentUserId) {
+            setFixturePanelHeight(null)
+            return
+        }
+
+        const mediaQuery = window.matchMedia('(min-width: 1024px)')
+
+        const syncFixtureHeight = () => {
+            if (!mediaQuery.matches || !teamsPanelRef.current) {
+                setFixturePanelHeight(null)
+                return
+            }
+
+            setFixturePanelHeight(teamsPanelRef.current.offsetHeight)
+        }
+
+        syncFixtureHeight()
+
+        const resizeObserver = new ResizeObserver(syncFixtureHeight)
+        if (teamsPanelRef.current) {
+            resizeObserver.observe(teamsPanelRef.current)
+        }
+
+        mediaQuery.addEventListener('change', syncFixtureHeight)
+        window.addEventListener('resize', syncFixtureHeight)
+
+        return () => {
+            resizeObserver.disconnect()
+            mediaQuery.removeEventListener('change', syncFixtureHeight)
+            window.removeEventListener('resize', syncFixtureHeight)
+        }
+    }, [currentUserId, teams.length, players.length, isAdmin, isManager])
 
     // Compute stats
     const completedMatches = matches.filter(m => m.status === 'completed')
@@ -242,13 +282,13 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
         const team1Score = matchScoreOrZero(match.team_1_score)
         const team2Score = matchScoreOrZero(match.team_2_score)
         const isCompleted = match.status === 'completed'
-        const winner = !isCompleted
-            ? '-'
+        const winningTeam = !isCompleted
+            ? null
             : team1Score > team2Score
-                ? team1?.team_name ?? 'Team 1'
+                ? 'team1'
                 : team2Score > team1Score
-                    ? team2?.team_name ?? 'Team 2'
-                    : '-'
+                    ? 'team2'
+                    : null
 
         return {
             type: 'match',
@@ -257,7 +297,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
             team1Name: team1?.team_name ?? 'Unknown',
             team2Name: team2?.team_name ?? 'Unknown',
             score: isCompleted ? `${team1Score} - ${team2Score}` : '-',
-            winner,
+            winningTeam,
             isCompleted,
             isFinal: !!match.is_final,
         }
@@ -267,7 +307,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
         ...(finalMatch ? [getFixtureMatchRow(finalMatch)] : []),
         ...normalFixtureMatches.map(getFixtureMatchRow),
         ...(matches.length > 0 && !finalMatch
-            ? [{ type: 'final', id: 'final', time: 'TBD', match: 'Top 2 teams from leaderboard', score: '-', winner: '-', isCompleted: false, isFinal: true } as FixtureFinalRow]
+            ? [{ type: 'final', id: 'final', time: 'TBD', match: 'Top 2 teams from leaderboard', score: '-', winningTeam: null, isCompleted: false, isFinal: true } as FixtureFinalRow]
             : []),
     ]
 
@@ -332,6 +372,23 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
             toast.error(error instanceof Error ? error.message : 'Failed to delete matches')
         } finally {
             setIsDeletingMatch(false)
+        }
+    }
+
+    async function handleResetMatch() {
+        if (!resetMatchConfirmId) return
+
+        setIsResettingMatch(true)
+        try {
+            await resetTournamentMatch(tournament.id, resetMatchConfirmId)
+            toast.success('Match reset')
+            setResetMatchConfirmId(null)
+            setMatchActionMenuId(null)
+            router.refresh()
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to reset match')
+        } finally {
+            setIsResettingMatch(false)
         }
     }
 
@@ -452,9 +509,9 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                 <span className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded-xl border border-border/70 bg-surface-2/70 px-2 py-2 sm:flex-none sm:justify-start sm:gap-1.5 sm:px-3">
                                     <span className="shrink-0">📅</span>
                                     <span className="min-w-0 truncate">
-                                        {new Date(tournament.start_date + 'T00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                        {new Date(tournament.start_date + 'T00:00').toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric' })}
                                         {tournament.end_date && tournament.end_date !== tournament.start_date
-                                            ? ` – ${new Date(tournament.end_date + 'T00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+                                            ? ` – ${new Date(tournament.end_date + 'T00:00').toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric', year: 'numeric' })}`
                                             : `, ${new Date(tournament.start_date + 'T00:00').getFullYear()}`
                                         }
                                     </span>
@@ -509,17 +566,19 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                 )}
             </Card>
 
-            {/* Teams Section */}
-            {currentUserId && (
-                <div>
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-lg font-semibold text-text-primary">🏆 Teams ({teams.length})</h3>
-                        <div className="flex items-center gap-2">
+            <div className={`grid min-w-0 max-w-full gap-6 ${currentUserId ? 'lg:grid-cols-2 lg:items-start' : ''}`}>
+                {/* Teams Section */}
+                {currentUserId && (
+                    <div ref={teamsPanelRef} className="min-w-0 max-w-full">
+                        <div className="min-w-0 max-w-full lg:rounded-xl lg:border lg:border-border lg:bg-surface-2 lg:p-5">
+                    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <h3 className="text-lg font-semibold text-accent">🏆 Teams ({teams.length})</h3>
+                        <div className="flex flex-wrap items-center gap-2">
                             {(isAdmin || isManager) && (
                                 <Button
                                     size="sm"
                                     onClick={() => setIsCreateTeamOpen(true)}
-                                    className="text-xs"
+                                    className="h-auto px-2 py-1 text-[11px] sm:px-3 sm:py-1.5 sm:text-xs"
                                 >
                                     + Create Team
                                 </Button>
@@ -529,7 +588,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setIsManageTeamsOpen(true)}
-                                    className="text-xs"
+                                    className="h-auto px-2 py-1 text-[11px] sm:px-3 sm:py-1.5 sm:text-xs"
                                 >
                                     Manage Teams
                                 </Button>
@@ -537,31 +596,31 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                         </div>
                     </div>
                     {teams.length > 0 ? (
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 min-w-0">
+                        <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 min-w-0">
                             {teams.map(team => {
                                 const teamPlayers = players.filter(p => p.team_id === team.id)
-                                const profile = Array.isArray(team.profiles) ? team.profiles[0] : team.profiles
                                 return (
-                                    <Card key={team.id}>
-                                        <div className="flex items-start justify-between mb-2">
-                                            <div className="flex items-center gap-3 overflow-hidden">
+                                    <Card key={team.id} padding="none" className="min-w-0 max-w-full overflow-hidden p-2.5 sm:p-4">
+                                        <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
+                                            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
                                                 {team.logo_url ? (
-                                                    <img src={team.logo_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-border flex-shrink-0" />
+                                                    <img src={team.logo_url} alt="" className="h-8 w-8 flex-shrink-0 rounded-lg border border-border object-cover sm:h-9 sm:w-9" />
                                                 ) : (
-                                                    <div className="w-10 h-10 rounded-lg bg-surface-3 flex items-center justify-center border border-border text-xs font-bold text-text-muted flex-shrink-0">
+                                                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-surface-3 text-[11px] font-bold text-text-muted sm:h-9 sm:w-9 sm:text-xs">
                                                         {team.team_name.substring(0,2).toUpperCase()}
                                                     </div>
                                                 )}
                                                 <div className="min-w-0">
-                                                    <h4 className="font-semibold text-text-primary truncate">{team.team_name}</h4>
+                                                    <h4 className="text-sm font-semibold text-text-primary truncate sm:text-base">{team.team_name}</h4>
                                                     {team.team_slogan && (
                                                         <p className="text-xs text-text-muted italic truncate">&ldquo;{team.team_slogan}&rdquo;</p>
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="text-xs text-text-muted bg-surface-3 rounded-full px-2 py-0.5">
-                                                    {teamPlayers.length} players
+                                            <div className="flex shrink-0 items-center gap-1">
+                                                <span className="rounded-full bg-surface-3 px-1.5 py-0.5 text-[9px] text-text-muted sm:px-2 sm:text-xs">
+                                                    <span className="sm:hidden">{teamPlayers.length}</span>
+                                                    <span className="hidden sm:inline">{teamPlayers.length} players</span>
                                                 </span>
                                                 {(isAdmin || isManager) && (
                                                     <button
@@ -586,8 +645,8 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                             </div>
                                         )}
                                         {(isAdmin || isManager) && (
-                                            <div className="mt-3 pt-3 border-t border-border flex justify-end">
-                                                <Button variant="secondary" size="sm" onClick={() => setAssigningTeamId(team.id)} className="text-xs py-1 h-auto">
+                                            <div className="mt-2 pt-2 border-t border-border flex justify-end">
+                                                <Button variant="secondary" size="sm" onClick={() => setAssigningTeamId(team.id)} className="text-[11px] py-1 h-auto sm:text-xs">
                                                     Assign Players
                                                 </Button>
                                             </div>
@@ -601,22 +660,25 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                             <p className="py-6 text-center text-sm text-text-muted">No teams added yet.</p>
                         </Card>
                     )}
-                </div>
-            )}
+                        </div>
+                    </div>
+                )}
 
-            {/* Fixture Section */}
-            <div>
+                {/* Fixture Section */}
+                <div
+                    className="flex h-full min-w-0 max-w-full flex-col lg:rounded-xl lg:border lg:border-border lg:bg-surface-2 lg:p-5"
+                    style={fixturePanelHeight ? { height: fixturePanelHeight } : undefined}
+                >
                 <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-text-primary">📅 Fixture</h3>
+                    <h3 className="text-lg font-semibold text-accent">📅 Fixture</h3>
                 </div>
                 {orderedFixtureRows.length > 0 ? (
-                    <Card className="overflow-x-auto p-0">
-                        <table className="w-full text-left text-[11px] sm:text-sm">
-                            <thead>
-                                <tr className="border-b border-border bg-surface-2/50 text-[10px] sm:text-xs text-text-muted">
+                    <div className="scrollbar-thin min-h-0 w-full max-w-full min-w-0 flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-border [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50">
+                        <table className="w-full min-w-[360px] text-left text-[11px] sm:min-w-0 sm:text-sm">
+                            <thead className="sticky top-0 z-20">
+                                <tr className="border-b border-emerald-600 bg-accent text-[10px] text-white shadow-sm shadow-accent/20 lg:border-border lg:bg-surface-2 lg:text-text-muted lg:shadow-none sm:text-xs">
                                     <th className="py-2 px-3 sm:py-3 sm:px-4 font-medium text-center">Match</th>
                                     <th className="py-2 px-3 sm:py-3 sm:px-4 font-medium text-center">Score</th>
-                                    <th className="py-2 px-3 sm:py-3 sm:px-4 font-medium text-center">Winner</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
@@ -646,7 +708,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                         <div className="flex items-center gap-1">
                                                             {/* Team 1 */}
                                                             <div className="flex items-center gap-1 flex-1 min-w-0 justify-end">
-                                                                <span className="font-medium text-text-primary truncate text-right text-[11px] sm:text-sm">{t1?.team_name ?? row.team1Name}</span>
+                                                                {row.winningTeam === 'team1' && (
+                                                                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[9px] font-black text-emerald-400 ring-1 ring-emerald-500/30">
+                                                                        W
+                                                                    </span>
+                                                                )}
+                                                                <span className="truncate text-right text-[10px] font-medium text-text-primary sm:text-sm">{t1?.team_name ?? row.team1Name}</span>
                                                                 {t1?.logo_url ? (
                                                                     // eslint-disable-next-line @next/next/no-img-element
                                                                     <img src={t1.logo_url} alt="" className="h-5 w-5 sm:h-6 sm:w-6 rounded object-contain flex-shrink-0" />
@@ -668,7 +735,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                                         {(t2?.team_name ?? row.team2Name).substring(0,2).toUpperCase()}
                                                                     </div>
                                                                 )}
-                                                                <span className="font-medium text-text-primary truncate text-[11px] sm:text-sm">{t2?.team_name ?? row.team2Name}</span>
+                                                                <span className="truncate text-[10px] font-medium text-text-primary sm:text-sm">{t2?.team_name ?? row.team2Name}</span>
+                                                                {row.winningTeam === 'team2' && (
+                                                                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[9px] font-black text-emerald-400 ring-1 ring-emerald-500/30">
+                                                                        W
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                         {/* Date + time + ongoing — centered below, anchored to VS position */}
@@ -689,9 +761,9 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                             <div className="flex-1" />
                                                             <div className="flex items-center gap-1 shrink-0">
                                                                 <span className="text-[10px] sm:text-[11px] text-text-muted">
-                                                                    {new Date(matchObj!.match_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                                    {new Date(matchObj!.match_date).toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric' })}
                                                                     {' · '}
-                                                                    {new Date(matchObj!.match_date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                                                    {new Date(matchObj!.match_date).toLocaleTimeString(DATE_TIME_LOCALE, { hour: '2-digit', minute: '2-digit', hour12: true })}
                                                                 </span>
                                                                 {isOngoing && (
                                                                     <span className="text-[10px] font-bold text-red-400">· Ongoing</span>
@@ -709,7 +781,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                         <div className="flex items-center gap-1">
                                                             {/* Left side: Top team */}
                                                             <div className="flex items-center gap-1 flex-1 min-w-0 justify-end">
-                                                                <span className="font-medium text-text-muted truncate text-right text-[11px] sm:text-sm">Top team</span>
+                                                                <span className="truncate text-right text-[10px] font-medium text-text-muted sm:text-sm">Top team</span>
                                                                 <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">1st</div>
                                                             </div>
                                                             {/* VS anchor */}
@@ -717,7 +789,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                             {/* Right side: 2nd team */}
                                                             <div className="flex items-center gap-1 flex-1 min-w-0 justify-start">
                                                                 <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">2nd</div>
-                                                                <span className="font-medium text-text-muted truncate text-[11px] sm:text-sm">2nd team</span>
+                                                                <span className="truncate text-[10px] font-medium text-text-muted sm:text-sm">2nd team</span>
                                                             </div>
                                                         </div>
                                                         {/* TBD metadata row anchored below VS */}
@@ -736,32 +808,24 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                         ? 'bg-surface-1/30 group-hover:bg-surface-1/50'
                                                         : 'group-hover:bg-surface-2/30'
                                             }`}>{row.score}</td>
-                                            <td className={`py-2 px-3 sm:py-3 sm:px-4 text-center whitespace-nowrap transition-colors ${
-                                                row.isCompleted
-                                                    ? 'bg-emerald-500/5 group-hover:bg-emerald-500/10'
-                                                    : orderedFixtureRows.indexOf(row) % 2 === 0
-                                                        ? 'bg-surface-1/30 group-hover:bg-surface-1/50'
-                                                        : 'group-hover:bg-surface-2/30'
-                                            }`}>
-                                                <span className="text-text-primary">{row.winner}</span>
-                                            </td>
                                         </tr>
                                     )
                                 })}
                             </tbody>
                         </table>
-                    </Card>
+                    </div>
                 ) : (
-                    <Card>
+                    <div className="rounded-xl border border-border">
                         <p className="py-6 text-center text-sm text-text-muted">No fixture yet.</p>
-                    </Card>
+                    </div>
                 )}
+                </div>
             </div>
 
             {/* Leaderboard Section */}
             <div>
                 <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-text-primary">🏆 Leaderboard</h3>
+                    <h3 className="text-lg font-semibold text-accent">🏆 Leaderboard</h3>
                     {isAdmin && leaderboardTab === 'players' && (
                         <Button
                             size="sm"
@@ -792,18 +856,9 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                             <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full" />
                         )}
                     </button>
-                    <button
-                        onClick={() => setLeaderboardTab('matches')}
-                        className={`pb-2 text-sm font-medium transition-colors relative ${leaderboardTab === 'matches' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
-                    >
-                        Matches ({matches.length})
-                        {leaderboardTab === 'matches' && (
-                            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full" />
-                        )}
-                    </button>
                 </div>
 
-                {leaderboardTab === 'matches' ? (
+                {false ? (
                     <div className="flex flex-col gap-4">
                         {isAdmin && (
                             <div className="flex justify-end gap-2">
@@ -828,7 +883,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                         <Card key={m.id} padding="none" className="flex flex-col p-3 sm:p-5">
                                             <div className="mb-2 flex items-center justify-between sm:mb-4">
                                                 <span className="text-[11px] text-text-muted sm:text-xs">
-                                                    {new Date(m.match_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                    {new Date(m.match_date).toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                                 <div className="flex items-center gap-1.5 sm:gap-2">
                                                     {m.is_final && (
@@ -863,9 +918,10 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                                                 setEditingMatchId(m.id)
                                                                                 setMatchActionMenuId(null)
                                                                             }}
-                                                                            className="w-full px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
                                                                         >
-                                                                            Edit Match
+                                                                            <svg className="h-4 w-4 shrink-0 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                                                            <span>Edit match</span>
                                                                         </button>
                                                                         <button
                                                                             type="button"
@@ -877,9 +933,13 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                                                 }
                                                                                 setMatchActionMenuId(null)
                                                                             }}
-                                                                            className="w-full px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
                                                                         >
-                                                                            {m.status === 'ongoing' ? 'Undo ongoing' : 'Mark as ongoing'}
+                                                                            <span className="relative flex h-3 w-3 shrink-0">
+                                                                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                                                                                <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+                                                                            </span>
+                                                                            <span>{m.status === 'ongoing' ? 'Undo ongoing' : 'Mark as ongoing'}</span>
                                                                         </button>
                                                                         <button
                                                                             type="button"
@@ -891,9 +951,21 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                                                 }
                                                                                 setMatchActionMenuId(null)
                                                                             }}
-                                                                            className="w-full px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
                                                                         >
-                                                                            {m.is_final ? 'Undo final match' : 'Mark as final match'}
+                                                                            <span className="h-3 w-3 shrink-0 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
+                                                                            <span>{m.is_final ? 'Undo final match' : 'Mark as final match'}</span>
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setResetMatchConfirmId(m.id)
+                                                                                setMatchActionMenuId(null)
+                                                                            }}
+                                                                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-amber-400 transition-colors hover:bg-surface-3"
+                                                                        >
+                                                                            <svg className="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" /><path d="M3 21v-5h5" /></svg>
+                                                                            <span>Reset this match</span>
                                                                         </button>
                                                                     </div>
                                                                 </>
@@ -999,16 +1071,16 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                     </div>
                 ) : leaderboardTab === 'players' ? (
                     players.length > 0 ? (
-                        <Card className="overflow-x-auto p-0">
-                        <table className="w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
-                            <thead>
-                                <tr className="border-b border-border bg-surface-2/50 text-[10px] sm:text-xs text-text-muted">
-                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium">Player</th>
-                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Team</th>
-                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Goals</th>
-                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Assists</th>
-                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">Matches</th>
-                                    <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium">Position</th>
+                        <Card className="scrollbar-thin max-h-[28rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[37rem]">
+                        <table className="w-auto min-w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
+                            <thead className="sticky top-0 z-20">
+                                <tr className="border-b border-emerald-600 bg-accent text-[10px] text-white shadow-sm shadow-accent/20 sm:text-xs">
+                                    <th className="w-7 py-2 pl-2 pr-1 text-center font-medium sm:w-10 sm:py-3 sm:pl-4 sm:pr-2">Rank</th>
+                                    <th className="w-[7.25rem] py-2 px-1 font-medium sm:w-auto sm:py-3 sm:px-2">Player</th>
+                                    <th className="py-2 px-1 font-medium text-center sm:py-3 sm:px-2">Team</th>
+                                    <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Goals</th>
+                                    <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Assists</th>
+                                    <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Matches</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
@@ -1018,7 +1090,8 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                     const isEven = idx % 2 === 0
                                     return (
                                         <tr key={tp.id} className={`group transition-colors ${isEven ? 'bg-surface-1/30' : ''} hover:bg-surface-1/50`}>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4">
+                                            <td className="py-2 pl-2 pr-1 text-center font-semibold text-text-muted sm:py-3 sm:pl-4 sm:pr-2">{idx + 1}</td>
+                                            <td className="py-2 px-1 sm:py-3 sm:px-2">
                                                 <div className="flex items-center gap-1.5 sm:gap-3">
                                                     {/* Avatar: hidden on mobile */}
                                                     {p?.avatar_url ? (
@@ -1034,12 +1107,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                         {p?.first_name} {p?.last_name}
                                                     </span>
                                                     {/* Abbreviated name on mobile */}
-                                                    <span className="sm:hidden block max-w-[4.5rem] truncate font-medium text-text-primary">
-                                                        {p?.first_name?.split(' ')[0]} {p?.last_name?.trim().charAt(0)}.
+                                                    <span className="sm:hidden block max-w-[6.75rem] truncate font-medium text-text-primary">
+                                                        {p?.first_name?.split(' ')[0]} {p?.last_name?.trim() ? `${p.last_name.trim().slice(0, 8)}${p.last_name.trim().length > 8 ? '.' : ''}` : ' '}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4">
+                                            <td className="py-2 px-1 sm:py-3 sm:px-2">
                                                 {team ? (
                                                     <div className="flex justify-center">
                                                         {team.logo_url ? (
@@ -1065,16 +1138,9 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-text-primary">{tp.goals}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-text-primary">{tp.assists}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{tp.matchesPlayed}</td>
-                                            <td className="py-2 px-2 sm:py-3 sm:px-4">
-                                                {p?.player_position ? (
-                                                    <span className="text-[10px] sm:text-xs text-text-muted capitalize">{p.player_position}</span>
-                                                ) : (
-                                                    <span className="text-[10px] sm:text-xs text-text-muted italic">-</span>
-                                                )}
-                                            </td>
+                                            <td className="py-2 px-1.5 text-center font-bold text-text-primary sm:py-3 sm:px-3">{tp.goals}</td>
+                                            <td className="py-2 px-1.5 text-center font-bold text-text-primary sm:py-3 sm:px-3">{tp.assists}</td>
+                                            <td className="py-2 px-1.5 text-center text-text-muted sm:py-3 sm:px-3">{tp.matchesPlayed}</td>
                                         </tr>
                                     )
                                 })}
@@ -1088,12 +1154,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                 )
                 ) : (
                     teams.length > 0 ? (
-                        <Card className="overflow-x-auto p-0">
+                        <Card className="scrollbar-thin max-h-[28rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[37rem]">
                             <table className="w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
-                                <thead>
-                                    <tr className="border-b border-border bg-surface-2/50 text-[10px] sm:text-xs text-text-muted">
-                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center w-8 sm:w-12">Rank</th>
-                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium">Team</th>
+                                <thead className="sticky top-0 z-20">
+                                    <tr className="border-b border-emerald-600 bg-accent text-[10px] text-white shadow-sm shadow-accent/20 sm:text-xs">
+                                        <th className="w-7 py-2 pl-2 pr-1 text-center font-medium sm:w-10 sm:py-3 sm:pl-4 sm:pr-2">Rank</th>
+                                        <th className="py-2 px-1 font-medium sm:py-3 sm:px-2">Team</th>
                                         <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">P</th>
                                         <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">W</th>
                                         <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">D</th>
@@ -1101,7 +1167,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                         <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">GD</th>
                                         <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">GF</th>
                                         <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">GA</th>
-                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center text-accent">Pts</th>
+                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center text-white">Pts</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
@@ -1109,8 +1175,8 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                         const isEven = idx % 2 === 0
                                         return (
                                             <tr key={team.id} className={`group transition-colors ${isEven ? 'bg-surface-1/30' : ''} hover:bg-surface-1/50`}>
-                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-semibold text-text-muted">{idx + 1}</td>
-                                                <td className="py-2 px-2 sm:py-3 sm:px-4">
+                                                <td className="py-2 pl-2 pr-1 text-center font-semibold text-text-muted sm:py-3 sm:pl-4 sm:pr-2">{idx + 1}</td>
+                                                <td className="py-2 px-1 sm:py-3 sm:px-2">
                                                     <div className="flex items-center gap-2">
                                                         {team.logo_url ? (
                                                             // eslint-disable-next-line @next/next/no-img-element
@@ -1144,6 +1210,214 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                             <p className="py-6 text-center text-sm text-text-muted">No teams added yet.</p>
                         </Card>
                     )
+                )}
+            </div>
+
+            {/* Matches Section */}
+            <div>
+                <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-accent">⚽ Matches ({matches.length})</h3>
+                    {isAdmin && (
+                        <div className="flex justify-end gap-2">
+                            {matches.length > 0 && (
+                                <Button
+                                    variant="danger"
+                                    size="sm"
+                                    onClick={() => setShowDeleteAllMatchesConfirm(true)}
+                                >
+                                    Delete All
+                                </Button>
+                            )}
+                            <Button size="sm" onClick={() => setIsCreateMatchOpen(true)}>+ Schedule Match</Button>
+                        </div>
+                    )}
+                </div>
+                {matches.length > 0 ? (
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {displayMatches.map(m => {
+                            const t1 = teams.find(t => t.id === m.team_1_id)
+                            const t2 = teams.find(t => t.id === m.team_2_id)
+                            const matchScorers = matchStats.filter(ms => ms.tournament_match_id === m.id && ms.goals > 0)
+                            const t1Scorers = matchScorers.filter(ms => ms.team_id === t1?.id).map(ms => {
+                                const p = players.find(player => player.player_id === ms.player_id)
+                                const pProfile = Array.isArray(p?.profiles) ? p?.profiles[0] : p?.profiles
+                                return `${pProfile?.first_name || 'Unknown'}${ms.goals > 1 ? `(${ms.goals})` : ''}`
+                            }).join(', ')
+                            const t2Scorers = matchScorers.filter(ms => ms.team_id === t2?.id).map(ms => {
+                                const p = players.find(player => player.player_id === ms.player_id)
+                                const pProfile = Array.isArray(p?.profiles) ? p?.profiles[0] : p?.profiles
+                                return `${pProfile?.first_name || 'Unknown'}${ms.goals > 1 ? `(${ms.goals})` : ''}`
+                            }).join(', ')
+                            const team1Score = matchScoreOrZero(m.team_1_score)
+                            const team2Score = matchScoreOrZero(m.team_2_score)
+
+                            return (
+                                <Card key={m.id} padding="none" className="flex flex-col p-3 sm:p-5">
+                                    <div className="mb-2 flex items-center justify-between sm:mb-4">
+                                        <span className="text-[11px] text-text-muted sm:text-xs">
+                                            {new Date(m.match_date).toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                        <div className="flex items-center gap-1.5 sm:gap-2">
+                                            {m.is_final && (
+                                                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                                                    Final
+                                                </span>
+                                            )}
+                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${m.status === 'completed' ? 'bg-surface-3 text-text-muted' : 'bg-accent/10 text-accent'}`}>
+                                                {m.status}
+                                            </span>
+                                            {isAdmin && (
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setMatchActionMenuId(matchActionMenuId === m.id ? null : m.id)}
+                                                        className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-3 hover:text-text-primary"
+                                                        title="Match actions"
+                                                    >
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                            <circle cx="12" cy="5" r="2" />
+                                                            <circle cx="12" cy="12" r="2" />
+                                                            <circle cx="12" cy="19" r="2" />
+                                                        </svg>
+                                                    </button>
+                                                    {matchActionMenuId === m.id && (
+                                                        <>
+                                                            <div className="fixed inset-0 z-40" onClick={() => setMatchActionMenuId(null)} />
+                                                            <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-surface-2 py-1 shadow-xl">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setEditingMatchId(m.id)
+                                                                        setMatchActionMenuId(null)
+                                                                    }}
+                                                                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                                >
+                                                                    <svg className="h-4 w-4 shrink-0 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                                                    <span>Edit match</span>
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        if (m.status === 'ongoing') {
+                                                                            setUnmarkOngoingConfirmId(m.id)
+                                                                        } else {
+                                                                            setOngoingConfirmId(m.id)
+                                                                        }
+                                                                        setMatchActionMenuId(null)
+                                                                    }}
+                                                                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                                >
+                                                                    <span className="relative flex h-3 w-3 shrink-0">
+                                                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                                                                        <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+                                                                    </span>
+                                                                    <span>{m.status === 'ongoing' ? 'Undo ongoing' : 'Mark as ongoing'}</span>
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        if (m.is_final) {
+                                                                            setUnmarkFinalConfirmId(m.id)
+                                                                        } else {
+                                                                            setFinalMatchConfirmId(m.id)
+                                                                        }
+                                                                        setMatchActionMenuId(null)
+                                                                    }}
+                                                                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                                >
+                                                                    <span className="h-3 w-3 shrink-0 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
+                                                                    <span>{m.is_final ? 'Undo final match' : 'Mark as final match'}</span>
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setResetMatchConfirmId(m.id)
+                                                                        setMatchActionMenuId(null)
+                                                                    }}
+                                                                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-amber-400 transition-colors hover:bg-surface-3"
+                                                                >
+                                                                    <svg className="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" /><path d="M3 21v-5h5" /></svg>
+                                                                    <span>Reset this match</span>
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-2 flex flex-1 items-center justify-between sm:mb-4">
+                                        <div className="flex w-full flex-col">
+                                            <div className="mb-1.5 flex w-full items-center justify-between gap-3 sm:mb-2 sm:gap-4">
+                                                <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
+                                                    {t1?.logo_url ? (
+                                                        <img src={t1.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
+                                                    ) : (
+                                                        <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
+                                                            {t1?.team_name?.substring(0,2).toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                    <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t1?.team_name || 'Unknown'}</span>
+                                                </div>
+
+                                                <div className="flex items-center gap-2 sm:gap-3">
+                                                    <div className="flex items-center gap-2 text-xl font-bold text-text-primary sm:gap-3 sm:text-2xl">
+                                                        <span>{team1Score}</span>
+                                                        <span className="text-lg font-normal text-text-muted sm:text-xl">-</span>
+                                                        <span>{team2Score}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
+                                                    {t2?.logo_url ? (
+                                                        <img src={t2.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
+                                                    ) : (
+                                                        <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
+                                                            {t2?.team_name?.substring(0,2).toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                    <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t2?.team_name || 'Unknown'}</span>
+                                                </div>
+                                            </div>
+
+                                            {m.status === 'completed' && (t1Scorers || t2Scorers) && (
+                                                <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-1.5 border-t border-border/50 pt-2 text-[10px] leading-snug text-text-muted sm:mt-3 sm:gap-2 sm:pt-3 sm:text-[11px]">
+                                                    <span className="min-w-0 whitespace-normal break-words text-right">
+                                                        {t1Scorers}
+                                                    </span>
+                                                    <span className="opacity-50">⚽</span>
+                                                    <span className="min-w-0 whitespace-normal break-words text-left">
+                                                        {t2Scorers}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {isAdmin && (
+                                        <div className="mt-auto flex justify-end gap-2 border-t border-border pt-2 sm:pt-3">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-auto py-1 text-[11px] text-red-500 hover:bg-red-500/10 hover:text-red-400 sm:py-1.5 sm:text-xs"
+                                                onClick={() => setDeleteMatchId(m.id)}
+                                            >
+                                                Delete
+                                            </Button>
+                                            <Button variant="secondary" size="sm" className="h-auto py-1 text-[11px] sm:py-1.5 sm:text-xs" onClick={() => setRecordScoreMatchId(m.id)}>
+                                                {m.status === 'completed' ? 'Edit Score' : 'Record Score'}
+                                            </Button>
+                                        </div>
+                                    )}
+                                </Card>
+                            )
+                        })}
+                    </div>
+                ) : (
+                    <Card>
+                        <p className="py-6 text-center text-sm text-text-muted">No matches scheduled yet.</p>
+                    </Card>
                 )}
             </div>
 
@@ -1346,6 +1620,26 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                             </Button>
                             <Button variant="danger" size="sm" onClick={handleDeleteMatch} disabled={isDeletingMatch}>
                                 {isDeletingMatch ? 'Deleting...' : 'Delete'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {resetMatchConfirmId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/50" onClick={() => !isResettingMatch && setResetMatchConfirmId(null)} />
+                    <div className="relative z-10 w-full max-w-sm rounded-xl border border-border bg-surface-2 p-6 shadow-2xl">
+                        <h3 className="text-lg font-semibold text-text-primary">Reset Match</h3>
+                        <p className="mt-2 text-sm text-text-muted">
+                            Reset this match back to scheduled with no score? This will remove all player goals and assists recorded for this match and update the fixture and leaderboard tables.
+                        </p>
+                        <div className="mt-5 flex items-center justify-end gap-3">
+                            <Button variant="ghost" size="sm" onClick={() => setResetMatchConfirmId(null)} disabled={isResettingMatch}>
+                                Cancel
+                            </Button>
+                            <Button variant="danger" size="sm" onClick={handleResetMatch} disabled={isResettingMatch}>
+                                {isResettingMatch ? 'Resetting...' : 'Reset Match'}
                             </Button>
                         </div>
                     </div>
