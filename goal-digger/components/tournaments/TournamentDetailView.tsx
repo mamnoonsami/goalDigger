@@ -427,7 +427,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
     }
 
     return (
-        <div className="flex flex-col gap-6 overflow-hidden">
+        <div className="flex flex-col gap-6">
             {/* Tournament Header Card */}
             <Card>
                 <div className="flex flex-col gap-4">
@@ -573,124 +573,124 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                 {currentUserId && (
                     <div ref={teamsPanelRef} className="min-w-0 max-w-full">
                         <div className="min-w-0 max-w-full lg:rounded-xl lg:border lg:border-border lg:bg-surface-2 lg:p-5">
-                    <div className="mb-3 flex items-center justify-between gap-2 border-b border-border/70 pb-2">
-                        <h3 className="flex min-w-0 items-center gap-2 text-lg font-semibold text-accent">
-                            <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                            <span className="truncate">Teams ({teams.length})</span>
-                        </h3>
-                        {(isAdmin || isManager) && (
-                            <div className="relative shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setTeamsSectionMenuOpen(!teamsSectionMenuOpen)}
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-3 hover:text-text-primary"
-                                    title="Team actions"
-                                >
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                        <circle cx="12" cy="5" r="2" />
-                                        <circle cx="12" cy="12" r="2" />
-                                        <circle cx="12" cy="19" r="2" />
-                                    </svg>
-                                </button>
-                                {teamsSectionMenuOpen && (
-                                    <>
-                                        <div className="fixed inset-0 z-40" onClick={() => setTeamsSectionMenuOpen(false)} />
-                                        <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-surface-2 py-1 shadow-xl sm:left-auto sm:right-0">
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setIsCreateTeamOpen(true)
-                                                    setTeamsSectionMenuOpen(false)
-                                                }}
-                                                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
-                                            >
-                                                <svg className="h-4 w-4 shrink-0 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
-                                                <span>Create team</span>
-                                            </button>
-                                            {teams.length > 0 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setIsManageTeamsOpen(true)
-                                                        setTeamsSectionMenuOpen(false)
-                                                    }}
-                                                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
-                                                >
-                                                    <svg className="h-4 w-4 shrink-0 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                                                    <span>Manage teams</span>
-                                                </button>
-                                            )}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                    {teams.length > 0 ? (
-                        <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 min-w-0">
-                            {teams.map(team => {
-                                const teamPlayers = players.filter(p => p.team_id === team.id)
-                                return (
-                                    <Card key={team.id} padding="none" className="min-w-0 max-w-full overflow-hidden p-2.5 sm:p-4">
-                                        <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
-                                            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-                                                {team.logo_url ? (
-                                                    <img src={team.logo_url} alt="" className="h-8 w-8 flex-shrink-0 rounded-lg border border-border object-cover sm:h-9 sm:w-9" />
-                                                ) : (
-                                                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-surface-3 text-[11px] font-bold text-text-muted sm:h-9 sm:w-9 sm:text-xs">
-                                                        {team.team_name.substring(0,2).toUpperCase()}
-                                                    </div>
-                                                )}
-                                                <div className="min-w-0">
-                                                    <h4 className="text-sm font-semibold text-text-primary truncate sm:text-base">{team.team_name}</h4>
-                                                    {team.team_slogan && (
-                                                        <p className="text-xs text-text-muted italic truncate">&ldquo;{team.team_slogan}&rdquo;</p>
+                            <div className="mb-3 flex items-center justify-between gap-2 border-b border-border/70 pb-2">
+                                <h3 className="flex min-w-0 items-center gap-2 text-lg font-semibold text-accent">
+                                    <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                                    <span className="truncate">Teams ({teams.length})</span>
+                                </h3>
+                                {(isAdmin || isManager) && (
+                                    <div className="relative shrink-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => setTeamsSectionMenuOpen(!teamsSectionMenuOpen)}
+                                            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-3 hover:text-text-primary"
+                                            title="Team actions"
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                <circle cx="12" cy="5" r="2" />
+                                                <circle cx="12" cy="12" r="2" />
+                                                <circle cx="12" cy="19" r="2" />
+                                            </svg>
+                                        </button>
+                                        {teamsSectionMenuOpen && (
+                                            <>
+                                                <div className="fixed inset-0 z-40" onClick={() => setTeamsSectionMenuOpen(false)} />
+                                                <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-surface-2 py-1 shadow-xl sm:left-auto sm:right-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setIsCreateTeamOpen(true)
+                                                            setTeamsSectionMenuOpen(false)
+                                                        }}
+                                                        className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                    >
+                                                        <svg className="h-4 w-4 shrink-0 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+                                                        <span>Create team</span>
+                                                    </button>
+                                                    {teams.length > 0 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setIsManageTeamsOpen(true)
+                                                                setTeamsSectionMenuOpen(false)
+                                                            }}
+                                                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                        >
+                                                            <svg className="h-4 w-4 shrink-0 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                                                            <span>Manage teams</span>
+                                                        </button>
                                                     )}
                                                 </div>
-                                            </div>
-                                            <div className="flex shrink-0 items-center gap-1">
-                                                <span className="rounded-full bg-surface-3 px-1.5 py-0.5 text-[9px] text-text-muted sm:px-2 sm:text-xs">
-                                                    <span className="sm:hidden">{teamPlayers.length}</span>
-                                                    <span className="hidden sm:inline">{teamPlayers.length} players</span>
-                                                </span>
-                                                {(isAdmin || isManager) && (
-                                                    <button
-                                                        onClick={() => setEditingTeamId(team.id)}
-                                                        className="p-1 rounded hover:bg-accent/10 text-accent hover:text-accent-hover transition-colors"
-                                                        title="Edit Team"
-                                                    >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
-                                                    </button>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            {teams.length > 0 ? (
+                                <div className="grid gap-2 sm:grid-cols-2 lg:gap-3 min-w-0">
+                                    {teams.map(team => {
+                                        const teamPlayers = players.filter(p => p.team_id === team.id)
+                                        return (
+                                            <Card key={team.id} padding="none" className="min-w-0 max-w-full overflow-hidden p-2.5 sm:p-4">
+                                                <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
+                                                    <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+                                                        {team.logo_url ? (
+                                                            <img src={team.logo_url} alt="" className="h-8 w-8 flex-shrink-0 rounded-lg border border-border object-cover sm:h-9 sm:w-9" />
+                                                        ) : (
+                                                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-surface-3 text-[11px] font-bold text-text-muted sm:h-9 sm:w-9 sm:text-xs">
+                                                                {team.team_name.substring(0, 2).toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                        <div className="min-w-0">
+                                                            <h4 className="text-sm font-semibold text-text-primary truncate sm:text-base">{team.team_name}</h4>
+                                                            {team.team_slogan && (
+                                                                <p className="text-xs text-text-muted italic truncate">&ldquo;{team.team_slogan}&rdquo;</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex shrink-0 items-center gap-1">
+                                                        <span className="rounded-full bg-surface-3 px-1.5 py-0.5 text-[9px] text-text-muted sm:px-2 sm:text-xs">
+                                                            <span className="sm:hidden">{teamPlayers.length}</span>
+                                                            <span className="hidden sm:inline">{teamPlayers.length} players</span>
+                                                        </span>
+                                                        {(isAdmin || isManager) && (
+                                                            <button
+                                                                onClick={() => setEditingTeamId(team.id)}
+                                                                className="p-1 rounded hover:bg-accent/10 text-accent hover:text-accent-hover transition-colors"
+                                                                title="Edit Team"
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {teamPlayers.length > 0 && (
+                                                    <div className="mt-2">
+                                                        <button
+                                                            onClick={() => setViewingTeamPlayersId(team.id)}
+                                                            className="text-xs text-accent hover:text-accent-hover transition-colors font-medium mb-2"
+                                                        >
+                                                            View Players
+                                                        </button>
+                                                    </div>
                                                 )}
-                                            </div>
-                                        </div>
-                                        
-                                        {teamPlayers.length > 0 && (
-                                            <div className="mt-2">
-                                                <button 
-                                                    onClick={() => setViewingTeamPlayersId(team.id)}
-                                                    className="text-xs text-accent hover:text-accent-hover transition-colors font-medium mb-2"
-                                                >
-                                                    View Players
-                                                </button>
-                                            </div>
-                                        )}
-                                        {(isAdmin || isManager) && (
-                                            <div className="mt-2 pt-2 border-t border-border flex justify-end">
-                                                <Button variant="secondary" size="sm" onClick={() => setAssigningTeamId(team.id)} className="text-[11px] py-1 h-auto sm:text-xs">
-                                                    Assign Players
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </Card>
-                                )
-                            })}
-                        </div>
-                    ) : (
-                        <Card>
-                            <p className="py-6 text-center text-sm text-text-muted">No teams added yet.</p>
-                        </Card>
-                    )}
+                                                {(isAdmin || isManager) && (
+                                                    <div className="mt-2 pt-2 border-t border-border flex justify-end">
+                                                        <Button variant="secondary" size="sm" onClick={() => setAssigningTeamId(team.id)} className="text-[11px] py-1 h-auto sm:text-xs">
+                                                            Assign Players
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </Card>
+                                        )
+                                    })}
+                                </div>
+                            ) : (
+                                <Card>
+                                    <p className="py-6 text-center text-sm text-text-muted">No teams added yet.</p>
+                                </Card>
+                            )}
                         </div>
                     </div>
                 )}
@@ -700,164 +700,167 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                     className="flex h-full min-w-0 max-w-full flex-col lg:rounded-xl lg:border lg:border-border lg:bg-surface-2 lg:p-5"
                     style={fixturePanelHeight ? { height: fixturePanelHeight } : undefined}
                 >
-                <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
-                        <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /></svg>
-                        <span>Fixture</span>
-                    </h3>
-                </div>
-                {orderedFixtureRows.length > 0 ? (
-                    <div className="scrollbar-thin min-h-0 w-full max-w-full min-w-0 flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-border [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50">
-                        <table className="w-full min-w-[360px] text-left text-[11px] sm:min-w-0 sm:text-sm">
-                            <thead className="sticky top-0 z-20">
-                                <tr className="border-b border-emerald-600 bg-accent text-[10px] text-white shadow-sm shadow-accent/20 lg:border-border lg:bg-surface-2 lg:text-text-muted lg:shadow-none sm:text-xs">
-                                    <th className="py-2 px-3 sm:py-3 sm:px-4 font-medium text-center">Match</th>
-                                    <th className="py-2 px-3 sm:py-3 sm:px-4 font-medium text-center">Score</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {orderedFixtureRows.map(row => {
-                                    const matchObj = row.type === 'match' ? matches.find(m => m.id === row.id) : null
-                                    const t1 = matchObj ? teams.find(t => t.id === matchObj.team_1_id) : null
-                                    const t2 = matchObj ? teams.find(t => t.id === matchObj.team_2_id) : null
+                    <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
+                        <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
+                            <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /></svg>
+                            <span>Fixture</span>
+                        </h3>
+                    </div>
+                    {orderedFixtureRows.length > 0 ? (
+                        <div className="scrollbar-thin min-h-0 w-full max-w-full min-w-0 flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-border [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50">
+                            <table className="w-full min-w-[360px] text-left text-[11px] sm:min-w-0 sm:text-sm">
+                                <thead className="sticky top-0 z-20">
+                                    <tr className="border-b border-emerald-600 bg-header-bg text-[10px] text-white shadow-sm shadow-accent/20 lg:border-border lg:bg-surface-2 lg:text-text-muted lg:shadow-none sm:text-xs">
+                                        <th className="py-2 px-3 sm:py-3 sm:px-4 font-medium text-center">Match</th>
+                                        <th className="py-2 px-3 sm:py-3 sm:px-4 font-medium text-center">Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                    {orderedFixtureRows.map(row => {
+                                        const matchObj = row.type === 'match' ? matches.find(m => m.id === row.id) : null
+                                        const t1 = matchObj ? teams.find(t => t.id === matchObj.team_1_id) : null
+                                        const t2 = matchObj ? teams.find(t => t.id === matchObj.team_2_id) : null
 
-                                    // Ongoing indicator: driven by status field
-                                    const isOngoing = matchObj && matchObj.status === 'ongoing'
+                                        // Ongoing indicator: driven by status field
+                                        const isOngoing = matchObj && matchObj.status === 'ongoing'
 
-                                    return (
-                                        <tr
-                                            key={row.id}
-                                            className="group transition-colors"
-                                        >
-                                            <td className={`py-2.5 px-3 sm:py-3 sm:px-4 transition-colors ${
-                                                row.isCompleted
+                                        return (
+                                            <tr
+                                                key={row.id}
+                                                className="group transition-colors"
+                                            >
+                                                <td className={`py-2.5 px-3 sm:py-3 sm:px-4 transition-colors ${row.isCompleted
                                                     ? 'bg-emerald-500/5 group-hover:bg-emerald-500/10'
                                                     : orderedFixtureRows.indexOf(row) % 2 === 0
                                                         ? 'bg-surface-1/30 group-hover:bg-surface-1/50'
                                                         : 'group-hover:bg-surface-2/30'
-                                            }`}>
-                                                {row.type === 'match' ? (
-                                                    <div className="flex flex-col gap-0.5">
-                                                        {/* Team layout: logo + name — VS — logo + name (tighter spacing) */}
-                                                        <div className="flex items-center gap-1">
-                                                            {/* Team 1 */}
-                                                            <div className="flex items-center gap-1 flex-1 min-w-0 justify-end">
-                                                                {row.winningTeam === 'team1' && (
-                                                                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[9px] font-black text-emerald-400 ring-1 ring-emerald-500/30">
-                                                                        W
+                                                    }`}>
+                                                    {row.type === 'match' ? (
+                                                        <div className="flex flex-col gap-0.5">
+                                                            {/* Team layout: logo + name — VS — logo + name (tighter spacing) */}
+                                                            <div className="flex items-center gap-1">
+                                                                {/* Team 1 */}
+                                                                <div className="flex items-center gap-1 flex-1 min-w-0 justify-end">
+                                                                    {row.winningTeam === 'team1' && (
+                                                                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[9px] font-black text-emerald-400 ring-1 ring-emerald-500/30">
+                                                                            W
+                                                                        </span>
+                                                                    )}
+                                                                    <span className="truncate text-right text-[10px] font-medium text-text-primary sm:text-sm">{t1?.team_name ?? row.team1Name}</span>
+                                                                    {t1?.logo_url ? (
+                                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                                        <img src={t1.logo_url} alt="" className="h-5 w-5 sm:h-6 sm:w-6 rounded object-contain flex-shrink-0" />
+                                                                    ) : (
+                                                                        <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">
+                                                                            {(t1?.team_name ?? row.team1Name).substring(0, 2).toUpperCase()}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                {/* VS anchor */}
+                                                                <span className="shrink-0 w-7 text-center text-[10px] sm:text-xs font-black text-accent">VS</span>
+                                                                {/* Team 2 */}
+                                                                <div className="flex items-center gap-1 flex-1 min-w-0 justify-start">
+                                                                    {t2?.logo_url ? (
+                                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                                        <img src={t2.logo_url} alt="" className="h-5 w-5 sm:h-6 sm:w-6 rounded object-contain flex-shrink-0" />
+                                                                    ) : (
+                                                                        <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">
+                                                                            {(t2?.team_name ?? row.team2Name).substring(0, 2).toUpperCase()}
+                                                                        </div>
+                                                                    )}
+                                                                    <span className="truncate text-[10px] font-medium text-text-primary sm:text-sm">{t2?.team_name ?? row.team2Name}</span>
+                                                                    {row.winningTeam === 'team2' && (
+                                                                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[9px] font-black text-emerald-400 ring-1 ring-emerald-500/30">
+                                                                            W
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {/* Date + time + ongoing — centered below, anchored to VS position */}
+                                                            <div className="flex items-center gap-1">
+                                                                {/* spacer matching team-1 side — leave empty */}
+                                                                <div className="flex-1" />
+                                                                <div className="flex items-center justify-center gap-1 w-7">
+                                                                    {isOngoing ? (
+                                                                        <span className="relative flex h-1.5 w-1.5">
+                                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                                                                        </span>
+                                                                    ) : null}
+                                                                </div>
+                                                                <div className="flex-1" />
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
+                                                                <div className="flex-1" />
+                                                                <div className="flex items-center gap-1 shrink-0">
+                                                                    <span className="text-[10px] sm:text-[11px] text-text-muted">
+                                                                        {new Date(matchObj!.match_date).toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric' })}
+                                                                        {' · '}
+                                                                        {new Date(matchObj!.match_date).toLocaleTimeString(DATE_TIME_LOCALE, { hour: '2-digit', minute: '2-digit', hour12: true })}
                                                                     </span>
-                                                                )}
-                                                                <span className="truncate text-right text-[10px] font-medium text-text-primary sm:text-sm">{t1?.team_name ?? row.team1Name}</span>
-                                                                {t1?.logo_url ? (
-                                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                                    <img src={t1.logo_url} alt="" className="h-5 w-5 sm:h-6 sm:w-6 rounded object-contain flex-shrink-0" />
-                                                                ) : (
-                                                                    <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">
-                                                                        {(t1?.team_name ?? row.team1Name).substring(0,2).toUpperCase()}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            {/* VS anchor */}
-                                                            <span className="shrink-0 w-7 text-center text-[10px] sm:text-xs font-black text-accent">VS</span>
-                                                            {/* Team 2 */}
-                                                            <div className="flex items-center gap-1 flex-1 min-w-0 justify-start">
-                                                                {t2?.logo_url ? (
-                                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                                    <img src={t2.logo_url} alt="" className="h-5 w-5 sm:h-6 sm:w-6 rounded object-contain flex-shrink-0" />
-                                                                ) : (
-                                                                    <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">
-                                                                        {(t2?.team_name ?? row.team2Name).substring(0,2).toUpperCase()}
-                                                                    </div>
-                                                                )}
-                                                                <span className="truncate text-[10px] font-medium text-text-primary sm:text-sm">{t2?.team_name ?? row.team2Name}</span>
-                                                                {row.winningTeam === 'team2' && (
-                                                                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[9px] font-black text-emerald-400 ring-1 ring-emerald-500/30">
-                                                                        W
-                                                                    </span>
-                                                                )}
+                                                                    {isOngoing && (
+                                                                        <span className="text-[10px] font-bold text-red-400 animate-pulse">· Ongoing</span>
+                                                                    )}
+                                                                    {row.isFinal && (
+                                                                        <span className="rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] sm:px-2 sm:text-[10px] font-bold uppercase tracking-wide text-accent">Final</span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1" />
                                                             </div>
                                                         </div>
-                                                        {/* Date + time + ongoing — centered below, anchored to VS position */}
-                                                        <div className="flex items-center gap-1">
-                                                            {/* spacer matching team-1 side — leave empty */}
-                                                            <div className="flex-1" />
-                                                            <div className="flex items-center justify-center gap-1 w-7">
-                                                                {isOngoing ? (
-                                                                    <span className="relative flex h-1.5 w-1.5">
-                                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
-                                                                    </span>
-                                                                ) : null}
+                                                    ) : (
+                                                        // Final placeholder row — styled like a match row with VS layout
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <div className="flex items-center gap-1">
+                                                                {/* Left side: Top team */}
+                                                                <div className="flex items-center gap-1 flex-1 min-w-0 justify-end">
+                                                                    <span className="truncate text-right text-[10px] font-medium text-text-muted sm:text-sm">Top team</span>
+                                                                    <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">1st</div>
+                                                                </div>
+                                                                {/* VS anchor */}
+                                                                <span className="shrink-0 w-7 text-center text-[10px] sm:text-xs font-black text-accent">VS</span>
+                                                                {/* Right side: 2nd team */}
+                                                                <div className="flex items-center gap-1 flex-1 min-w-0 justify-start">
+                                                                    <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">2nd</div>
+                                                                    <span className="truncate text-[10px] font-medium text-text-muted sm:text-sm">2nd team</span>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex-1" />
-                                                        </div>
-                                                        <div className="flex items-center gap-1">
-                                                            <div className="flex-1" />
-                                                            <div className="flex items-center gap-1 shrink-0">
-                                                                <span className="text-[10px] sm:text-[11px] text-text-muted">
-                                                                    {new Date(matchObj!.match_date).toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric' })}
-                                                                    {' · '}
-                                                                    {new Date(matchObj!.match_date).toLocaleTimeString(DATE_TIME_LOCALE, { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                                                </span>
-                                                                {isOngoing && (
-                                                                    <span className="text-[10px] font-bold text-red-400">· Ongoing</span>
-                                                                )}
-                                                                {row.isFinal && (
-                                                                    <span className="rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] sm:px-2 sm:text-[10px] font-bold uppercase tracking-wide text-accent">Final</span>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex-1" />
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    // Final placeholder row — styled like a match row with VS layout
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <div className="flex items-center gap-1">
-                                                            {/* Left side: Top team */}
-                                                            <div className="flex items-center gap-1 flex-1 min-w-0 justify-end">
-                                                                <span className="truncate text-right text-[10px] font-medium text-text-muted sm:text-sm">Top team</span>
-                                                                <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">1st</div>
-                                                            </div>
-                                                            {/* VS anchor */}
-                                                            <span className="shrink-0 w-7 text-center text-[10px] sm:text-xs font-black text-accent">VS</span>
-                                                            {/* Right side: 2nd team */}
-                                                            <div className="flex items-center gap-1 flex-1 min-w-0 justify-start">
-                                                                <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">2nd</div>
-                                                                <span className="truncate text-[10px] font-medium text-text-muted sm:text-sm">2nd team</span>
+                                                            {/* TBD metadata row anchored below VS */}
+                                                            <div className="flex items-center gap-1">
+                                                                <div className="flex-1" />
+                                                                <span className="w-7 text-center text-[10px] sm:text-[11px] text-text-muted/50 italic">TBD</span>
+                                                                <div className="flex-1" />
                                                             </div>
                                                         </div>
-                                                        {/* TBD metadata row anchored below VS */}
-                                                        <div className="flex items-center gap-1">
-                                                            <div className="flex-1" />
-                                                            <span className="w-7 text-center text-[10px] sm:text-[11px] text-text-muted/50 italic">TBD</span>
-                                                            <div className="flex-1" />
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className={`py-2 px-3 sm:py-3 sm:px-4 text-center font-mono font-semibold text-text-primary whitespace-nowrap transition-colors ${
-                                                row.isCompleted
+                                                    )}
+                                                </td>
+                                                <td className={`py-2 px-3 sm:py-3 sm:px-4 text-center font-mono font-semibold text-text-primary whitespace-nowrap transition-colors ${row.isCompleted
                                                     ? 'bg-emerald-500/5 group-hover:bg-emerald-500/10'
                                                     : orderedFixtureRows.indexOf(row) % 2 === 0
                                                         ? 'bg-surface-1/30 group-hover:bg-surface-1/50'
                                                         : 'group-hover:bg-surface-2/30'
-                                            }`}>{row.score}</td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <div className="rounded-xl border border-border">
-                        <p className="py-6 text-center text-sm text-text-muted">No fixture yet.</p>
-                    </div>
-                )}
+                                                    }`}>{row.score}</td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-border">
+                            <p className="py-6 text-center text-sm text-text-muted">No fixture yet.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Leaderboard Section */}
-            <div>
+            <div className="relative mt-8">
+                {/* Full-width background bleed */}
+                <div className="absolute inset-y-0 left-[-100vw] right-[-100vw] border-y border-border/80 bg-accent/5" />
+                
+                <div className="relative py-8">
+                    <div>
                 <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
                     <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
                         <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
@@ -1019,7 +1022,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                         const pProfile = Array.isArray(p?.profiles) ? p?.profiles[0] : p?.profiles
                                                         return `${pProfile?.first_name || 'Unknown'}${ms.goals > 1 ? `(${ms.goals})` : ''}`
                                                     }).join(', ')
-                                                    
+
                                                     const t2Scorers = matchScorers.filter(ms => ms.team_id === t2?.id).map(ms => {
                                                         const p = players.find(player => player.player_id === ms.player_id)
                                                         const pProfile = Array.isArray(p?.profiles) ? p?.profiles[0] : p?.profiles
@@ -1037,7 +1040,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                                         <img src={t1.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
                                                                     ) : (
                                                                         <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
-                                                                            {t1?.team_name?.substring(0,2).toUpperCase()}
+                                                                            {t1?.team_name?.substring(0, 2).toUpperCase()}
                                                                         </div>
                                                                     )}
                                                                     <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t1?.team_name || 'Unknown'}</span>
@@ -1058,7 +1061,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                                         <img src={t2.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
                                                                     ) : (
                                                                         <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
-                                                                            {t2?.team_name?.substring(0,2).toUpperCase()}
+                                                                            {t2?.team_name?.substring(0, 2).toUpperCase()}
                                                                         </div>
                                                                     )}
                                                                     <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t2?.team_name || 'Unknown'}</span>
@@ -1108,93 +1111,93 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                     </div>
                 ) : leaderboardTab === 'players' ? (
                     players.length > 0 ? (
-                        <Card className="scrollbar-thin max-h-[28rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[37rem]">
-                        <table className="w-auto min-w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
-                            <thead className="sticky top-0 z-20">
-                                <tr className="border-b border-emerald-600 bg-accent text-[10px] text-white shadow-sm shadow-accent/20 sm:text-xs">
-                                    <th className="w-7 py-2 pl-2 pr-1 text-center font-medium sm:w-10 sm:py-3 sm:pl-4 sm:pr-2">Rank</th>
-                                    <th className="w-[7.25rem] py-2 px-1 font-medium sm:w-auto sm:py-3 sm:px-2">Player</th>
-                                    <th className="py-2 px-1 font-medium text-center sm:py-3 sm:px-2">Team</th>
-                                    <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Goals</th>
-                                    <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Assists</th>
-                                    <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Matches</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {playerStats.map((tp, idx) => {
-                                    const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
-                                    const team = teams.find(t => t.id === tp.team_id)
-                                    const isEven = idx % 2 === 0
-                                    return (
-                                        <tr key={tp.id} className={`group transition-colors ${isEven ? 'bg-surface-1/30' : ''} hover:bg-surface-1/50`}>
-                                            <td className="py-2 pl-2 pr-1 text-center font-semibold text-text-muted sm:py-3 sm:pl-4 sm:pr-2">{idx + 1}</td>
-                                            <td className="py-2 px-1 sm:py-3 sm:px-2">
-                                                <div className="flex items-center gap-1.5 sm:gap-3">
-                                                    {/* Avatar: hidden on mobile */}
-                                                    {p?.avatar_url ? (
-                                                        // eslint-disable-next-line @next/next/no-img-element
-                                                        <img src={p.avatar_url} alt="" className="hidden sm:block h-8 w-8 rounded-full object-cover bg-surface-3 flex-shrink-0" />
+                        <Card className="scrollbar-thin max-h-[22rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[26.5rem]">
+                            <table className="w-auto min-w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
+                                <thead className="sticky top-0 z-20">
+                                    <tr className="border-b border-emerald-600 bg-header-bg text-[10px] text-white shadow-sm shadow-accent/20 sm:text-xs">
+                                        <th className="w-7 py-2 pl-2 pr-1 text-center font-medium sm:w-10 sm:py-3 sm:pl-4 sm:pr-2">Rank</th>
+                                        <th className="w-[7.25rem] py-2 px-1 font-medium sm:w-auto sm:py-3 sm:px-2">Player</th>
+                                        <th className="py-2 px-1 font-medium text-center sm:py-3 sm:px-2">Team</th>
+                                        <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Goals</th>
+                                        <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Assists</th>
+                                        <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Matches</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                    {playerStats.map((tp, idx) => {
+                                        const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
+                                        const team = teams.find(t => t.id === tp.team_id)
+                                        const isEven = idx % 2 === 0
+                                        return (
+                                            <tr key={tp.id} className={`group transition-colors ${isEven ? 'bg-surface-1/30' : ''} hover:bg-surface-1/50`}>
+                                                <td className="py-2 pl-2 pr-1 text-center font-semibold text-text-muted sm:py-3 sm:pl-4 sm:pr-2">{idx + 1}</td>
+                                                <td className="py-2 px-1 sm:py-3 sm:px-2">
+                                                    <div className="flex items-center gap-1.5 sm:gap-3">
+                                                        {/* Avatar: hidden on mobile */}
+                                                        {p?.avatar_url ? (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img src={p.avatar_url} alt="" className="hidden sm:block h-8 w-8 rounded-full object-cover bg-surface-3 flex-shrink-0" />
+                                                        ) : (
+                                                            <div className="hidden sm:flex h-8 w-8 rounded-full bg-accent/20 items-center justify-center text-xs font-bold text-accent flex-shrink-0">
+                                                                {p?.first_name?.[0]}{p?.last_name?.[0]}
+                                                            </div>
+                                                        )}
+                                                        {/* Full name on desktop */}
+                                                        <span className="hidden sm:inline font-medium text-text-primary">
+                                                            {p?.first_name} {p?.last_name}
+                                                        </span>
+                                                        {/* Abbreviated name on mobile */}
+                                                        <span className="sm:hidden block max-w-[6.75rem] truncate font-medium text-text-primary">
+                                                            {p?.first_name?.split(' ')[0]} {p?.last_name?.trim() ? `${p.last_name.trim().slice(0, 8)}${p.last_name.trim().length > 8 ? '.' : ''}` : ' '}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-2 px-1 sm:py-3 sm:px-2">
+                                                    {team ? (
+                                                        <div className="flex justify-center">
+                                                            {team.logo_url ? (
+                                                                // eslint-disable-next-line @next/next/no-img-element
+                                                                <img
+                                                                    src={team.logo_url}
+                                                                    alt={team.team_name}
+                                                                    title={team.team_name}
+                                                                    className="h-6 w-6 rounded-lg object-contain sm:h-8 sm:w-8"
+                                                                />
+                                                            ) : (
+                                                                <span
+                                                                    title={team.team_name}
+                                                                    className="flex h-6 w-6 items-center justify-center rounded-lg border border-border bg-surface-3 text-[9px] font-bold text-text-muted sm:h-8 sm:w-8 sm:text-[10px]"
+                                                                >
+                                                                    {team.team_name.substring(0, 2).toUpperCase()}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     ) : (
-                                                        <div className="hidden sm:flex h-8 w-8 rounded-full bg-accent/20 items-center justify-center text-xs font-bold text-accent flex-shrink-0">
-                                                            {p?.first_name?.[0]}{p?.last_name?.[0]}
+                                                        <div className="flex justify-center">
+                                                            <span className="text-[10px] sm:text-xs text-text-muted italic">-</span>
                                                         </div>
                                                     )}
-                                                    {/* Full name on desktop */}
-                                                    <span className="hidden sm:inline font-medium text-text-primary">
-                                                        {p?.first_name} {p?.last_name}
-                                                    </span>
-                                                    {/* Abbreviated name on mobile */}
-                                                    <span className="sm:hidden block max-w-[6.75rem] truncate font-medium text-text-primary">
-                                                        {p?.first_name?.split(' ')[0]} {p?.last_name?.trim() ? `${p.last_name.trim().slice(0, 8)}${p.last_name.trim().length > 8 ? '.' : ''}` : ' '}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="py-2 px-1 sm:py-3 sm:px-2">
-                                                {team ? (
-                                                    <div className="flex justify-center">
-                                                        {team.logo_url ? (
-                                                            // eslint-disable-next-line @next/next/no-img-element
-                                                            <img
-                                                                src={team.logo_url}
-                                                                alt={team.team_name}
-                                                                title={team.team_name}
-                                                                className="h-6 w-6 rounded-lg object-contain sm:h-8 sm:w-8"
-                                                            />
-                                                        ) : (
-                                                            <span
-                                                                title={team.team_name}
-                                                                className="flex h-6 w-6 items-center justify-center rounded-lg border border-border bg-surface-3 text-[9px] font-bold text-text-muted sm:h-8 sm:w-8 sm:text-[10px]"
-                                                            >
-                                                                {team.team_name.substring(0, 2).toUpperCase()}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex justify-center">
-                                                        <span className="text-[10px] sm:text-xs text-text-muted italic">-</span>
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="py-2 px-1.5 text-center font-bold text-text-primary sm:py-3 sm:px-3">{tp.goals}</td>
-                                            <td className="py-2 px-1.5 text-center font-bold text-text-primary sm:py-3 sm:px-3">{tp.assists}</td>
-                                            <td className="py-2 px-1.5 text-center text-text-muted sm:py-3 sm:px-3">{tp.matchesPlayed}</td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </Card>
-                ) : (
-                    <Card>
-                        <p className="py-6 text-center text-sm text-text-muted">No players assigned yet.</p>
-                    </Card>
-                )
+                                                </td>
+                                                <td className="py-2 px-1.5 text-center font-bold text-text-primary sm:py-3 sm:px-3">{tp.goals}</td>
+                                                <td className="py-2 px-1.5 text-center font-bold text-text-primary sm:py-3 sm:px-3">{tp.assists}</td>
+                                                <td className="py-2 px-1.5 text-center text-text-muted sm:py-3 sm:px-3">{tp.matchesPlayed}</td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </Card>
+                    ) : (
+                        <Card>
+                            <p className="py-6 text-center text-sm text-text-muted">No players assigned yet.</p>
+                        </Card>
+                    )
                 ) : (
                     teams.length > 0 ? (
-                        <Card className="scrollbar-thin max-h-[28rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[37rem]">
+                        <Card className="scrollbar-thin max-h-[22rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[26.5rem]">
                             <table className="w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
                                 <thead className="sticky top-0 z-20">
-                                    <tr className="border-b border-emerald-600 bg-accent text-[10px] text-white shadow-sm shadow-accent/20 sm:text-xs">
+                                    <tr className="border-b border-emerald-600 bg-header-bg text-[10px] text-white shadow-sm shadow-accent/20 sm:text-xs">
                                         <th className="w-7 py-2 pl-2 pr-1 text-center font-medium sm:w-10 sm:py-3 sm:pl-4 sm:pr-2">Rank</th>
                                         <th className="py-2 px-1 font-medium sm:py-3 sm:px-2">Team</th>
                                         <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">P</th>
@@ -1220,7 +1223,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                             <img src={team.logo_url} alt="" className="h-6 w-6 sm:h-7 sm:w-7 rounded object-contain flex-shrink-0" />
                                                         ) : (
                                                             <div className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded bg-surface-3 text-[9px] font-bold text-text-muted flex-shrink-0">
-                                                                {team.team_name.substring(0,2).toUpperCase()}
+                                                                {team.team_name.substring(0, 2).toUpperCase()}
                                                             </div>
                                                         )}
                                                         <div className="max-w-[6rem] truncate font-medium text-text-primary sm:max-w-none">
@@ -1248,9 +1251,11 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                         </Card>
                     )
                 )}
+                </div>
             </div>
+        </div>
 
-            {/* Matches Section */}
+        {/* Matches Section */}
             <div>
                 <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
                     <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
@@ -1336,7 +1341,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                     Final
                                                 </span>
                                             )}
-                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${m.status === 'completed' ? 'bg-surface-3 text-text-muted' : 'bg-accent/10 text-accent'}`}>
+                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${m.status === 'completed'
+                                                ? 'bg-surface-3 text-text-muted'
+                                                : m.status === 'ongoing'
+                                                    ? 'bg-red-500/10 text-red-500 animate-pulse ring-1 ring-red-500/30'
+                                                    : 'bg-accent/10 text-accent'
+                                                }`}>
                                                 {m.status}
                                             </span>
                                             {isAdmin && (
@@ -1439,7 +1449,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                         <img src={t1.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
                                                     ) : (
                                                         <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
-                                                            {t1?.team_name?.substring(0,2).toUpperCase()}
+                                                            {t1?.team_name?.substring(0, 2).toUpperCase()}
                                                         </div>
                                                     )}
                                                     <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t1?.team_name || 'Unknown'}</span>
@@ -1458,7 +1468,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                         <img src={t2.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
                                                     ) : (
                                                         <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
-                                                            {t2?.team_name?.substring(0,2).toUpperCase()}
+                                                            {t2?.team_name?.substring(0, 2).toUpperCase()}
                                                         </div>
                                                     )}
                                                     <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t2?.team_name || 'Unknown'}</span>
@@ -1575,7 +1585,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                             <div className="flex items-center justify-between p-4 border-b border-border">
                                 <h2 className="text-lg font-bold text-text-primary">{team.team_name} Players</h2>
                                 <button onClick={() => setViewingTeamPlayersId(null)} className="p-2 -mr-2 text-text-muted hover:text-text-primary transition-colors">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
                                 </button>
                             </div>
                             <div className="p-4 overflow-y-auto">
