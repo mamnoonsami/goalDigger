@@ -21,6 +21,7 @@
   --danger: #ef4444;
   --danger-hover: #dc2626;
   --sidebar-w: 240px;
+  --header-bg: var(--accent-hover);
 }
 
 /* ─────────────────────────────────────────────
@@ -45,10 +46,13 @@
   --danger: #c81e1e;
   /* Slightly desaturated red */
   --danger-hover: #9b1c1c;
+  --header-bg: var(--accent);
 }
 
 @theme inline {
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-header-bg: var(--header-bg);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);

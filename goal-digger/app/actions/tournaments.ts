@@ -599,12 +599,7 @@ export async function markTournamentMatchAsOngoing(tournamentId: string, matchId
         .single()
     if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can mark ongoing matches')
 
-    // Clear any existing ongoing match in this tournament
-    await supabase
-        .from('tournament_matches')
-        .update({ status: 'scheduled', updated_at: new Date().toISOString() })
-        .eq('tournament_id', tournamentId)
-        .eq('status', 'ongoing')
+    // Mark the selected match as ongoing (without clearing others, allowing simultaneous matches)
 
     const { error } = await supabase
         .from('tournament_matches')
