@@ -857,405 +857,405 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
             {/* Leaderboard Section */}
             <div className="relative mt-8">
                 {/* Full-width background bleed */}
-                <div className="absolute inset-y-0 left-[-100vw] right-[-100vw] border-y border-border/80 bg-accent/5" />
-                
+                <div className="absolute inset-y-0 left-[-100vw] right-[-100vw] border-y border-border/80 bg-white/15" />
+
                 <div className="relative py-8">
                     <div>
-                <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
-                        <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
-                        <span>Leaderboard</span>
-                    </h3>
-                    {isAdmin && leaderboardTab === 'players' && (
-                        <Button
-                            size="sm"
-                            onClick={() => setIsAddPlayersOpen(true)}
-                            className="text-xs"
-                        >
-                            Manage Players
-                        </Button>
-                    )}
-                </div>
+                        <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
+                            <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
+                                <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
+                                <span>Leaderboard</span>
+                            </h3>
+                            {isAdmin && leaderboardTab === 'players' && (
+                                <Button
+                                    size="sm"
+                                    onClick={() => setIsAddPlayersOpen(true)}
+                                    className="text-xs"
+                                >
+                                    Manage Players
+                                </Button>
+                            )}
+                        </div>
 
-                <div className="flex items-center gap-4 border-b border-border mb-4">
-                    <button
-                        onClick={() => setLeaderboardTab('teams')}
-                        className={`pb-2 text-sm font-medium transition-colors relative ${leaderboardTab === 'teams' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
-                    >
-                        Teams ({teams.length})
-                        {leaderboardTab === 'teams' && (
-                            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full" />
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setLeaderboardTab('players')}
-                        className={`pb-2 text-sm font-medium transition-colors relative ${leaderboardTab === 'players' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
-                    >
-                        Players ({players.length})
-                        {leaderboardTab === 'players' && (
-                            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full" />
-                        )}
-                    </button>
-                </div>
-
-                {false ? (
-                    <div className="flex flex-col gap-4">
-                        {isAdmin && (
-                            <div className="flex justify-end gap-2">
-                                {matches.length > 0 && (
-                                    <Button
-                                        variant="danger"
-                                        size="sm"
-                                        onClick={() => setShowDeleteAllMatchesConfirm(true)}
-                                    >
-                                        Delete All
-                                    </Button>
+                        <div className="flex items-center gap-4 border-b border-border mb-4">
+                            <button
+                                onClick={() => setLeaderboardTab('teams')}
+                                className={`pb-2 text-sm font-medium transition-colors relative ${leaderboardTab === 'teams' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                            >
+                                Teams ({teams.length})
+                                {leaderboardTab === 'teams' && (
+                                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full" />
                                 )}
-                                <Button size="sm" onClick={() => setIsCreateMatchOpen(true)}>+ Schedule Match</Button>
-                            </div>
-                        )}
-                        {matches.length > 0 ? (
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                {displayMatches.map(m => {
-                                    const t1 = teams.find(t => t.id === m.team_1_id)
-                                    const t2 = teams.find(t => t.id === m.team_2_id)
-                                    return (
-                                        <Card key={m.id} padding="none" className="flex flex-col p-3 sm:p-5">
-                                            <div className="mb-2 flex items-center justify-between sm:mb-4">
-                                                <span className="text-[11px] text-text-muted sm:text-xs">
-                                                    {new Date(m.match_date).toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                                <div className="flex items-center gap-1.5 sm:gap-2">
-                                                    {m.is_final && (
-                                                        <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
-                                                            Final
+                            </button>
+                            <button
+                                onClick={() => setLeaderboardTab('players')}
+                                className={`pb-2 text-sm font-medium transition-colors relative ${leaderboardTab === 'players' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                            >
+                                Players ({players.length})
+                                {leaderboardTab === 'players' && (
+                                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-accent rounded-t-full" />
+                                )}
+                            </button>
+                        </div>
+
+                        {false ? (
+                            <div className="flex flex-col gap-4">
+                                {isAdmin && (
+                                    <div className="flex justify-end gap-2">
+                                        {matches.length > 0 && (
+                                            <Button
+                                                variant="danger"
+                                                size="sm"
+                                                onClick={() => setShowDeleteAllMatchesConfirm(true)}
+                                            >
+                                                Delete All
+                                            </Button>
+                                        )}
+                                        <Button size="sm" onClick={() => setIsCreateMatchOpen(true)}>+ Schedule Match</Button>
+                                    </div>
+                                )}
+                                {matches.length > 0 ? (
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        {displayMatches.map(m => {
+                                            const t1 = teams.find(t => t.id === m.team_1_id)
+                                            const t2 = teams.find(t => t.id === m.team_2_id)
+                                            return (
+                                                <Card key={m.id} padding="none" className="flex flex-col p-3 sm:p-5">
+                                                    <div className="mb-2 flex items-center justify-between sm:mb-4">
+                                                        <span className="text-[11px] text-text-muted sm:text-xs">
+                                                            {new Date(m.match_date).toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                         </span>
-                                                    )}
-                                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${m.status === 'completed' ? 'bg-surface-3 text-text-muted' : 'bg-accent/10 text-accent'}`}>
-                                                        {m.status}
-                                                    </span>
-                                                    {isAdmin && (
-                                                        <div className="relative">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setMatchActionMenuId(matchActionMenuId === m.id ? null : m.id)}
-                                                                className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-3 hover:text-text-primary"
-                                                                title="Match actions"
-                                                            >
-                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                                                    <circle cx="12" cy="5" r="2" />
-                                                                    <circle cx="12" cy="12" r="2" />
-                                                                    <circle cx="12" cy="19" r="2" />
-                                                                </svg>
-                                                            </button>
-                                                            {matchActionMenuId === m.id && (
-                                                                <>
-                                                                    <div className="fixed inset-0 z-40" onClick={() => setMatchActionMenuId(null)} />
-                                                                    <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-surface-2 py-1 shadow-xl">
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                setEditingMatchId(m.id)
-                                                                                setMatchActionMenuId(null)
-                                                                            }}
-                                                                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
-                                                                        >
-                                                                            <svg className="h-4 w-4 shrink-0 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
-                                                                            <span>Edit match</span>
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                if (m.status === 'ongoing') {
-                                                                                    setUnmarkOngoingConfirmId(m.id)
-                                                                                } else {
-                                                                                    setOngoingConfirmId(m.id)
-                                                                                }
-                                                                                setMatchActionMenuId(null)
-                                                                            }}
-                                                                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
-                                                                        >
-                                                                            <span className="relative flex h-3 w-3 shrink-0">
-                                                                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                                                                                <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
-                                                                            </span>
-                                                                            <span>{m.status === 'ongoing' ? 'Undo ongoing' : 'Mark as ongoing'}</span>
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                if (m.is_final) {
-                                                                                    setUnmarkFinalConfirmId(m.id)
-                                                                                } else {
-                                                                                    setFinalMatchConfirmId(m.id)
-                                                                                }
-                                                                                setMatchActionMenuId(null)
-                                                                            }}
-                                                                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
-                                                                        >
-                                                                            <span className="h-3 w-3 shrink-0 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
-                                                                            <span>{m.is_final ? 'Undo final match' : 'Mark as final match'}</span>
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                setResetMatchConfirmId(m.id)
-                                                                                setMatchActionMenuId(null)
-                                                                            }}
-                                                                            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-amber-400 transition-colors hover:bg-surface-3"
-                                                                        >
-                                                                            <svg className="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" /><path d="M3 21v-5h5" /></svg>
-                                                                            <span>Reset this match</span>
-                                                                        </button>
-                                                                    </div>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="mb-2 flex flex-1 items-center justify-between sm:mb-4">
-                                                {(() => {
-                                                    const matchScorers = matchStats.filter(ms => ms.tournament_match_id === m.id && ms.goals > 0)
-                                                    const t1Scorers = matchScorers.filter(ms => ms.team_id === t1?.id).map(ms => {
-                                                        const p = players.find(player => player.player_id === ms.player_id)
-                                                        const pProfile = Array.isArray(p?.profiles) ? p?.profiles[0] : p?.profiles
-                                                        return `${pProfile?.first_name || 'Unknown'}${ms.goals > 1 ? `(${ms.goals})` : ''}`
-                                                    }).join(', ')
-
-                                                    const t2Scorers = matchScorers.filter(ms => ms.team_id === t2?.id).map(ms => {
-                                                        const p = players.find(player => player.player_id === ms.player_id)
-                                                        const pProfile = Array.isArray(p?.profiles) ? p?.profiles[0] : p?.profiles
-                                                        return `${pProfile?.first_name || 'Unknown'}${ms.goals > 1 ? `(${ms.goals})` : ''}`
-                                                    }).join(', ')
-                                                    const team1Score = matchScoreOrZero(m.team_1_score)
-                                                    const team2Score = matchScoreOrZero(m.team_2_score)
-
-                                                    return (
-                                                        <div className="flex flex-col w-full">
-                                                            <div className="mb-1.5 flex w-full items-center justify-between gap-3 sm:mb-2 sm:gap-4">
-                                                                {/* Team 1 */}
-                                                                <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
-                                                                    {t1?.logo_url ? (
-                                                                        <img src={t1.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
-                                                                    ) : (
-                                                                        <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
-                                                                            {t1?.team_name?.substring(0, 2).toUpperCase()}
-                                                                        </div>
-                                                                    )}
-                                                                    <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t1?.team_name || 'Unknown'}</span>
-                                                                </div>
-
-                                                                {/* Score */}
-                                                                <div className="flex items-center gap-2 sm:gap-3">
-                                                                    <div className="flex items-center gap-2 text-xl font-bold text-text-primary sm:gap-3 sm:text-2xl">
-                                                                        <span>{team1Score}</span>
-                                                                        <span className="text-lg font-normal text-text-muted sm:text-xl">-</span>
-                                                                        <span>{team2Score}</span>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Team 2 */}
-                                                                <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
-                                                                    {t2?.logo_url ? (
-                                                                        <img src={t2.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
-                                                                    ) : (
-                                                                        <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
-                                                                            {t2?.team_name?.substring(0, 2).toUpperCase()}
-                                                                        </div>
-                                                                    )}
-                                                                    <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t2?.team_name || 'Unknown'}</span>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Scorers Section (FIFA style) */}
-                                                            {m.status === 'completed' && (t1Scorers || t2Scorers) && (
-                                                                <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-1.5 border-t border-border/50 pt-2 text-[10px] leading-snug text-text-muted sm:mt-3 sm:gap-2 sm:pt-3 sm:text-[11px]">
-                                                                    <span className="min-w-0 whitespace-normal break-words text-right">
-                                                                        {t1Scorers}
-                                                                    </span>
-                                                                    <span className="opacity-50">⚽</span>
-                                                                    <span className="min-w-0 whitespace-normal break-words text-left">
-                                                                        {t2Scorers}
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )
-                                                })()}
-                                            </div>
-                                            {isAdmin && (
-                                                <div className="mt-auto flex justify-end gap-2 border-t border-border pt-2 sm:pt-3">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-auto py-1 text-[11px] text-red-500 hover:bg-red-500/10 hover:text-red-400 sm:py-1.5 sm:text-xs"
-                                                        onClick={() => setDeleteMatchId(m.id)}
-                                                    >
-                                                        Delete
-                                                    </Button>
-                                                    <Button variant="secondary" size="sm" className="h-auto py-1 text-[11px] sm:py-1.5 sm:text-xs" onClick={() => setRecordScoreMatchId(m.id)}>
-                                                        {m.status === 'completed' ? 'Edit Score' : 'Record Score'}
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </Card>
-                                    )
-                                })}
-                            </div>
-                        ) : (
-                            <Card>
-                                <p className="py-6 text-center text-sm text-text-muted">No matches scheduled yet.</p>
-                            </Card>
-                        )}
-                    </div>
-                ) : leaderboardTab === 'players' ? (
-                    players.length > 0 ? (
-                        <Card className="scrollbar-thin max-h-[22rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[26.5rem]">
-                            <table className="w-auto min-w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
-                                <thead className="sticky top-0 z-20">
-                                    <tr className="border-b border-emerald-600 bg-header-bg text-[10px] text-white shadow-sm shadow-accent/20 sm:text-xs">
-                                        <th className="w-7 py-2 pl-2 pr-1 text-center font-medium sm:w-10 sm:py-3 sm:pl-4 sm:pr-2">Rank</th>
-                                        <th className="w-[7.25rem] py-2 px-1 font-medium sm:w-auto sm:py-3 sm:px-2">Player</th>
-                                        <th className="py-2 px-1 font-medium text-center sm:py-3 sm:px-2">Team</th>
-                                        <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Goals</th>
-                                        <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Assists</th>
-                                        <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Matches</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-border">
-                                    {playerStats.map((tp, idx) => {
-                                        const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
-                                        const team = teams.find(t => t.id === tp.team_id)
-                                        const isEven = idx % 2 === 0
-                                        return (
-                                            <tr key={tp.id} className={`group transition-colors ${isEven ? 'bg-surface-1/30' : ''} hover:bg-surface-1/50`}>
-                                                <td className="py-2 pl-2 pr-1 text-center font-semibold text-text-muted sm:py-3 sm:pl-4 sm:pr-2">{idx + 1}</td>
-                                                <td className="py-2 px-1 sm:py-3 sm:px-2">
-                                                    <div className="flex items-center gap-1.5 sm:gap-3">
-                                                        {/* Avatar: hidden on mobile */}
-                                                        {p?.avatar_url ? (
-                                                            // eslint-disable-next-line @next/next/no-img-element
-                                                            <img src={p.avatar_url} alt="" className="hidden sm:block h-8 w-8 rounded-full object-cover bg-surface-3 flex-shrink-0" />
-                                                        ) : (
-                                                            <div className="hidden sm:flex h-8 w-8 rounded-full bg-accent/20 items-center justify-center text-xs font-bold text-accent flex-shrink-0">
-                                                                {p?.first_name?.[0]}{p?.last_name?.[0]}
-                                                            </div>
-                                                        )}
-                                                        {/* Full name on desktop */}
-                                                        <span className="hidden sm:inline font-medium text-text-primary">
-                                                            {p?.first_name} {p?.last_name}
-                                                        </span>
-                                                        {/* Abbreviated name on mobile */}
-                                                        <span className="sm:hidden block max-w-[6.75rem] truncate font-medium text-text-primary">
-                                                            {p?.first_name?.split(' ')[0]} {p?.last_name?.trim() ? `${p.last_name.trim().slice(0, 8)}${p.last_name.trim().length > 8 ? '.' : ''}` : ' '}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-2 px-1 sm:py-3 sm:px-2">
-                                                    {team ? (
-                                                        <div className="flex justify-center">
-                                                            {team.logo_url ? (
-                                                                // eslint-disable-next-line @next/next/no-img-element
-                                                                <img
-                                                                    src={team.logo_url}
-                                                                    alt={team.team_name}
-                                                                    title={team.team_name}
-                                                                    className="h-6 w-6 rounded-lg object-contain sm:h-8 sm:w-8"
-                                                                />
-                                                            ) : (
-                                                                <span
-                                                                    title={team.team_name}
-                                                                    className="flex h-6 w-6 items-center justify-center rounded-lg border border-border bg-surface-3 text-[9px] font-bold text-text-muted sm:h-8 sm:w-8 sm:text-[10px]"
-                                                                >
-                                                                    {team.team_name.substring(0, 2).toUpperCase()}
+                                                        <div className="flex items-center gap-1.5 sm:gap-2">
+                                                            {m.is_final && (
+                                                                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                                                                    Final
                                                                 </span>
                                                             )}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex justify-center">
-                                                            <span className="text-[10px] sm:text-xs text-text-muted italic">-</span>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td className="py-2 px-1.5 text-center font-bold text-text-primary sm:py-3 sm:px-3">{tp.goals}</td>
-                                                <td className="py-2 px-1.5 text-center font-bold text-text-primary sm:py-3 sm:px-3">{tp.assists}</td>
-                                                <td className="py-2 px-1.5 text-center text-text-muted sm:py-3 sm:px-3">{tp.matchesPlayed}</td>
-                                            </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
-                        </Card>
-                    ) : (
-                        <Card>
-                            <p className="py-6 text-center text-sm text-text-muted">No players assigned yet.</p>
-                        </Card>
-                    )
-                ) : (
-                    teams.length > 0 ? (
-                        <Card className="scrollbar-thin max-h-[22rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[26.5rem]">
-                            <table className="w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
-                                <thead className="sticky top-0 z-20">
-                                    <tr className="border-b border-emerald-600 bg-header-bg text-[10px] text-white shadow-sm shadow-accent/20 sm:text-xs">
-                                        <th className="w-7 py-2 pl-2 pr-1 text-center font-medium sm:w-10 sm:py-3 sm:pl-4 sm:pr-2">Rank</th>
-                                        <th className="py-2 px-1 font-medium sm:py-3 sm:px-2">Team</th>
-                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">P</th>
-                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">W</th>
-                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">D</th>
-                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">L</th>
-                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">GD</th>
-                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">GF</th>
-                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">GA</th>
-                                        <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center text-white">Pts</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-border">
-                                    {teamStats.map((team, idx) => {
-                                        const isEven = idx % 2 === 0
-                                        return (
-                                            <tr key={team.id} className={`group transition-colors ${isEven ? 'bg-surface-1/30' : ''} hover:bg-surface-1/50`}>
-                                                <td className="py-2 pl-2 pr-1 text-center font-semibold text-text-muted sm:py-3 sm:pl-4 sm:pr-2">{idx + 1}</td>
-                                                <td className="py-2 px-1 sm:py-3 sm:px-2">
-                                                    <div className="flex items-center gap-2">
-                                                        {team.logo_url ? (
-                                                            // eslint-disable-next-line @next/next/no-img-element
-                                                            <img src={team.logo_url} alt="" className="h-6 w-6 sm:h-7 sm:w-7 rounded object-contain flex-shrink-0" />
-                                                        ) : (
-                                                            <div className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded bg-surface-3 text-[9px] font-bold text-text-muted flex-shrink-0">
-                                                                {team.team_name.substring(0, 2).toUpperCase()}
-                                                            </div>
-                                                        )}
-                                                        <div className="max-w-[6rem] truncate font-medium text-text-primary sm:max-w-none">
-                                                            {team.team_name}
+                                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${m.status === 'completed' ? 'bg-surface-3 text-text-muted' : 'bg-accent/10 text-accent'}`}>
+                                                                {m.status}
+                                                            </span>
+                                                            {isAdmin && (
+                                                                <div className="relative">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setMatchActionMenuId(matchActionMenuId === m.id ? null : m.id)}
+                                                                        className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-3 hover:text-text-primary"
+                                                                        title="Match actions"
+                                                                    >
+                                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                                            <circle cx="12" cy="5" r="2" />
+                                                                            <circle cx="12" cy="12" r="2" />
+                                                                            <circle cx="12" cy="19" r="2" />
+                                                                        </svg>
+                                                                    </button>
+                                                                    {matchActionMenuId === m.id && (
+                                                                        <>
+                                                                            <div className="fixed inset-0 z-40" onClick={() => setMatchActionMenuId(null)} />
+                                                                            <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-surface-2 py-1 shadow-xl">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        setEditingMatchId(m.id)
+                                                                                        setMatchActionMenuId(null)
+                                                                                    }}
+                                                                                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                                                >
+                                                                                    <svg className="h-4 w-4 shrink-0 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                                                                    <span>Edit match</span>
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        if (m.status === 'ongoing') {
+                                                                                            setUnmarkOngoingConfirmId(m.id)
+                                                                                        } else {
+                                                                                            setOngoingConfirmId(m.id)
+                                                                                        }
+                                                                                        setMatchActionMenuId(null)
+                                                                                    }}
+                                                                                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                                                >
+                                                                                    <span className="relative flex h-3 w-3 shrink-0">
+                                                                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                                                                                        <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+                                                                                    </span>
+                                                                                    <span>{m.status === 'ongoing' ? 'Undo ongoing' : 'Mark as ongoing'}</span>
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        if (m.is_final) {
+                                                                                            setUnmarkFinalConfirmId(m.id)
+                                                                                        } else {
+                                                                                            setFinalMatchConfirmId(m.id)
+                                                                                        }
+                                                                                        setMatchActionMenuId(null)
+                                                                                    }}
+                                                                                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3"
+                                                                                >
+                                                                                    <span className="h-3 w-3 shrink-0 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
+                                                                                    <span>{m.is_final ? 'Undo final match' : 'Mark as final match'}</span>
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        setResetMatchConfirmId(m.id)
+                                                                                        setMatchActionMenuId(null)
+                                                                                    }}
+                                                                                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-amber-400 transition-colors hover:bg-surface-3"
+                                                                                >
+                                                                                    <svg className="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" /><path d="M3 21v-5h5" /></svg>
+                                                                                    <span>Reset this match</span>
+                                                                                </button>
+                                                                            </div>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                </td>
-                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.played}</td>
-                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-emerald-400">{team.won}</td>
-                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-yellow-400">{team.drawn}</td>
-                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-red-400">{team.lost}</td>
-                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.gd > 0 ? `+${team.gd}` : team.gd}</td>
-                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.gf}</td>
-                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.ga}</td>
-                                                <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-accent">{team.points}</td>
+                                                    <div className="mb-2 flex flex-1 items-center justify-between sm:mb-4">
+                                                        {(() => {
+                                                            const matchScorers = matchStats.filter(ms => ms.tournament_match_id === m.id && ms.goals > 0)
+                                                            const t1Scorers = matchScorers.filter(ms => ms.team_id === t1?.id).map(ms => {
+                                                                const p = players.find(player => player.player_id === ms.player_id)
+                                                                const pProfile = Array.isArray(p?.profiles) ? p?.profiles[0] : p?.profiles
+                                                                return `${pProfile?.first_name || 'Unknown'}${ms.goals > 1 ? `(${ms.goals})` : ''}`
+                                                            }).join(', ')
+
+                                                            const t2Scorers = matchScorers.filter(ms => ms.team_id === t2?.id).map(ms => {
+                                                                const p = players.find(player => player.player_id === ms.player_id)
+                                                                const pProfile = Array.isArray(p?.profiles) ? p?.profiles[0] : p?.profiles
+                                                                return `${pProfile?.first_name || 'Unknown'}${ms.goals > 1 ? `(${ms.goals})` : ''}`
+                                                            }).join(', ')
+                                                            const team1Score = matchScoreOrZero(m.team_1_score)
+                                                            const team2Score = matchScoreOrZero(m.team_2_score)
+
+                                                            return (
+                                                                <div className="flex flex-col w-full">
+                                                                    <div className="mb-1.5 flex w-full items-center justify-between gap-3 sm:mb-2 sm:gap-4">
+                                                                        {/* Team 1 */}
+                                                                        <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
+                                                                            {t1?.logo_url ? (
+                                                                                <img src={t1.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
+                                                                            ) : (
+                                                                                <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
+                                                                                    {t1?.team_name?.substring(0, 2).toUpperCase()}
+                                                                                </div>
+                                                                            )}
+                                                                            <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t1?.team_name || 'Unknown'}</span>
+                                                                        </div>
+
+                                                                        {/* Score */}
+                                                                        <div className="flex items-center gap-2 sm:gap-3">
+                                                                            <div className="flex items-center gap-2 text-xl font-bold text-text-primary sm:gap-3 sm:text-2xl">
+                                                                                <span>{team1Score}</span>
+                                                                                <span className="text-lg font-normal text-text-muted sm:text-xl">-</span>
+                                                                                <span>{team2Score}</span>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Team 2 */}
+                                                                        <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
+                                                                            {t2?.logo_url ? (
+                                                                                <img src={t2.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
+                                                                            ) : (
+                                                                                <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
+                                                                                    {t2?.team_name?.substring(0, 2).toUpperCase()}
+                                                                                </div>
+                                                                            )}
+                                                                            <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t2?.team_name || 'Unknown'}</span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Scorers Section (FIFA style) */}
+                                                                    {m.status === 'completed' && (t1Scorers || t2Scorers) && (
+                                                                        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-1.5 border-t border-border/50 pt-2 text-[10px] leading-snug text-text-muted sm:mt-3 sm:gap-2 sm:pt-3 sm:text-[11px]">
+                                                                            <span className="min-w-0 whitespace-normal break-words text-right">
+                                                                                {t1Scorers}
+                                                                            </span>
+                                                                            <span className="opacity-50">⚽</span>
+                                                                            <span className="min-w-0 whitespace-normal break-words text-left">
+                                                                                {t2Scorers}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )
+                                                        })()}
+                                                    </div>
+                                                    {isAdmin && (
+                                                        <div className="mt-auto flex justify-end gap-2 border-t border-border pt-2 sm:pt-3">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-auto py-1 text-[11px] text-red-500 hover:bg-red-500/10 hover:text-red-400 sm:py-1.5 sm:text-xs"
+                                                                onClick={() => setDeleteMatchId(m.id)}
+                                                            >
+                                                                Delete
+                                                            </Button>
+                                                            <Button variant="secondary" size="sm" className="h-auto py-1 text-[11px] sm:py-1.5 sm:text-xs" onClick={() => setRecordScoreMatchId(m.id)}>
+                                                                {m.status === 'completed' ? 'Edit Score' : 'Record Score'}
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </Card>
+                                            )
+                                        })}
+                                    </div>
+                                ) : (
+                                    <Card>
+                                        <p className="py-6 text-center text-sm text-text-muted">No matches scheduled yet.</p>
+                                    </Card>
+                                )}
+                            </div>
+                        ) : leaderboardTab === 'players' ? (
+                            players.length > 0 ? (
+                                <Card className="scrollbar-thin max-h-[22rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[26.5rem]">
+                                    <table className="w-auto min-w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
+                                        <thead className="sticky top-0 z-20">
+                                            <tr className="border-b border-emerald-600 bg-header-bg text-[10px] text-white shadow-sm shadow-accent/20 sm:text-xs">
+                                                <th className="w-7 py-2 pl-2 pr-1 text-center font-medium sm:w-10 sm:py-3 sm:pl-4 sm:pr-2">Rank</th>
+                                                <th className="w-[7.25rem] py-2 px-1 font-medium sm:w-auto sm:py-3 sm:px-2">Player</th>
+                                                <th className="py-2 px-1 font-medium text-center sm:py-3 sm:px-2">Team</th>
+                                                <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Goals</th>
+                                                <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Assists</th>
+                                                <th className="py-2 px-1.5 font-medium text-center sm:py-3 sm:px-3">Matches</th>
                                             </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
-                        </Card>
-                    ) : (
-                        <Card>
-                            <p className="py-6 text-center text-sm text-text-muted">No teams added yet.</p>
-                        </Card>
-                    )
-                )}
+                                        </thead>
+                                        <tbody className="divide-y divide-border">
+                                            {playerStats.map((tp, idx) => {
+                                                const p = Array.isArray(tp.profiles) ? tp.profiles[0] : tp.profiles
+                                                const team = teams.find(t => t.id === tp.team_id)
+                                                const isEven = idx % 2 === 0
+                                                return (
+                                                    <tr key={tp.id} className={`group transition-colors ${isEven ? 'bg-surface-1/30' : ''} hover:bg-surface-1/50`}>
+                                                        <td className="py-2 pl-2 pr-1 text-center font-semibold text-text-muted sm:py-3 sm:pl-4 sm:pr-2">{idx + 1}</td>
+                                                        <td className="py-2 px-1 sm:py-3 sm:px-2">
+                                                            <div className="flex items-center gap-1.5 sm:gap-3">
+                                                                {/* Avatar: hidden on mobile */}
+                                                                {p?.avatar_url ? (
+                                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                                    <img src={p.avatar_url} alt="" className="hidden sm:block h-8 w-8 rounded-full object-cover bg-surface-3 flex-shrink-0" />
+                                                                ) : (
+                                                                    <div className="hidden sm:flex h-8 w-8 rounded-full bg-accent/20 items-center justify-center text-xs font-bold text-accent flex-shrink-0">
+                                                                        {p?.first_name?.[0]}{p?.last_name?.[0]}
+                                                                    </div>
+                                                                )}
+                                                                {/* Full name on desktop */}
+                                                                <span className="hidden sm:inline font-medium text-text-primary">
+                                                                    {p?.first_name} {p?.last_name}
+                                                                </span>
+                                                                {/* Abbreviated name on mobile */}
+                                                                <span className="sm:hidden block max-w-[6.75rem] truncate font-medium text-text-primary">
+                                                                    {p?.first_name?.split(' ')[0]} {p?.last_name?.trim() ? `${p.last_name.trim().slice(0, 8)}${p.last_name.trim().length > 8 ? '.' : ''}` : ' '}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2 px-1 sm:py-3 sm:px-2">
+                                                            {team ? (
+                                                                <div className="flex justify-center">
+                                                                    {team.logo_url ? (
+                                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                                        <img
+                                                                            src={team.logo_url}
+                                                                            alt={team.team_name}
+                                                                            title={team.team_name}
+                                                                            className="h-6 w-6 rounded-lg object-contain sm:h-8 sm:w-8"
+                                                                        />
+                                                                    ) : (
+                                                                        <span
+                                                                            title={team.team_name}
+                                                                            className="flex h-6 w-6 items-center justify-center rounded-lg border border-border bg-surface-3 text-[9px] font-bold text-text-muted sm:h-8 sm:w-8 sm:text-[10px]"
+                                                                        >
+                                                                            {team.team_name.substring(0, 2).toUpperCase()}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex justify-center">
+                                                                    <span className="text-[10px] sm:text-xs text-text-muted italic">-</span>
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td className="py-2 px-1.5 text-center font-bold text-text-primary sm:py-3 sm:px-3">{tp.goals}</td>
+                                                        <td className="py-2 px-1.5 text-center font-bold text-text-primary sm:py-3 sm:px-3">{tp.assists}</td>
+                                                        <td className="py-2 px-1.5 text-center text-text-muted sm:py-3 sm:px-3">{tp.matchesPlayed}</td>
+                                                    </tr>
+                                                )
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </Card>
+                            ) : (
+                                <Card>
+                                    <p className="py-6 text-center text-sm text-text-muted">No players assigned yet.</p>
+                                </Card>
+                            )
+                        ) : (
+                            teams.length > 0 ? (
+                                <Card className="scrollbar-thin max-h-[22rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[26.5rem]">
+                                    <table className="w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
+                                        <thead className="sticky top-0 z-20">
+                                            <tr className="border-b border-emerald-600 bg-header-bg text-[10px] text-white shadow-sm shadow-accent/20 sm:text-xs">
+                                                <th className="w-7 py-2 pl-2 pr-1 text-center font-medium sm:w-10 sm:py-3 sm:pl-4 sm:pr-2">Rank</th>
+                                                <th className="py-2 px-1 font-medium sm:py-3 sm:px-2">Team</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">P</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">W</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">D</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">L</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">GD</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">GF</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center">GA</th>
+                                                <th className="py-2 px-2 sm:py-3 sm:px-4 font-medium text-center text-white">Pts</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-border">
+                                            {teamStats.map((team, idx) => {
+                                                const isEven = idx % 2 === 0
+                                                return (
+                                                    <tr key={team.id} className={`group transition-colors ${isEven ? 'bg-surface-1/30' : ''} hover:bg-surface-1/50`}>
+                                                        <td className="py-2 pl-2 pr-1 text-center font-semibold text-text-muted sm:py-3 sm:pl-4 sm:pr-2">{idx + 1}</td>
+                                                        <td className="py-2 px-1 sm:py-3 sm:px-2">
+                                                            <div className="flex items-center gap-2">
+                                                                {team.logo_url ? (
+                                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                                    <img src={team.logo_url} alt="" className="h-6 w-6 sm:h-7 sm:w-7 rounded object-contain flex-shrink-0" />
+                                                                ) : (
+                                                                    <div className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded bg-surface-3 text-[9px] font-bold text-text-muted flex-shrink-0">
+                                                                        {team.team_name.substring(0, 2).toUpperCase()}
+                                                                    </div>
+                                                                )}
+                                                                <div className="max-w-[6rem] truncate font-medium text-text-primary sm:max-w-none">
+                                                                    {team.team_name}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.played}</td>
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-emerald-400">{team.won}</td>
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-yellow-400">{team.drawn}</td>
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-red-400">{team.lost}</td>
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.gd > 0 ? `+${team.gd}` : team.gd}</td>
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.gf}</td>
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-center text-text-muted">{team.ga}</td>
+                                                        <td className="py-2 px-2 sm:py-3 sm:px-4 text-center font-bold text-accent">{team.points}</td>
+                                                    </tr>
+                                                )
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </Card>
+                            ) : (
+                                <Card>
+                                    <p className="py-6 text-center text-sm text-text-muted">No teams added yet.</p>
+                                </Card>
+                            )
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        {/* Matches Section */}
+            {/* Matches Section */}
             <div>
                 <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
                     <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
