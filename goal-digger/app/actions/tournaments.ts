@@ -725,13 +725,29 @@ export async function recordTournamentMatchScore(
         .single()
     if (!profile?.is_admin && !profile?.is_king) throw new Error('Only admins can record match scores')
 
-    // 1. Update the match score and status
+    // 1. Fetch current match to preserve status if needed
+    const { data: match, error: matchLookupError } = await supabase
+        .from('tournament_matches')
+        .select('status')
+        .eq('id', matchId)
+        .single()
+
+    if (matchLookupError || !match) throw new Error('Match not found')
+
+    let newStatus = match.status
+    if (data.mark_completed) {
+        newStatus = 'completed'
+    } else if (match.status === 'completed') {
+        newStatus = 'scheduled'
+    }
+
+    // 2. Update the match score and status
     const { error: matchError } = await supabase
         .from('tournament_matches')
         .update({
             team_1_score: data.team_1_score,
             team_2_score: data.team_2_score,
-            status: data.mark_completed ? 'completed' : 'scheduled',
+            status: newStatus,
             updated_at: new Date().toISOString()
         })
         .eq('id', matchId)
