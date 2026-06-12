@@ -28,6 +28,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <AppShell
             profile={profile}
             isAdmin={profile?.is_admin || profile?.is_king || false}
+            isKing={profile?.is_king ?? false}
             isPlayer={profile?.is_player ?? false}
             isManager={profile?.is_manager ?? false}
             initialUnreadCount={unreadCount ?? 0}

@@ -13,12 +13,13 @@ interface AppShellProps {
     children: ReactNode
     profile: Pick<Profile, 'first_name' | 'last_name' | 'avatar_url'> | null
     isAdmin?: boolean
+    isKing?: boolean
     isPlayer?: boolean
     isManager?: boolean
     initialUnreadCount?: number
 }
 
-export function AppShell({ children, profile, isAdmin = false, isPlayer = false, isManager = false, initialUnreadCount = 0 }: AppShellProps) {
+export function AppShell({ children, profile, isAdmin = false, isKing = false, isPlayer = false, isManager = false, initialUnreadCount = 0 }: AppShellProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [isSidebarMinimized, setIsSidebarMinimized] = useState(false)
 
@@ -34,6 +35,7 @@ export function AppShell({ children, profile, isAdmin = false, isPlayer = false,
                             isMinimized={isSidebarMinimized}
                             onToggleMinimize={() => setIsSidebarMinimized(!isSidebarMinimized)}
                             isAdmin={isAdmin}
+                            isKing={isKing}
                             isPlayer={isPlayer}
                             isManager={isManager}
                         />

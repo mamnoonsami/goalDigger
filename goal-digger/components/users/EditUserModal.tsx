@@ -8,14 +8,17 @@ import type { UserRow } from './UserTable'
 interface EditUserModalProps {
     user: UserRow
     onClose: () => void
+    tenants?: { id: string; name: string }[]
+    isKing?: boolean
 }
 
 const POSITIONS = ['goalkeeper', 'defender', 'midfielder', 'striker']
 const ROLES = ['admin', 'manager', 'player', 'viewer']
 
-export function EditUserModal({ user, onClose }: EditUserModalProps) {
+export function EditUserModal({ user, onClose, tenants = [], isKing = false }: EditUserModalProps) {
     const [firstName, setFirstName] = useState(user.first_name)
     const [lastName, setLastName] = useState(user.last_name)
+    const [tenantId, setTenantId] = useState(user.tenant_id ?? 'none')
     const [nickname, setNickname] = useState(user.nickname ?? '')
     const [role, setRole] = useState(user.role)
     const [position, setPosition] = useState(user.player_position ?? '')
@@ -44,6 +47,7 @@ export function EditUserModal({ user, onClose }: EditUserModalProps) {
                 is_manager: isManager,
                 is_player: isPlayer,
                 is_viewer: isViewer,
+                ...(isKing ? { tenant_id: tenantId === 'none' ? null : tenantId } : {})
             })
             onClose()
         } catch (err) {
@@ -112,6 +116,25 @@ export function EditUserModal({ user, onClose }: EditUserModalProps) {
                                 />
                             </label>
                         </div>
+
+                        {/* Group Assignment (King only) */}
+                        {isKing && tenants.length > 0 && (
+                            <div>
+                                <label className="flex flex-col gap-1.5">
+                                    <span className="text-xs font-medium text-text-muted">Group (Tenant)</span>
+                                    <select
+                                        value={tenantId}
+                                        onChange={e => setTenantId(e.target.value)}
+                                        className="rounded-lg border border-border bg-surface-1 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
+                                    >
+                                        <option value="none">No Group (Unassigned)</option>
+                                        {tenants.map(t => (
+                                            <option key={t.id} value={t.id}>{t.name}</option>
+                                        ))}
+                                    </select>
+                                </label>
+                            </div>
+                        )}
 
                         {/* Role + Position */}
                         <div className="grid grid-cols-2 gap-3">

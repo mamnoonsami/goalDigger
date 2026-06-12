@@ -40,7 +40,7 @@ export default async function AuctionDetailPage({ params }: PageProps) {
         (async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return { data: null }
-            return supabase.from('profiles').select('is_admin, is_manager').eq('id', user.id).single()
+            return supabase.from('profiles').select('is_admin, is_manager, tenant_id').eq('id', user.id).single()
         })()
     ])
 
@@ -58,10 +58,12 @@ export default async function AuctionDetailPage({ params }: PageProps) {
         isAdmin ? supabase.from('profiles')
             .select('id, first_name, last_name, player_position, base_score')
             .eq('is_player', true)
+            .eq('tenant_id', profile?.tenant_id)
             .order('base_score', { ascending: false }) : Promise.resolve({ data: [] }),
         supabase.from('profiles')
             .select('id, first_name, last_name, avatar_url')
             .eq('is_manager', true)
+            .eq('tenant_id', profile?.tenant_id)
             .order('first_name', { ascending: true })
     ])
 

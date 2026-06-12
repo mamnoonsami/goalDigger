@@ -24,11 +24,12 @@ interface SidebarProps {
     isMinimized?: boolean
     onToggleMinimize?: () => void
     isAdmin?: boolean
+    isKing?: boolean
     isPlayer?: boolean
     isManager?: boolean
 }
 
-export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMinimize, isAdmin = false, isPlayer = false, isManager = false }: SidebarProps) {
+export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMinimize, isAdmin = false, isKing = false, isPlayer = false, isManager = false }: SidebarProps) {
     const pathname = usePathname()
     const router = useRouter()
     const unreadCount = useChatStore((s) => s.unreadCount)
@@ -50,7 +51,11 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
             { href: '/ratings', label: 'Rate Your Teammates', icon: '⭐' }
         ] : []),
         ...(isAdmin ? [
-            { href: '/users', label: 'User Management', icon: '🛡️' }
+            { href: '/users', label: 'User Management', icon: '🛡️' },
+            { href: '/settings/group', label: 'Group Settings', icon: '⚙️' }
+        ] : []),
+        ...(isKing ? [
+            { href: '/settings/king', label: 'King Settings', icon: '👑' }
         ] : []),
     ]
 

@@ -27,20 +27,25 @@ export interface UserRow {
     auction_budget: number
     created_at: string
     updated_at: string
+    tenant_id?: string
+    tenant?: { name: string } | null
 }
 
 interface UserTableProps {
     users: UserRow[]
     currentUserId: string
+    tenants?: { id: string; name: string }[]
+    isKing?: boolean
 }
 
 type RoleFilter = 'all' | 'admin' | 'manager' | 'player' | 'viewer'
 type PositionFilter = 'all' | 'goalkeeper' | 'defender' | 'midfielder' | 'striker'
 
-export function UserTable({ users, currentUserId }: UserTableProps) {
+export function UserTable({ users, currentUserId, tenants = [], isKing = false }: UserTableProps) {
     const [search, setSearch] = useState('')
     const [roleFilter, setRoleFilter] = useState<RoleFilter>('all')
     const [positionFilter, setPositionFilter] = useState<PositionFilter>('all')
+    const [tenantFilter, setTenantFilter] = useState<string>('all')
     const [editUser, setEditUser] = useState<UserRow | null>(null)
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -56,9 +61,14 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                 || (roleFilter === 'player' && u.is_player)
                 || (roleFilter === 'viewer' && u.is_viewer)
             const matchesPosition = positionFilter === 'all' || u.player_position === positionFilter
-            return matchesSearch && matchesRole && matchesPosition
+            const matchesTenant = tenantFilter === 'all' 
+                || (tenantFilter === 'none' && !u.tenant_id)
+                || u.tenant_id === tenantFilter
+            return matchesSearch && matchesRole && matchesPosition && matchesTenant
         })
-    }, [users, search, roleFilter, positionFilter])
+    }, [users, search, roleFilter, positionFilter, tenantFilter])
+
+    const showTenantColumn = isKing || useMemo(() => users.some(u => u.tenant?.name), [users, isKing])
 
     async function handleDelete(id: string) {
         setDeletingId(id)
@@ -127,6 +137,21 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                             <option value="midfielder">Midfielder</option>
                             <option value="striker">Striker</option>
                         </select>
+
+                        {/* Tenant filter (Only visible to Kings) */}
+                        {isKing && (
+                            <select
+                                value={tenantFilter}
+                                onChange={e => setTenantFilter(e.target.value)}
+                                className="flex-1 sm:flex-none min-w-[125px] rounded-lg border border-border bg-surface-1 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
+                            >
+                                <option value="all">All Groups</option>
+                                <option value="none">Unassigned</option>
+                                {tenants.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                            </select>
+                        )}
                     </div>
 
                     {/* Count */}
@@ -142,6 +167,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                     <thead>
                         <tr className="border-b border-border text-left text-xs font-semibold uppercase tracking-wider text-text-muted">
                             <th className="px-5 py-3">User</th>
+                            {showTenantColumn && <th className="px-5 py-3">Group</th>}
                             <th className="px-5 py-3">Role</th>
                             <th className="px-5 py-3">Flags</th>
                             <th className="px-5 py-3">Position</th>
@@ -168,6 +194,11 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                                         </div>
                                     </div>
                                 </td>
+                                {showTenantColumn && (
+                                    <td className="px-5 py-3 text-text-muted capitalize">
+                                        {u.tenant_id ? (u.tenant?.name || '—') : <span className="text-red-400 font-semibold text-xs">Unassigned</span>}
+                                    </td>
+                                )}
                                 <td className="px-5 py-3">
                                     <Badge variant={roleVariant[u.role] ?? 'slate'}>{u.role}</Badge>
                                 </td>
@@ -244,6 +275,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                                 </div>
                                 <p className="text-xs text-text-muted mt-0.5 capitalize">
                                     {u.player_position ?? 'No position'} · Score: {u.base_score} · {u.goals}G · {u.matches_played}M
+                                    {u.tenant_id ? (u.tenant?.name && ` · Group: ${u.tenant.name}`) : <span className="text-red-400 font-semibold normal-case"> · Unassigned</span>}
                                 </p>
                                 <div className="flex gap-1 mt-1.5 flex-wrap">
                                     {u.is_king && flagBadge(true, 'K')}
@@ -328,7 +360,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
 
             {/* Edit modal */}
             {editUser && (
-                <EditUserModal user={editUser} onClose={() => setEditUser(null)} />
+                <EditUserModal user={editUser} onClose={() => setEditUser(null)} tenants={tenants} isKing={isKing} />
             )}
         </>
     )

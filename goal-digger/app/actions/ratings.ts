@@ -15,10 +15,17 @@ export async function getPlayersToRate() {
 
     if (!myId) return []
 
+    const { data: myProfile } = await supabase
+        .from('profiles')
+        .select('tenant_id')
+        .eq('id', myId)
+        .single()
+
     const { data: players, error } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, avatar_url, player_position')
         .eq('is_player', true)
+        .eq('tenant_id', myProfile?.tenant_id)
         .neq('id', myId)
         .order('first_name')
 
