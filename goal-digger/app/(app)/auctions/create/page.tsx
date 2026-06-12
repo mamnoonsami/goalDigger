@@ -12,7 +12,7 @@ export default async function CreateAuctionPage() {
     // Check admin
     const { data: profile } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('is_admin, tenant_id')
         .eq('id', user.id)
         .single()
 
@@ -23,6 +23,7 @@ export default async function CreateAuctionPage() {
         .from('profiles')
         .select('id, first_name, last_name, player_position, base_score')
         .eq('is_player', true)
+        .eq('tenant_id', profile?.tenant_id)
         .order('first_name', { ascending: true })
 
     // Fetch all managers for optional assignment
@@ -30,6 +31,7 @@ export default async function CreateAuctionPage() {
         .from('profiles')
         .select('id, first_name, last_name')
         .eq('is_manager', true)
+        .eq('tenant_id', profile?.tenant_id)
         .order('first_name', { ascending: true })
 
     return (

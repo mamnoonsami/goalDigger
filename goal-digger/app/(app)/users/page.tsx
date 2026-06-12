@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '../../../lib/supabase/server'
 import { getUsers } from '../../actions/users'
+import { getAllGroups } from '../../actions/tenant'
 import { UserTable } from '../../../components/users/UserTable'
 
 export const dynamic = 'force-dynamic'
@@ -20,6 +21,11 @@ export default async function UsersPage() {
 
     const users = await getUsers()
 
+    let tenants: { id: string; name: string }[] = []
+    if (profile?.is_king) {
+        tenants = await getAllGroups()
+    }
+
     return (
         <div className="flex flex-col gap-6">
             <div>
@@ -29,7 +35,7 @@ export default async function UsersPage() {
                 </p>
             </div>
 
-            <UserTable users={users} currentUserId={user.id} />
+            <UserTable users={users} currentUserId={user.id} tenants={tenants} isKing={profile?.is_king || false} />
         </div>
     )
 }

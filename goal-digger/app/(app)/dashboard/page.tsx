@@ -13,12 +13,15 @@ export default async function DashboardPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    const [{ data: profile }, { data: matches }, { data: players }, { data: auctions }] = await Promise.all([
-        supabase
-            .from('profiles')
-            .select('first_name, last_name, role, is_admin, is_king, is_manager, is_player, base_score, goals, matches_played, player_position, peer_rating_score')
-            .eq('id', user!.id)
-            .single(),
+    // 1. Fetch user profile first to get roles and tenant_id
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, role, is_admin, is_king, is_manager, is_player, base_score, goals, matches_played, player_position, peer_rating_score, tenant_id')
+        .eq('id', user!.id)
+        .single()
+
+    // 2. Fetch matches, players in same tenant, and auctions
+    const [{ data: matches }, { data: players }, { data: auctions }] = await Promise.all([
         supabase
             .from('matches')
             .select('id, title, status, scheduled_at, location, max_players, notes, created_at')
@@ -28,6 +31,7 @@ export default async function DashboardPage() {
             .from('profiles')
             .select('id, first_name, last_name, base_score, goals, role, matches_played, player_position, avatar_url, peer_rating_score')
             .eq('is_player', true)
+            .eq('tenant_id', profile?.tenant_id)
             .limit(100),
         supabase
             .from('auctions')

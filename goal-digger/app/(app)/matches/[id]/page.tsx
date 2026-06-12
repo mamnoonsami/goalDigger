@@ -32,7 +32,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
 
     // Fetch profile for admin check
     const { data: profile } = user
-        ? await supabase.from('profiles').select('is_admin, is_king').eq('id', user.id).single()
+        ? await supabase.from('profiles').select('is_admin, is_king, tenant_id').eq('id', user.id).single()
         : { data: null }
 
     // Fetch signups with player profile data
@@ -47,6 +47,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
     const { data: allPlayers } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, base_score, peer_rating_score, player_position, avatar_url')
+        .eq('tenant_id', profile?.tenant_id)
         .order('first_name', { ascending: true })
 
     const comingSignups = signups?.filter((s: any) => s.invitation_accepted) ?? []
