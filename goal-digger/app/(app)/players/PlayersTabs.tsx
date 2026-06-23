@@ -19,14 +19,18 @@ type Player = {
     peer_rating_score?: number | null
 }
 
-const POSITIONS = ['striker', 'midfielder', 'defender', 'goalkeeper'] as const
+const POSITIONS = ['all players', 'striker', 'midfielder', 'defender', 'goalkeeper'] as const
 type PositionTab = typeof POSITIONS[number]
 
 export function PlayersTabs({ players }: { players: Player[] }) {
-    const [activeTab, setActiveTab] = useState<PositionTab>('striker')
+    const [activeTab, setActiveTab] = useState<PositionTab>('all players')
 
     // Filter players by active tab (already sorted by parent)
-    const filteredPlayers = players.filter(p => p.player_position === activeTab)
+    const filteredPlayers = players.filter(p => 
+        activeTab === 'all players' 
+            ? true 
+            : p.player_position === activeTab
+    )
 
     return (
         <div className="flex flex-col gap-6">
