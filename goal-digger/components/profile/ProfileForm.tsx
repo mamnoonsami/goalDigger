@@ -5,6 +5,7 @@ import { Button } from '../ui/Button'
 import { updateProfile } from '../../app/actions/profile'
 import { createClient } from '../../lib/supabase/client'
 import imageCompression from 'browser-image-compression'
+import { Avatar } from '../ui/Avatar'
 
 interface ProfileFormProps {
     profile: {
@@ -145,18 +146,14 @@ export function ProfileForm({ profile, goals }: ProfileFormProps) {
             {/* Avatar section */}
             <div className="flex flex-col items-center gap-4">
                 <div className="relative">
-                    {avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                            src={avatarUrl}
-                            alt="Avatar"
-                            className="h-24 w-24 rounded-full border-4 border-accent/30 object-cover bg-surface-3"
-                        />
-                    ) : (
-                        <div className="h-24 w-24 rounded-full border-4 border-accent/30 bg-accent/20 flex items-center justify-center text-3xl font-bold text-accent">
-                            {firstName?.[0]?.toUpperCase()}{lastName?.[0]?.toUpperCase()}
-                        </div>
-                    )}
+                    <Avatar
+                        firstName={firstName}
+                        lastName={lastName}
+                        avatarUrl={avatarUrl}
+                        size="xl"
+                        interactive={true}
+                        className="bg-surface-3 border-4 border-accent/30"
+                    />
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto max-w-[200px] sm:max-w-none mx-auto">
                     <Button

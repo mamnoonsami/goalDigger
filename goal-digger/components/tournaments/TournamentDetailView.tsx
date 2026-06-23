@@ -17,6 +17,7 @@ import { AssignPlayersToTeamModal } from './AssignPlayersToTeamModal'
 import { CreateTournamentMatchModal } from './CreateTournamentMatchModal'
 import { RecordMatchScoreModal } from './RecordMatchScoreModal'
 import { EditTournamentMatchModal } from './EditTournamentMatchModal'
+import { TeamLogo } from './TeamLogo'
 
 interface Auction {
     id: string
@@ -634,13 +635,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                             <Card key={team.id} padding="none" className="min-w-0 max-w-full overflow-hidden p-2.5 sm:p-4">
                                                 <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
                                                     <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-                                                        {team.logo_url ? (
-                                                            <img src={team.logo_url} alt="" className="h-8 w-8 flex-shrink-0 rounded-lg border border-border object-cover sm:h-9 sm:w-9" />
-                                                        ) : (
-                                                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-surface-3 text-[11px] font-bold text-text-muted sm:h-9 sm:w-9 sm:text-xs">
-                                                                {team.team_name.substring(0, 2).toUpperCase()}
-                                                            </div>
-                                                        )}
+                                                        <TeamLogo 
+                                                            teamName={team.team_name}
+                                                            logoUrl={team.logo_url}
+                                                            className="h-8 w-8 rounded-lg sm:h-9 sm:w-9"
+                                                            fallbackClassName="h-8 w-8 rounded-lg text-[11px] sm:h-9 sm:w-9 sm:text-xs"
+                                                        />
                                                         <div className="min-w-0">
                                                             <h4 className="text-sm font-semibold text-text-primary truncate sm:text-base">{team.team_name}</h4>
                                                             {team.team_slogan && (
@@ -747,27 +747,23 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                                         </span>
                                                                     )}
                                                                     <span className="truncate text-right text-[10px] font-medium text-text-primary sm:text-sm">{t1?.team_name ?? row.team1Name}</span>
-                                                                    {t1?.logo_url ? (
-                                                                        // eslint-disable-next-line @next/next/no-img-element
-                                                                        <img src={t1.logo_url} alt="" className="h-5 w-5 sm:h-6 sm:w-6 rounded object-contain flex-shrink-0" />
-                                                                    ) : (
-                                                                        <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">
-                                                                            {(t1?.team_name ?? row.team1Name).substring(0, 2).toUpperCase()}
-                                                                        </div>
-                                                                    )}
+                                                                    <TeamLogo
+                                                                        teamName={row.team1Name}
+                                                                        logoUrl={t1?.logo_url}
+                                                                        className="h-5 w-5 sm:h-6 sm:w-6 rounded object-contain flex-shrink-0"
+                                                                        fallbackClassName="h-5 w-5 sm:h-6 sm:w-6 rounded text-[8px]"
+                                                                    />
                                                                 </div>
                                                                 {/* VS anchor */}
                                                                 <span className="shrink-0 w-7 text-center text-[10px] sm:text-xs font-black text-accent">VS</span>
                                                                 {/* Team 2 */}
                                                                 <div className="flex items-center gap-1 flex-1 min-w-0 justify-start">
-                                                                    {t2?.logo_url ? (
-                                                                        // eslint-disable-next-line @next/next/no-img-element
-                                                                        <img src={t2.logo_url} alt="" className="h-5 w-5 sm:h-6 sm:w-6 rounded object-contain flex-shrink-0" />
-                                                                    ) : (
-                                                                        <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded bg-surface-3 text-[8px] sm:text-[9px] font-bold text-text-muted flex-shrink-0">
-                                                                            {(t2?.team_name ?? row.team2Name).substring(0, 2).toUpperCase()}
-                                                                        </div>
-                                                                    )}
+                                                                    <TeamLogo
+                                                                        teamName={row.team2Name}
+                                                                        logoUrl={t2?.logo_url}
+                                                                        className="h-5 w-5 sm:h-6 sm:w-6 rounded object-contain flex-shrink-0"
+                                                                        fallbackClassName="h-5 w-5 sm:h-6 sm:w-6 rounded text-[8px]"
+                                                                    />
                                                                     <span className="truncate text-[10px] font-medium text-text-primary sm:text-sm">{t2?.team_name ?? row.team2Name}</span>
                                                                     {row.winningTeam === 'team2' && (
                                                                         <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[9px] font-black text-emerald-400 ring-1 ring-emerald-500/30">
@@ -1036,13 +1032,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                                     <div className="mb-1.5 flex w-full items-center justify-between gap-3 sm:mb-2 sm:gap-4">
                                                                         {/* Team 1 */}
                                                                         <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
-                                                                            {t1?.logo_url ? (
-                                                                                <img src={t1.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
-                                                                            ) : (
-                                                                                <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
-                                                                                    {t1?.team_name?.substring(0, 2).toUpperCase()}
-                                                                                </div>
-                                                                            )}
+                                                                            <TeamLogo
+                                                                                teamName={t1?.team_name}
+                                                                                logoUrl={t1?.logo_url}
+                                                                                className="h-10 w-10 sm:h-12 sm:w-12 rounded"
+                                                                                fallbackClassName="h-10 w-10 sm:h-12 sm:w-12 rounded text-[11px] sm:text-xs"
+                                                                            />
                                                                             <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t1?.team_name || 'Unknown'}</span>
                                                                         </div>
 
@@ -1057,13 +1052,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
 
                                                                         {/* Team 2 */}
                                                                         <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
-                                                                            {t2?.logo_url ? (
-                                                                                <img src={t2.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
-                                                                            ) : (
-                                                                                <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
-                                                                                    {t2?.team_name?.substring(0, 2).toUpperCase()}
-                                                                                </div>
-                                                                            )}
+                                                                            <TeamLogo
+                                                                                teamName={t2?.team_name}
+                                                                                logoUrl={t2?.logo_url}
+                                                                                className="h-10 w-10 sm:h-12 sm:w-12 rounded"
+                                                                                fallbackClassName="h-10 w-10 sm:h-12 sm:w-12 rounded text-[11px] sm:text-xs"
+                                                                            />
                                                                             <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t2?.team_name || 'Unknown'}</span>
                                                                         </div>
                                                                     </div>
@@ -1445,13 +1439,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                         <div className="flex w-full flex-col">
                                             <div className="mb-1.5 flex w-full items-center justify-between gap-3 sm:mb-2 sm:gap-4">
                                                 <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
-                                                    {t1?.logo_url ? (
-                                                        <img src={t1.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
-                                                    ) : (
-                                                        <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
-                                                            {t1?.team_name?.substring(0, 2).toUpperCase()}
-                                                        </div>
-                                                    )}
+                                                    <TeamLogo
+                                                        teamName={t1?.team_name}
+                                                        logoUrl={t1?.logo_url}
+                                                        className="h-10 w-10 sm:h-12 sm:w-12 rounded"
+                                                        fallbackClassName="h-10 w-10 sm:h-12 sm:w-12 rounded text-[11px] sm:text-xs"
+                                                    />
                                                     <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t1?.team_name || 'Unknown'}</span>
                                                 </div>
 
@@ -1464,13 +1457,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                                                 </div>
 
                                                 <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:gap-2">
-                                                    {t2?.logo_url ? (
-                                                        <img src={t2.logo_url} alt="" className="h-10 w-10 rounded object-contain sm:h-12 sm:w-12" />
-                                                    ) : (
-                                                        <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-3 text-[11px] font-bold text-text-muted sm:h-12 sm:w-12 sm:text-xs">
-                                                            {t2?.team_name?.substring(0, 2).toUpperCase()}
-                                                        </div>
-                                                    )}
+                                                    <TeamLogo
+                                                        teamName={t2?.team_name}
+                                                        logoUrl={t2?.logo_url}
+                                                        className="h-10 w-10 sm:h-12 sm:w-12 rounded"
+                                                        fallbackClassName="h-10 w-10 sm:h-12 sm:w-12 rounded text-[11px] sm:text-xs"
+                                                    />
                                                     <span className="w-full truncate text-center text-[11px] font-semibold text-text-primary sm:text-xs">{t2?.team_name || 'Unknown'}</span>
                                                 </div>
                                             </div>

@@ -58,6 +58,7 @@ export default async function PlayerDetailPage({ params }: PageProps) {
                         lastName={player.last_name}
                         avatarUrl={player.avatar_url}
                         size="lg"
+                        interactive={true}
                     />
                     <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
