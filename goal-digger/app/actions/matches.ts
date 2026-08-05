@@ -267,6 +267,34 @@ export async function togglePaidStatus(matchId: string, playerId: string, isPaid
     revalidatePath(`/matches/${matchId}`)
 }
 
+/** Fetch list of player IDs that have email addresses in auth.users */
+export async function getPlayerIdsWithEmails(playerIds?: string[]): Promise<string[]> {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { createClient: createPureClient } = await import('@supabase/supabase-js')
+    const adminClient = createPureClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { data: usersData, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
+    if (error || !usersData?.users) return []
+
+    const validEmailSet = new Set(
+        usersData.users
+            .filter(u => u.email && u.email.trim() !== '')
+            .map(u => u.id)
+    )
+
+    if (playerIds && playerIds.length > 0) {
+        return playerIds.filter(id => validEmailSet.has(id))
+    }
+
+    return Array.from(validEmailSet)
+}
+
 /** Admin: Send an email invitation directly to a player */
 export async function sendMatchInvitation(matchId: string, playerId: string, localizedTime?: string) {
     const supabase = await createClient()
@@ -279,7 +307,7 @@ export async function sendMatchInvitation(matchId: string, playerId: string, loc
     if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
 
     // 2. Fetch match details for the email content
-    const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()
+    const { data: match } = await supabase.from('matches').select('title, scheduled_at, location, tenant_id').eq('id', matchId).single()
     if (!match) throw new Error('Match not found')
 
     // 3. Fetch the target player's auth profile (Service Role needed to read email)
@@ -301,7 +329,7 @@ export async function sendMatchInvitation(matchId: string, playerId: string, loc
     const secret = process.env.SUPABASE_JWT_SECRET
     if (!secret) throw new Error('JWT Secret is not configured')
 
-    const token = jwt.sign({ matchId, playerId }, secret, {
+    const token = jwt.sign({ matchId, playerId, tenantId: match.tenant_id }, secret, {
         expiresIn: '5d', // Set to exactly 5 days per user request
     })
 

@@ -291,7 +291,7 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
                 </>
             ) : (
                 /* Pre-balance: just list the players */
-                <div className="overflow-hidden rounded-xl border border-border bg-surface-2">
+                <div className="rounded-xl border border-border bg-surface-2">
                     <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-5">
                         <div>
                             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">Confirmed roster</p>
@@ -349,7 +349,7 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
 
             {/* Not Coming Section */}
             {(notComingSignups.length > 0 || isAdmin) && (
-                <div className="mt-1 overflow-hidden rounded-xl border border-border bg-surface-2">
+                <div className="mt-1 rounded-xl border border-border bg-surface-2">
                     <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-5">
                         <div className="flex items-center gap-3">
                             <div className="w-6 h-6 rounded-full bg-red-500/15 flex items-center justify-center flex-shrink-0">

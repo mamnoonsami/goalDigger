@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Button } from '../ui/Button'
 import { useToast } from '../providers/ToastProvider'
-import { sendMatchCostEmail, getEmailPreview } from '../../app/actions/matches'
+import { sendMatchCostEmail, getEmailPreview, getPlayerIdsWithEmails } from '../../app/actions/matches'
 
 interface SignupPlayer {
     player_id: string
@@ -31,10 +31,35 @@ export function SendMatchCostModal({ matchId, scheduledAt, signups, onClose }: S
     const [previewData, setPreviewData] = useState<{subject: string, html: string, recipients: {id: string, name: string, email: string}[]} | null>(null)
     const [loadingPreview, setLoadingPreview] = useState(false)
 
-    const unpaidSignups = useMemo(() => signups.filter(s => !s.paid), [signups])
+    const [emailPlayerIds, setEmailPlayerIds] = useState<Set<string> | null>(null)
+    const [loadingEmails, setLoadingEmails] = useState(true)
 
-    // Pre-select all unpaid players by default
-    const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set(unpaidSignups.map(s => s.player_id)))
+    const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set())
+
+    useEffect(() => {
+        let mounted = true
+        getPlayerIdsWithEmails(signups.map(s => s.player_id))
+            .then(ids => {
+                if (mounted) {
+                    const set = new Set(ids)
+                    setEmailPlayerIds(set)
+                    setLoadingEmails(false)
+                    const unpaidWithEmails = signups.filter(s => !s.paid && set.has(s.player_id))
+                    setSelectedPlayers(new Set(unpaidWithEmails.map(s => s.player_id)))
+                }
+            })
+            .catch(err => {
+                console.error('Error fetching player emails:', err)
+                if (mounted) setLoadingEmails(false)
+            })
+        return () => { mounted = false }
+    }, [signups])
+
+    const unpaidSignups = useMemo(() => {
+        if (!emailPlayerIds) return []
+        return signups.filter(s => !s.paid && emailPlayerIds.has(s.player_id))
+    }, [signups, emailPlayerIds])
+
     const [totalCost, setTotalCost] = useState<string>('150')
     const [customNumPlayers, setCustomNumPlayers] = useState<string>('')
 
@@ -177,8 +202,16 @@ export function SendMatchCostModal({ matchId, scheduledAt, signups, onClose }: S
                                     </button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto p-1 max-h-[250px]">
-                                    {unpaidSignups.length === 0 ? (
-                                        <div className="p-4 text-center text-sm text-text-muted">No unpaid players left to request from.</div>
+                                    {loadingEmails ? (
+                                        <div className="flex flex-col items-center justify-center p-6 text-center">
+                                            <svg className="animate-spin h-5 w-5 text-accent mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <p className="text-xs text-text-muted">Loading player email accounts...</p>
+                                        </div>
+                                    ) : unpaidSignups.length === 0 ? (
+                                        <div className="p-4 text-center text-sm text-text-muted">No unpaid players with registered email accounts left.</div>
                                     ) : (
                                         unpaidSignups.map(signup => {
                                             const isSelected = selectedPlayers.has(signup.player_id)
