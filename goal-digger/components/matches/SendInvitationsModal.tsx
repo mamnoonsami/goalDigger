@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Button } from '../ui/Button'
 import { useToast } from '../providers/ToastProvider'
 import { sendMatchInvitation, getEmailPreview, getPlayerIdsWithEmails } from '../../app/actions/matches'
+import { formatDateTime12h } from '../../lib/utils'
 
 interface Player {
     id: string
@@ -104,7 +105,7 @@ export function SendInvitationsModal({ matchId, scheduledAt, allPlayers, signedI
 
         setLoadingPreview(true)
         try {
-            const localizedTime = new Date(scheduledAt).toLocaleString()
+            const localizedTime = formatDateTime12h(scheduledAt)
             const data = await getEmailPreview('invitation', matchId, Array.from(selectedPlayers), localizedTime)
             setPreviewData(data)
             setStep('preview')
@@ -126,7 +127,7 @@ export function SendInvitationsModal({ matchId, scheduledAt, allPlayers, signedI
         for (const playerId of Array.from(selectedPlayers)) {
             try {
                 // Formatting time on the client to use local timezone
-                const localizedTime = new Date(scheduledAt).toLocaleString()
+                const localizedTime = formatDateTime12h(scheduledAt)
                 await sendMatchInvitation(matchId, playerId, localizedTime)
                 successCount++
             } catch (err: unknown) {

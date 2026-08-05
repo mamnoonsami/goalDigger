@@ -267,6 +267,21 @@ export async function togglePaidStatus(matchId: string, playerId: string, isPaid
     revalidatePath(`/matches/${matchId}`)
 }
 
+function formatDateTime12h(isoOrDate?: string | Date | null): string {
+    if (!isoOrDate) return 'TBD'
+    const date = typeof isoOrDate === 'string' ? new Date(isoOrDate) : isoOrDate
+    if (isNaN(date.getTime())) return 'TBD'
+    return date.toLocaleString('en-US', {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    })
+}
+
 /** Fetch list of player IDs that have email addresses in auth.users */
 export async function getPlayerIdsWithEmails(playerIds?: string[]): Promise<string[]> {
     const supabase = await createClient()
@@ -351,7 +366,7 @@ export async function sendMatchInvitation(matchId: string, playerId: string, loc
         },
     })
 
-    const matchDate = localizedTime || (match.scheduled_at ? new Date(match.scheduled_at).toLocaleString() : 'TBD')
+    const matchDate = localizedTime || formatDateTime12h(match.scheduled_at)
     const html = generateInvitationEmailHtml(match, matchDate, acceptLink, declineLink)
 
     await transporter.sendMail({
@@ -400,7 +415,7 @@ export async function sendMatchCostEmail(matchId: string, playerId: string, loca
         },
     })
 
-    const matchDate = localizedTime || (match.scheduled_at ? new Date(match.scheduled_at).toLocaleString() : 'TBD')
+    const matchDate = localizedTime || formatDateTime12h(match.scheduled_at)
     const html = generateCostEmailHtml(match, matchDate, costPerPerson)
 
     await transporter.sendMail({
@@ -432,7 +447,7 @@ export async function sendTeamRosterEmail(
     const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()
     if (!match) throw new Error('Match not found')
 
-    const matchDate = localizedTime || (match.scheduled_at ? new Date(match.scheduled_at).toLocaleString() : 'TBD')
+    const matchDate = localizedTime || formatDateTime12h(match.scheduled_at)
 
     // 3. Fetch recipient emails
     const { createClient: createPureClient } = await import('@supabase/supabase-js')
@@ -660,7 +675,7 @@ export async function getEmailPreview(
     const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()
     if (!match) throw new Error('Match not found')
     
-    const matchDate = localizedTime || (match.scheduled_at ? new Date(match.scheduled_at).toLocaleString() : 'TBD')
+    const matchDate = localizedTime || formatDateTime12h(match.scheduled_at)
 
     // 3. Fetch recipient emails
     const { createClient: createPureClient } = await import('@supabase/supabase-js')
