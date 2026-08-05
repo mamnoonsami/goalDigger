@@ -24,7 +24,7 @@ interface UpcomingMatchesProps {
 export function UpcomingMatches({ matches }: UpcomingMatchesProps) {
     return (
         <>
-            <Card padding="none">
+            <Card padding="none" className="min-w-0 overflow-hidden">
                 <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-5">
                     <div>
                         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">On the calendar</p>
