@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Button } from '../ui/Button'
 import { useToast } from '../providers/ToastProvider'
 import { sendMatchCostEmail, getEmailPreview, getPlayerIdsWithEmails } from '../../app/actions/matches'
+import { formatDateTime12h } from '../../lib/utils'
 
 interface SignupPlayer {
     player_id: string
@@ -89,7 +90,7 @@ export function SendMatchCostModal({ matchId, scheduledAt, signups, onClose }: S
         
         setLoadingPreview(true)
         try {
-            const localizedTime = new Date(scheduledAt).toLocaleString()
+            const localizedTime = formatDateTime12h(scheduledAt)
             const data = await getEmailPreview('cost', matchId, Array.from(selectedPlayers), localizedTime, costPerPerson)
             setPreviewData(data)
             setStep('preview')
@@ -111,7 +112,7 @@ export function SendMatchCostModal({ matchId, scheduledAt, signups, onClose }: S
         for (const playerId of Array.from(selectedPlayers)) {
             try {
                 // Formatting time on the client to use local timezone
-                const localizedTime = new Date(scheduledAt).toLocaleString()
+                const localizedTime = formatDateTime12h(scheduledAt)
                 await sendMatchCostEmail(matchId, playerId, localizedTime, costPerPerson)
                 successCount++
             } catch (err: unknown) {

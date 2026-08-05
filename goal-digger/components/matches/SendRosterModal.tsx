@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '../ui/Button'
 import { useToast } from '../providers/ToastProvider'
 import { sendTeamRosterEmail, getEmailPreview } from '../../app/actions/matches'
+import { formatDateTime12h } from '../../lib/utils'
 
 interface Player {
     id: string
@@ -31,7 +32,7 @@ export function SendRosterModal({ matchId, scheduledAt, team1Ids, team2Ids, team
         let mounted = true
         async function fetchPreview() {
             try {
-                const localizedTime = new Date(scheduledAt).toLocaleString()
+                const localizedTime = formatDateTime12h(scheduledAt)
                 const allIds = [...team1Ids, ...team2Ids]
                 const data = await getEmailPreview('roster', matchId, allIds, localizedTime, undefined, team1List, team2List)
                 if (mounted) {
@@ -53,7 +54,7 @@ export function SendRosterModal({ matchId, scheduledAt, team1Ids, team2Ids, team
     async function handleConfirmSend() {
         setSending(true)
         try {
-            const localizedTime = new Date(scheduledAt).toLocaleString()
+            const localizedTime = formatDateTime12h(scheduledAt)
             const allIds = [...team1Ids, ...team2Ids]
             await sendTeamRosterEmail(matchId, allIds, team1List, team2List, localizedTime)
             toast.success(`Successfully broadcasted team roster to ${allIds.length} players!`)
