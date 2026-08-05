@@ -1,21 +1,15 @@
 import { redirect } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { createClient } from '../../lib/supabase/server'
+import { getCurrentUserProfile } from '../../lib/supabase/getCurrentUser'
 import { AppShell } from '../../components/layout/AppShell'
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
     const supabase = await createClient()
 
     // Verify session — middleware handles the redirect but this is a safety net
-    const { data: { user } } = await supabase.auth.getUser()
+    const { user, profile } = await getCurrentUserProfile()
     if (!user) redirect('/login')
-
-    // Fetch profile for topbar + admin check for sidebar + chat read timestamp
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('first_name, last_name, avatar_url, is_admin, is_king, is_player, is_manager, last_read_chat_at')
-        .eq('id', user.id)
-        .single()
 
     // Compute initial unread count server-side (messages newer than last_read_chat_at)
     const lastRead = profile?.last_read_chat_at ?? new Date(0).toISOString()

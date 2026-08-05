@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '../../lib/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 
 /**
  * Fetch all profiles with the 'is_player' flag set to true, except the current logged-in user.
@@ -25,6 +25,7 @@ export async function getPlayersToRate() {
         .from('profiles')
         .select('id, first_name, last_name, avatar_url, player_position')
         .eq('is_player', true)
+        .eq('is_active', true)
         .eq('tenant_id', myProfile?.tenant_id)
         .neq('id', myId)
         .order('first_name')
@@ -267,6 +268,7 @@ export async function publishRatings() {
     revalidatePath('/ratings')
     revalidatePath('/players')
     revalidatePath('/dashboard')
+    ;(revalidateTag as any)('leaderboard')
     
     return { success: true, count: updatedCount }
 }

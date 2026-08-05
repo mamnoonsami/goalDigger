@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '../../lib/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 
 /** Fetch the tenant group details for the current user */
 export async function getTenant() {
@@ -55,8 +55,29 @@ export async function updateTenantName(name: string) {
 
     if (error) throw new Error(error.message)
 
+    ;(revalidateTag as any)('tenants')
     revalidatePath('/settings/group')
 }
+
+const getCachedGroups = unstable_cache(
+    async () => {
+        const { createClient: createAdminClient } = await import('@supabase/supabase-js')
+        const adminSupabase = createAdminClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+        )
+
+        const { data, error } = await adminSupabase
+            .from('tenants')
+            .select('*')
+            .order('created_at', { ascending: false })
+
+        if (error) throw new Error(error.message)
+        return data ?? []
+    },
+    ['all-tenants-list'],
+    { tags: ['tenants'], revalidate: 3600 }
+)
 
 /** Fetch all tenant groups (King only) */
 export async function getAllGroups() {
@@ -73,19 +94,7 @@ export async function getAllGroups() {
 
     if (!profile?.is_king) throw new Error('Only the King can view all groups')
 
-    const { createClient: createAdminClient } = await import('@supabase/supabase-js')
-    const adminSupabase = createAdminClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    const { data, error } = await adminSupabase
-        .from('tenants')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-    if (error) throw new Error(error.message)
-    return data
+    return getCachedGroups()
 }
 
 /** Create a new tenant group (King only) */
@@ -117,6 +126,7 @@ export async function createGroup(name: string) {
 
     if (error) throw new Error(error.message)
 
+    ;(revalidateTag as any)('tenants')
     revalidatePath('/settings/king')
     return data.id
 }

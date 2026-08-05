@@ -6,7 +6,7 @@ import { Badge, roleVariant } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Avatar } from '../ui/Avatar'
 import { EditUserModal } from './EditUserModal'
-import { deleteUser } from '../../app/actions/users'
+import { deleteUser, updateUser } from '../../app/actions/users'
 
 export interface UserRow {
     id: string
@@ -20,6 +20,7 @@ export interface UserRow {
     is_manager: boolean
     is_player: boolean
     is_viewer: boolean
+    is_active?: boolean
     player_position: string | null
     base_score: number
     goals: number
@@ -180,7 +181,7 @@ export function UserTable({ users, currentUserId, tenants = [], isKing = false }
                     </thead>
                     <tbody className="divide-y divide-border">
                         {filtered.map(u => (
-                            <tr key={u.id} className="hover:bg-surface-3/50 transition-colors">
+                            <tr key={u.id} className={`hover:bg-surface-3/50 transition-colors ${!(u.is_active ?? true) ? 'opacity-60 bg-surface-2/30' : ''}`}>
                                 <td className="px-5 py-3">
                                     <div className="flex items-center gap-3">
                                         <Avatar firstName={u.first_name} lastName={u.last_name} avatarUrl={u.avatar_url} size="sm" />
@@ -263,7 +264,7 @@ export function UserTable({ users, currentUserId, tenants = [], isKing = false }
                     </Card>
                 )}
                 {filtered.map(u => (
-                    <Card key={u.id} padding="sm" className="relative">
+                    <Card key={u.id} padding="sm" className={`relative ${!(u.is_active ?? true) ? 'opacity-60 bg-surface-2/40' : ''}`}>
                         <div className="flex items-start gap-3 pr-8">
                             <Avatar firstName={u.first_name} lastName={u.last_name} avatarUrl={u.avatar_url} size="sm" />
                             <div className="flex-1 min-w-0">

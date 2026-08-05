@@ -48,6 +48,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
         .from('profiles')
         .select('id, first_name, last_name, base_score, peer_rating_score, player_position, avatar_url')
         .eq('tenant_id', profile?.tenant_id)
+        .eq('is_active', true)
         .order('first_name', { ascending: true })
 
     const comingSignups = signups?.filter((s: any) => s.invitation_accepted) ?? []

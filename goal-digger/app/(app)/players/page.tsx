@@ -12,6 +12,7 @@ export default async function PlayersPage() {
         .from('profiles')
         .select('id, first_name, last_name, avatar_url, role, player_position, base_score, goals, matches_played, peer_rating_score')
         .eq('is_player', true)
+        .eq('is_active', true)
         .eq('tenant_id', profile?.tenant_id)
 
     // Sort by peer rating score, descending
