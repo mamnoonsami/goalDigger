@@ -71,7 +71,7 @@ export default async function DashboardPage() {
     const canRate = profile?.is_admin || profile?.is_king || profile?.is_player || profile?.is_manager
 
     return (
-        <div className="dashboard-page flex flex-col gap-6 lg:gap-8">
+        <div className="dashboard-page flex min-w-0 flex-col gap-6 overflow-hidden lg:gap-8">
             {/* Page header */}
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                 <div>
@@ -175,7 +175,7 @@ export default async function DashboardPage() {
                 />
             </section>
 
-            <section aria-labelledby="activity-heading">
+            <section aria-labelledby="activity-heading" className="min-w-0">
                 <div className="mb-4 flex items-end justify-between gap-4">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Stay in the loop</p>
@@ -185,7 +185,7 @@ export default async function DashboardPage() {
                 </div>
 
                 {/* 2-column grid on md+ */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+                <div className="grid min-w-0 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
                     <UpcomingMatches
                         matches={sortedMatches}
                         isAdmin={profile?.is_admin || profile?.is_king || false}
@@ -195,7 +195,7 @@ export default async function DashboardPage() {
                         auctions={auctions}
                     />
 
-                    <Card padding="none">
+                    <Card padding="none" className="min-w-0 overflow-hidden">
                         <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-5">
                             <div>
                                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">Leaderboard</p>

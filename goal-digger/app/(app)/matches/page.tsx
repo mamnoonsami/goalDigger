@@ -34,7 +34,7 @@ export default async function MatchesPage() {
     const activeCount = matches.filter((match) => match.status === 'in_progress' || match.status === 'balanced').length
 
     return (
-        <div className="flex flex-col gap-6 lg:gap-8">
+        <div className="flex min-w-0 flex-col gap-6 overflow-hidden lg:gap-8">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Match centre</p>
@@ -77,10 +77,10 @@ export default async function MatchesPage() {
             </div>
 
             {matches.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {matches.map((m) => (
-                        <Link key={m.id} href={`/matches/${m.id}`} className="group">
-                            <Card hoverable className="relative h-full overflow-hidden p-0">
+                        <Link key={m.id} href={`/matches/${m.id}`} className="group min-w-0">
+                            <Card hoverable className="relative h-full min-w-0 overflow-hidden p-0">
                                 <div className="h-1 bg-gradient-to-r from-accent to-accent/20" />
                                 <div className="p-5 sm:p-6">
                                     <div className="flex items-start justify-between gap-3">
