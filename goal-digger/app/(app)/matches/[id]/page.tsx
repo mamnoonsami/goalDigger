@@ -76,13 +76,13 @@ export default async function MatchDetailPage({ params }: PageProps) {
                                 <span className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Match details</span>
                                 <Badge variant={statusVariant[match.status as MatchStatus] ?? 'slate'}>{match.status}</Badge>
                             </div>
-                            <div className="mt-3 flex items-start gap-3">
-                                <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent sm:flex">
-                                    <svg aria-hidden="true" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8.5" /><path d="m12 3.5 2.6 3.7-2.6 3.2-4.3-.7L5.5 6.2M12 10.4l3.7 2.7-1.4 4.2-4.3.1-2.1-3.9" /></svg>
+                            <div className="mt-3 flex items-center gap-3.5 sm:gap-4">
+                                <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent">
+                                    <svg aria-hidden="true" className="h-6 w-6 sm:h-7 sm:w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8.5" /><path d="m12 3.5 2.6 3.7-2.6 3.2-4.3-.7L5.5 6.2M12 10.4l3.7 2.7-1.4 4.2-4.3.1-2.1-3.9" /></svg>
                                 </div>
-                                <div className="min-w-0">
-                                    <h1 className="truncate text-2xl font-semibold tracking-[-0.035em] text-text-primary sm:text-3xl">{match.title}</h1>
-                                    <p className="mt-2 text-sm text-text-muted">Everything you need before kickoff.</p>
+                                <div className="min-w-0 flex flex-col justify-center">
+                                    <h1 className="truncate text-2xl font-semibold tracking-[-0.035em] text-text-primary sm:text-3xl leading-tight">{match.title}</h1>
+                                    <p className="mt-0.5 text-xs sm:text-sm text-text-muted">Everything you need before kickoff.</p>
                                 </div>
                             </div>
                         </div>

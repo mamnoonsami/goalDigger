@@ -18,7 +18,7 @@ export async function GET(request: Request) {
 
     try {
         // 1. Verify and decode the JWT
-        const decoded = jwt.verify(token, secret) as { matchId: string, playerId: string }
+        const decoded = jwt.verify(token, secret) as { matchId: string; playerId: string; tenantId?: string }
         const { matchId, playerId } = decoded
 
         // 2. Create admin Supabase client (bypasses RLS)
@@ -28,6 +28,21 @@ export async function GET(request: Request) {
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         )
 
+        let tenantId = decoded.tenantId
+        if (!tenantId) {
+            const { data: matchData, error: matchErr } = await adminClient
+                .from('matches')
+                .select('tenant_id')
+                .eq('id', matchId)
+                .single()
+
+            if (matchErr || !matchData?.tenant_id) {
+                console.error('Failed to fetch match tenant_id:', matchErr)
+                return NextResponse.redirect(`${baseUrl}/?error=Could+not+process+invitation`)
+            }
+            tenantId = matchData.tenant_id
+        }
+
         const accepted = action !== 'decline'
 
         // 3. Upsert into match_signups
@@ -36,7 +51,7 @@ export async function GET(request: Request) {
         const { error } = await adminClient
             .from('match_signups')
             .upsert(
-                { match_id: matchId, player_id: playerId, invitation_accepted: accepted },
+                { match_id: matchId, player_id: playerId, tenant_id: tenantId, invitation_accepted: accepted },
                 { onConflict: 'match_id,player_id' }
             )
 
