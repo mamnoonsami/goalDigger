@@ -28,6 +28,7 @@ export function EditUserModal({ user, onClose, tenants = [], isKing = false }: E
     const [isManager, setIsManager] = useState(user.is_manager)
     const [isPlayer, setIsPlayer] = useState(user.is_player)
     const [isViewer, setIsViewer] = useState(user.is_viewer)
+    const [isActive, setIsActive] = useState(user.is_active ?? true)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')
 
@@ -47,6 +48,7 @@ export function EditUserModal({ user, onClose, tenants = [], isKing = false }: E
                 is_manager: isManager,
                 is_player: isPlayer,
                 is_viewer: isViewer,
+                is_active: isActive,
                 ...(isKing ? { tenant_id: tenantId === 'none' ? null : tenantId } : {})
             })
             onClose()
@@ -188,6 +190,27 @@ export function EditUserModal({ user, onClose, tenants = [], isKing = false }: E
                                     className="rounded-lg border border-border bg-surface-1 px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/50"
                                 />
                             </label>
+                        </div>
+
+                        {/* Account Status Toggle */}
+                        <div className="rounded-lg border border-border bg-surface-1 p-3 flex items-center justify-between">
+                            <div>
+                                <span className="text-sm font-semibold text-text-primary block">Account Status</span>
+                                <span className="text-xs text-text-muted">Inactive players do not appear in match or tournament player selections.</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsActive(!isActive)}
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                    isActive ? 'bg-accent' : 'bg-surface-4'
+                                }`}
+                            >
+                                <span
+                                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                        isActive ? 'translate-x-5' : 'translate-x-0'
+                                    }`}
+                                />
+                            </button>
                         </div>
 
                         {/* Boolean flags */}

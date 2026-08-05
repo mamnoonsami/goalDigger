@@ -40,7 +40,7 @@ export async function getUsers() {
         )
         const { data, error } = await adminSupabase
             .from('profiles')
-            .select('id, first_name, last_name, nickname, avatar_url, role, is_admin, is_king, is_manager, is_player, is_viewer, player_position, base_score, goals, matches_played, auction_budget, created_at, updated_at, tenant_id, tenant:tenants(name)')
+            .select('id, first_name, last_name, nickname, avatar_url, role, is_admin, is_king, is_manager, is_player, is_viewer, is_active, player_position, base_score, goals, matches_played, auction_budget, created_at, updated_at, tenant_id, tenant:tenants(name)')
             .order('created_at', { ascending: true })
 
         if (error) throw new Error(error.message)
@@ -53,6 +53,7 @@ export async function getUsers() {
                 : (tenantVal as { name: string } | null | undefined)
             return {
                 ...u,
+                is_active: u.is_active ?? true,
                 tenant: tenantObj ? { name: String(tenantObj.name) } : null
             }
         })
@@ -60,7 +61,7 @@ export async function getUsers() {
         // Regular admin is restricted to their own tenant
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, first_name, last_name, nickname, avatar_url, role, is_admin, is_king, is_manager, is_player, is_viewer, player_position, base_score, goals, matches_played, auction_budget, created_at, updated_at, tenant_id, tenant:tenants(name)')
+            .select('id, first_name, last_name, nickname, avatar_url, role, is_admin, is_king, is_manager, is_player, is_viewer, is_active, player_position, base_score, goals, matches_played, auction_budget, created_at, updated_at, tenant_id, tenant:tenants(name)')
             .eq('tenant_id', currentUser?.tenant_id)
             .order('created_at', { ascending: true })
 
@@ -74,6 +75,7 @@ export async function getUsers() {
                 : (tenantVal as { name: string } | null | undefined)
             return {
                 ...u,
+                is_active: u.is_active ?? true,
                 tenant: tenantObj ? { name: String(tenantObj.name) } : null
             }
         })
@@ -92,6 +94,7 @@ export async function updateUser(
         is_manager?: boolean
         is_player?: boolean
         is_viewer?: boolean
+        is_active?: boolean
         player_position?: string | null
         base_score?: number
         auction_budget?: number
