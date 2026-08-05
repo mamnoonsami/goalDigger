@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { saveTeamAssignments, resetTeams, togglePaidStatus } from '../../app/actions/matches'
 import { balanceTeams as runBalance } from '@goaldigger/core'
-import { Button } from '../ui/Button'
 import { ManageMatchPlayersModal } from './ManageMatchPlayersModal'
 import { MatchActionMenu } from './MatchActionMenu'
 import { SendInvitationsModal } from './SendInvitationsModal'
@@ -35,7 +34,6 @@ interface TeamRosterProps {
     notComingSignups?: SignupPlayer[]
     allPlayers: any[]
     isAdmin: boolean
-    matchStatus: string
 }
 
 function effectiveScore(p: { base_score: number; goals: number }) {
@@ -52,7 +50,7 @@ function abbrevPos(pos: string) {
     }
 }
 
-export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notComingSignups = [], allPlayers, isAdmin, matchStatus }: TeamRosterProps) {
+export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notComingSignups = [], allPlayers, isAdmin }: TeamRosterProps) {
     const [signups, setSignups] = useState<SignupPlayer[]>(initialSignups)
     const [draggedId, setDraggedId] = useState<string | null>(null)
     const [saving, setSaving] = useState(false)
@@ -201,10 +199,10 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
     }, [draggedId, signups])
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5">
             {/* Admin toolbar */}
             {isAdmin && hasTeams && (
-                <div className="flex items-center justify-start sm:justify-center gap-3 mb-[-4px]">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-2 px-4 py-2.5 sm:justify-center">
                     <div className="flex items-center gap-3">
                         <p className="text-sm text-text-muted">
                             Diff: <span className={`font-bold ${scoreDiff <= 5 ? 'text-success' : scoreDiff <= 15 ? 'text-warning' : 'text-danger'}`}>{scoreDiff}</span>
@@ -293,11 +291,12 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
                 </>
             ) : (
                 /* Pre-balance: just list the players */
-                <div className="bg-surface-2 rounded-xl border border-border">
-                    <div className="border-b border-border px-5 py-4 flex items-center justify-between">
-                        <h2 className="font-semibold text-text-primary">
-                            Signed-Up Players ({signups.length})
-                        </h2>
+                <div className="overflow-hidden rounded-xl border border-border bg-surface-2">
+                    <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-5">
+                        <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">Confirmed roster</p>
+                            <h2 className="mt-1 font-semibold text-text-primary">Signed-up players <span className="text-text-muted">({signups.length})</span></h2>
+                        </div>
                         {isAdmin && (
                             <div className="flex items-center gap-1">
                                 {signups.length >= 2 && !hasTeams && (
@@ -332,7 +331,7 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
                         </ul>
                     ) : (
                         <p className="px-5 py-8 text-center text-sm text-text-muted">
-                            No players have joined yet. Be the first! 🎯
+                            No players have joined yet. Be the first to sign up.
                         </p>
                     )}
                 </div>
@@ -350,15 +349,16 @@ export function TeamRoster({ matchId, scheduledAt, signups: initialSignups, notC
 
             {/* Not Coming Section */}
             {(notComingSignups.length > 0 || isAdmin) && (
-                <div className="bg-surface-2 rounded-xl border border-border mt-4">
-                    <div className="border-b border-border px-5 py-4 flex items-center justify-between">
+                <div className="mt-1 overflow-hidden rounded-xl border border-border bg-surface-2">
+                    <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-5">
                         <div className="flex items-center gap-3">
                             <div className="w-6 h-6 rounded-full bg-red-500/15 flex items-center justify-center flex-shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                             </div>
-                            <h2 className="font-semibold text-text-primary">
-                                Can't Make It ({notComingSignups.length})
-                            </h2>
+                            <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">Unavailable</p>
+                                <h2 className="mt-1 font-semibold text-text-primary">Can&apos;t make it <span className="text-text-muted">({notComingSignups.length})</span></h2>
+                            </div>
                         </div>
                         {isAdmin && (
                             <MatchActionMenu

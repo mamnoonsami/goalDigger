@@ -7,15 +7,55 @@ import { cn } from '../../lib/utils'
 import { Logo } from '../ui/Logo'
 import { useChatStore } from '../../store/chatStore'
 
-const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/chat', label: 'Group Chat', icon: '💬' },
-    { href: '/matches', label: 'Matches', icon: '⚽' },
-    { href: '/players', label: 'Players', icon: '👥' },
-    { href: '/tournaments', label: 'Tournaments', icon: '🏆' },
-    { href: '/auctions', label: 'Auctions', icon: '🔨' },
-    { href: '/profile', label: 'My Profile', icon: '👤' },
+type SidebarIconName = 'dashboard' | 'chat' | 'matches' | 'players' | 'tournaments' | 'auctions' | 'profile' | 'ratings' | 'users' | 'settings' | 'king'
+
+const navItems: { href: string; label: string; icon: SidebarIconName }[] = [
+    { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
+    { href: '/chat', label: 'Group Chat', icon: 'chat' },
+    { href: '/matches', label: 'Matches', icon: 'matches' },
+    { href: '/players', label: 'Players', icon: 'players' },
+    { href: '/tournaments', label: 'Tournaments', icon: 'tournaments' },
+    { href: '/auctions', label: 'Auctions', icon: 'auctions' },
+    { href: '/profile', label: 'My Profile', icon: 'profile' },
 ]
+
+function SidebarIcon({ name }: { name: SidebarIconName }) {
+    const common = {
+        className: 'h-[18px] w-[18px]',
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        stroke: 'currentColor',
+        strokeWidth: 1.8,
+        strokeLinecap: 'round' as const,
+        strokeLinejoin: 'round' as const,
+        'aria-hidden': true,
+    }
+
+    switch (name) {
+        case 'dashboard':
+            return <svg {...common}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>
+        case 'chat':
+            return <svg {...common}><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.7 8.7 0 0 1-3.2-.6L4 20l1.3-3.7A7.2 7.2 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z" /><path d="M8 11.5h.01M12 11.5h.01M16 11.5h.01" strokeWidth="2.4" /></svg>
+        case 'matches':
+            return <svg {...common}><circle cx="12" cy="12" r="8.5" /><path d="m12 3.5 2.6 3.7-2.6 3.2-4.3-.7L5.5 6.2M12 10.4l3.7 2.7-1.4 4.2-4.3.1-2.1-3.9M14.6 7.2l4.1-.2M15.7 13.1l3.7 2.4" /></svg>
+        case 'players':
+            return <svg {...common}><circle cx="9" cy="8" r="3" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.8M17 14a4.5 4.5 0 0 1 3.5 4.4" /></svg>
+        case 'tournaments':
+            return <svg {...common}><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" /><path d="M7 6H4v1a4 4 0 0 0 4 4M17 6h3v1a4 4 0 0 1-4 4M12 13v4M8 20h8M9 17h6" /></svg>
+        case 'auctions':
+            return <svg {...common}><path d="m14 5 5 5M12.5 6.5l5 5M4 20l4.3-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z" /><path d="M13 20h7" /></svg>
+        case 'profile':
+            return <svg {...common}><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20a7.5 7.5 0 0 1 15 0" /></svg>
+        case 'ratings':
+            return <svg {...common}><path d="m12 3 2.8 5.6 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.5l6.2-.9L12 3Z" /></svg>
+        case 'users':
+            return <svg {...common}><path d="M16 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20M9.5 10.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM17 11a3 3 0 1 0-1-5.8M17 14.5a4 4 0 0 1 4 4V20" /></svg>
+        case 'settings':
+            return <svg {...common}><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" /><path d="m19.4 15 .1.1a1.8 1.8 0 0 1-2.5 2.5l-.1-.1a1.8 1.8 0 0 0-3 1.3v.2a1.8 1.8 0 0 1-3.6 0v-.2a1.8 1.8 0 0 0-3-1.3l-.1.1a1.8 1.8 0 0 1-2.5-2.5l.1-.1a1.8 1.8 0 0 0-1.3-3H3.3a1.8 1.8 0 0 1 0-3.6h.2a1.8 1.8 0 0 0 1.3-3l-.1-.1a1.8 1.8 0 0 1 2.5-2.5l.1.1a1.8 1.8 0 0 0 3-1.3V2.3a1.8 1.8 0 0 1 3.6 0v.2a1.8 1.8 0 0 0 3 1.3l.1-.1a1.8 1.8 0 0 1 2.5 2.5l-.1.1a1.8 1.8 0 0 0 1.3 3h.2a1.8 1.8 0 0 1 0 3.6h-.2a1.8 1.8 0 0 0-1.3 2.1Z" /></svg>
+        case 'king':
+            return <svg {...common}><path d="m5 8 2.2 2.2L12 5l4.8 5.2L19 8l1 11H4L5 8Z" /><path d="M3 21h18M7 16h10" /></svg>
+    }
+}
 
 interface SidebarProps {
     /** On mobile we render as a drawer — controlled by parent */
@@ -48,14 +88,14 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
     const items = [
         ...navItems,
         ...(canRate ? [
-            { href: '/ratings', label: 'Rate Your Teammates', icon: '⭐' }
+            { href: '/ratings', label: 'Rate Your Teammates', icon: 'ratings' as SidebarIconName }
         ] : []),
         ...(isAdmin ? [
-            { href: '/users', label: 'User Management', icon: '🛡️' },
-            { href: '/settings/group', label: 'Group Settings', icon: '⚙️' }
+            { href: '/users', label: 'User Management', icon: 'users' as SidebarIconName },
+            { href: '/settings/group', label: 'Group Settings', icon: 'settings' as SidebarIconName }
         ] : []),
         ...(isKing ? [
-            { href: '/settings/king', label: 'King Settings', icon: '👑' }
+            { href: '/settings/king', label: 'King Settings', icon: 'king' as SidebarIconName }
         ] : []),
     ]
 
@@ -80,7 +120,7 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
                 <aside
                     className={cn(
                         'fixed inset-y-0 left-0 z-30 flex flex-col',
-                        'bg-surface-2 border-r border-border',
+                    'border-r border-border bg-surface-2/95 shadow-[8px_0_30px_rgba(0,0,0,0.08)] backdrop-blur-xl',
                         'transition-[width,transform] duration-300 ease-in-out',
                         'h-screen',
                         isMinimized ? 'w-[72px]' : 'w-[240px]',
@@ -92,12 +132,34 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
                     aria-label="Main navigation"
                 >
                     {/* Brand */}
-                    <Link href="/dashboard" className="flex h-16 shrink-0 items-center justify-center border-b border-border overflow-hidden transition-all duration-300 hover:bg-surface-3/50 px-4">
-                        {!isMinimized && <Logo size="md" />}
-                    </Link>
+                    <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-border px-4">
+                        <Link href="/dashboard" className={cn('flex min-w-0 items-center overflow-hidden transition-opacity hover:opacity-80', isMinimized && 'mx-auto')}>
+                            {isMinimized ? (
+                                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-xs font-bold tracking-tight text-white shadow-sm">GD</span>
+                            ) : (
+                                <Logo size="md" />
+                            )}
+                        </Link>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            aria-label="Close menu"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-3 hover:text-text-primary md:hidden"
+                        >
+                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                        </button>
+                    </div>
+
+                    {!isMinimized && (
+                        <div className="px-5 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+                            Main menu
+                        </div>
+                    )}
+
+                    {isMinimized && <div className="h-4" />}
 
                     {/* Nav */}
-                    <nav className="flex-1 overflow-y-auto px-3 py-4 min-h-0">
+                    <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
                         <ul className="flex flex-col gap-1">
                             {items.map(({ href, label, icon }) => {
                                 const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
@@ -110,16 +172,16 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
                                             onClick={onClose}
                                             title={isMinimized ? label : undefined}
                                             className={cn(
-                                                'flex items-center rounded-lg py-2.5 transition-colors duration-150 min-h-[44px]',
+                                                'group flex min-h-[44px] items-center rounded-xl py-2.5 transition-all duration-150',
                                                 isMinimized ? 'justify-center px-0 mx-1' : 'gap-3 px-3',
                                                 'text-sm font-medium',
                                                 active
-                                                    ? 'bg-accent/15 text-accent'
-                                                    : 'text-text-muted hover:bg-surface-3 hover:text-text-primary'
+                                                    ? 'bg-accent/12 text-accent shadow-sm'
+                                                    : 'text-text-muted hover:bg-surface-3/75 hover:text-text-primary'
                                             )}
                                         >
-                                            <span className="relative flex-shrink-0 text-base leading-none flex items-center justify-center">
-                                                {icon}
+                                            <span className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors', active ? 'bg-accent/15' : 'bg-transparent group-hover:bg-surface-3')}>
+                                                <SidebarIcon name={icon} />
                                                 {/* Unread notification dot (minimized) */}
                                                 {showBadge && isMinimized && (
                                                     <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-surface-2">
