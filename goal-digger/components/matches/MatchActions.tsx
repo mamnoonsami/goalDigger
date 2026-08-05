@@ -45,8 +45,9 @@ export function MatchActions({ matchId, matchStatus, hasJoined, hasDeclined = fa
         <div className="flex flex-col gap-3 w-full sm:w-auto">
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
                 {isOpen && !hasJoined && (
-                    <Button onClick={handleJoin} isLoading={loading} size="lg" className="w-full sm:w-auto justify-center text-xs sm:text-base px-2 sm:px-6">
-                        ⚽ Join Game
+                    <Button onClick={handleJoin} isLoading={loading} size="lg" className="w-full justify-center gap-2 px-2 text-xs sm:w-auto sm:px-6 sm:text-base">
+                        <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="8.5" /><path d="m12 3.5 2.6 3.7-2.6 3.2-4.3-.7L5.5 6.2M12 10.4l3.7 2.7-1.4 4.2-4.3.1-2.1-3.9" /></svg>
+                        Join game
                     </Button>
                 )}
                 {isOpen && hasJoined && (
@@ -59,7 +60,7 @@ export function MatchActions({ matchId, matchStatus, hasJoined, hasDeclined = fa
 
                 {isOpen && !hasDeclined && (
                     <Button onClick={handleDecline} isLoading={loading} variant="danger" size="lg" className="w-full sm:w-auto justify-center text-xs sm:text-base px-2 sm:px-6">
-                        Can't Make It
+                        Can&apos;t make it
                     </Button>
                 )}
                 {isOpen && hasDeclined && (

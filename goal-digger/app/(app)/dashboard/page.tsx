@@ -1,7 +1,6 @@
 import { createClient } from '../../../lib/supabase/server'
 import { StatCard } from '../../../components/ui/StatCard'
 import { Card } from '../../../components/ui/Card'
-import { Badge, roleVariant, statusVariant } from '../../../components/ui/Badge'
 import Link from 'next/link'
 import { UpcomingMatches } from '../../../components/dashboard/UpcomingMatches'
 import { OngoingAuctions } from '../../../components/dashboard/OngoingAuctions'
@@ -72,32 +71,50 @@ export default async function DashboardPage() {
     const canRate = profile?.is_admin || profile?.is_king || profile?.is_player || profile?.is_manager
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="dashboard-page flex flex-col gap-6 lg:gap-8">
             {/* Page header */}
-            <div>
-                <h1 className="text-2xl font-bold text-text-primary">
-                    Welcome back, {profile?.first_name ?? 'Player'} 👋
-                </h1>
-                <p className="mt-1 text-sm text-text-muted">
-                    Here&apos;s what&apos;s happening in your squad.
-                </p>
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Squad overview</p>
+                    <h1 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-text-primary sm:text-3xl">
+                        Good to see you, {profile?.first_name ?? 'Player'}.
+                    </h1>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-text-muted">
+                        Keep an eye on your performance, upcoming games, and everything happening across your squad.
+                    </p>
+                </div>
+                <Link
+                    href="/matches"
+                    className="inline-flex w-fit items-center gap-2 rounded-lg border border-border bg-surface-2 px-3.5 py-2 text-sm font-medium text-text-primary transition-colors hover:border-accent/40 hover:text-accent"
+                >
+                    Browse matches
+                    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 20 20" fill="none">
+                        <path d="M4 10h11m-4.5-4.5L15 10l-4.5 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                </Link>
             </div>
 
             {/* Ratings Notice */}
             {canRate && (
                 <Link href="/ratings" className="block w-full">
-                    <div className="bg-accent/10 hover:bg-accent/20 transition-colors border border-accent/20 rounded-lg p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-start gap-4">
+                    <div className="group flex flex-col gap-4 rounded-xl border border-accent/25 bg-accent/[0.08] p-4 transition-colors hover:border-accent/45 hover:bg-accent/[0.12] sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                        <div className="flex items-start gap-3.5">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent">
+                                <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557L3.04 10.942a.562.562 0 01.321-.988l5.518-.442a.562.562 0 00.475-.345L11.48 3.5z" />
+                                </svg>
+                            </div>
                             <div>
-                                <h3 className="text-accent font-bold text-lg mb-1">⭐ Ratings going on.</h3>
-                                <p className="text-sm text-accent/90 leading-relaxed font-medium">
-                                    Please rate your teammates to make the game fair for everyone. You will be able to see the rating scores once everyone completes rating.
+                                <h3 className="text-sm font-semibold text-accent sm:text-base">Ratings are open</h3>
+                                <p className="mt-1 max-w-2xl text-sm leading-6 text-accent/80">
+                                    Rate your teammates to keep scores fair and help everyone see where they stand.
                                 </p>
                             </div>
                         </div>
-                        <div className="w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-accent/20 flex justify-end">
-                            <span className="whitespace-nowrap text-sm font-semibold text-accent/90 flex items-center gap-1">
-                                Go to Ratings <span aria-hidden="true">→</span>
+                        <div className="flex items-center justify-between border-t border-accent/20 pt-3 sm:border-0 sm:pt-0">
+                            <span className="text-xs font-medium text-accent/70 sm:hidden">Action needed</span>
+                            <span className="flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-accent">
+                                Open ratings <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
                             </span>
                         </div>
                     </div>
@@ -105,7 +122,7 @@ export default async function DashboardPage() {
             )}
 
             {/* Stat cards */}
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <section aria-label="Your performance" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                 <StatCard
                     label="Your Score"
                     value={effectiveScore}
@@ -114,6 +131,7 @@ export default async function DashboardPage() {
                     icon={
                         <svg viewBox="0 0 24 24" fill="currentColor" width="1em" height="1em"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" /></svg>
                     }
+                    className="min-h-[132px] p-4 sm:p-5"
                 />
                 <StatCard
                     label="Peer Rating"
@@ -122,6 +140,7 @@ export default async function DashboardPage() {
                     icon={
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="1em" height="1em"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
                     }
+                    className="min-h-[132px] p-4 sm:p-5"
                 />
 
                 {/* <StatCard
@@ -143,6 +162,7 @@ export default async function DashboardPage() {
                     icon={
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="1em" height="1em"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
                     }
+                    className="min-h-[132px] p-4 sm:p-5"
                 />
                 <StatCard
                     label="Base Score"
@@ -151,31 +171,42 @@ export default async function DashboardPage() {
                     icon={
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="1em" height="1em"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
                     }
+                    className="min-h-[132px] p-4 sm:p-5"
                 />
-            </div>
+            </section>
 
-            {/* 2-column grid on md+ */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {/* Upcoming matches */}
-                <UpcomingMatches
-                    matches={sortedMatches}
-                    isAdmin={profile?.is_admin || profile?.is_king || false}
-                />
-
-                {/* Ongoing auctions */}
-                <OngoingAuctions
-                    auctions={auctions}
-                />
-
-                {/* Top players */}
-                <Card padding="none">
-                    <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                        <h2 className="font-bold text-accent">Top Players</h2>
-                        <Link href="/players" className="text-xs text-accent hover:underline">View all →</Link>
+            <section aria-labelledby="activity-heading">
+                <div className="mb-4 flex items-end justify-between gap-4">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Stay in the loop</p>
+                        <h2 id="activity-heading" className="mt-1.5 text-xl font-semibold tracking-[-0.025em] text-text-primary">Your squad at a glance</h2>
                     </div>
-                    <TopPlayersList players={topPlayers} />
-                </Card>
-            </div>
+                    <span className="hidden text-xs text-text-muted sm:block">Updated from your latest activity</span>
+                </div>
+
+                {/* 2-column grid on md+ */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+                    <UpcomingMatches
+                        matches={sortedMatches}
+                        isAdmin={profile?.is_admin || profile?.is_king || false}
+                    />
+
+                    <OngoingAuctions
+                        auctions={auctions}
+                    />
+
+                    <Card padding="none">
+                        <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-5">
+                            <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">Leaderboard</p>
+                                <h2 className="mt-1 font-semibold text-text-primary">Top players</h2>
+                            </div>
+                            <Link href="/players" className="text-xs font-medium text-accent transition-colors hover:text-accent-hover">View all →</Link>
+                        </div>
+                        <TopPlayersList players={topPlayers} />
+                    </Card>
+                </div>
+            </section>
         </div>
     )
 }

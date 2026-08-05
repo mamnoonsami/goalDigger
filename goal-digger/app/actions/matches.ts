@@ -327,7 +327,7 @@ export async function sendMatchInvitation(matchId: string, playerId: string, loc
     const html = generateInvitationEmailHtml(match, matchDate, acceptLink, declineLink)
 
     await transporter.sendMail({
-        from: `"Saturday Soccer Match" <${process.env.SMTP_USER}>`,
+        from: `"${match.title}" <${process.env.SMTP_USER}>`,
         to: targetEmail,
         subject: `Invite: ${match.title}! ⚽`,
         html

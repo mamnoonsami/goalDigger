@@ -54,21 +54,25 @@ export function MatchAdminActions({ match }: MatchAdminActionsProps) {
                 </Button>
             </div>
 
-            <div className="relative sm:hidden">
+            <div className="relative shrink-0 sm:hidden">
                 <button
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    className="p-1.5 rounded-lg hover:bg-surface-3 text-text-muted transition-colors"
+                    aria-label="Open match actions"
+                    aria-expanded={mobileMenuOpen}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface-2 text-text-muted shadow-sm transition-colors hover:border-accent/40 hover:bg-surface-3 hover:text-text-primary"
                 >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
+                    <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
                 </button>
                 {mobileMenuOpen && (
                     <>
                         <div className="fixed inset-0 z-40" onClick={() => setMobileMenuOpen(false)} />
-                        <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-lg border border-border bg-surface-2 shadow-xl py-1">
-                            <button onClick={() => { setIsEditOpen(true); setMobileMenuOpen(false) }} className="w-full text-left px-4 py-2.5 text-sm text-text-primary hover:bg-surface-3 transition-colors">
+                        <div className="absolute right-0 top-full z-50 mt-2 w-48 origin-top-right rounded-xl border border-border bg-surface-2 p-1.5 shadow-xl shadow-black/20">
+                            <button onClick={() => { setIsEditOpen(true); setMobileMenuOpen(false) }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3">
+                                <svg className="h-4 w-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" /><path d="m15 5 4 4" /></svg>
                                 Edit Match
                             </button>
-                            <button onClick={() => { setShowDeleteConfirm(true); setMobileMenuOpen(false) }} className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-surface-3 transition-colors">
+                            <button onClick={() => { setShowDeleteConfirm(true); setMobileMenuOpen(false) }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-red-400 transition-colors hover:bg-red-500/10">
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14H5V6M8 6V4h8v2M10 11v5M14 11v5" /></svg>
                                 Delete Match
                             </button>
                         </div>

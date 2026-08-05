@@ -19,23 +19,26 @@ interface OngoingAuctionsProps {
 export function OngoingAuctions({ auctions }: OngoingAuctionsProps) {
     return (
         <Card padding="none">
-            <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                <h2 className="font-bold text-accent">Auctions</h2>
-                <Link href="/auctions" className="text-xs text-accent hover:underline">
+            <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-5">
+                <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted">Keep an eye on</p>
+                    <h2 className="mt-1 font-semibold text-text-primary">Auctions</h2>
+                </div>
+                <Link href="/auctions" className="text-xs font-medium text-accent transition-colors hover:text-accent-hover">
                     View all →
                 </Link>
             </div>
             {auctions && auctions.length > 0 ? (
                 <ul className="divide-y divide-border">
                     {auctions.map((a) => (
-                        <li key={a.id} className="relative flex items-center justify-between gap-3 px-5 py-3.5 group hover:bg-surface-2 transition-colors cursor-pointer">
-                            <div>
-                                <Link href={`/auctions/${a.id}`} className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors before:absolute before:inset-0">{a.title}</Link>
-                                <p className="text-xs text-text-muted">
+                        <li key={a.id} className="group relative flex items-center justify-between gap-3 px-4 py-4 transition-colors hover:bg-surface-2 sm:px-5">
+                            <div className="min-w-0">
+                                <Link href={`/auctions/${a.id}`} className="block truncate text-sm font-medium text-text-primary transition-colors before:absolute before:inset-0 group-hover:text-accent">{a.title}</Link>
+                                <p className="mt-1 truncate text-xs text-text-muted">
                                     <LocalTime isoString={a.scheduled_at} format="long" />
                                 </p>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="shrink-0">
                                 <AuctionStatusBadge status={a.status} scheduledAt={a.scheduled_at} />
                             </div>
                         </li>
