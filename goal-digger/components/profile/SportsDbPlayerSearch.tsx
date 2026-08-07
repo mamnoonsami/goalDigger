@@ -31,10 +31,10 @@ export function SportsDbPlayerSearch() {
             const res = await fetch(
                 `https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${formatted}`
             )
-            const data = await res.json()
+            const data: { player?: PlayerResult[] | null } = await res.json()
             // Filter to soccer players only
             const players: PlayerResult[] = (data.player || []).filter(
-                (p: any) => p.strSport === 'Soccer'
+                (player) => player.strSport === 'Soccer'
             )
             setResults(players)
         } catch {
@@ -47,7 +47,7 @@ export function SportsDbPlayerSearch() {
     return (
         <Card>
             <h2 className="font-semibold text-text-primary mb-1">
-                ⚽ Player Photo Lookup
+                Player Photo Lookup
                 <span className="text-xs font-normal text-text-muted ml-2">(TheSportsDB)</span>
             </h2>
             <p className="text-xs text-text-muted mb-4">
@@ -94,6 +94,7 @@ export function SportsDbPlayerSearch() {
                             {/* Photo */}
                             <div className="w-20 h-20 rounded-full overflow-hidden bg-surface-3 flex-shrink-0">
                                 {player.strCutout || player.strThumb ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img
                                         src={(player.strCutout || player.strThumb) + '/small'}
                                         alt={player.strPlayer}

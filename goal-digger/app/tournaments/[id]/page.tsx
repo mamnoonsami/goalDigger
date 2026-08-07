@@ -88,12 +88,12 @@ export default async function TournamentDetailPage({ params }: PageProps) {
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-6 lg:gap-8">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-text-muted">
-                <Link href="/tournaments" className="hover:text-accent transition-colors">Tournaments</Link>
-                <span>/</span>
-                <span className="text-text-primary font-medium">{tournament.name}</span>
+                <Link href="/tournaments" className="shrink-0 transition-colors hover:text-accent">Tournaments</Link>
+                <svg aria-hidden="true" className="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="none"><path d="m7.5 4 6 6-6 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <span className="min-w-0 truncate font-medium text-text-primary">{tournament.name}</span>
             </div>
 
             <TournamentDetailView

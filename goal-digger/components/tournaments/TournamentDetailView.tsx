@@ -134,6 +134,18 @@ function formatFixtureTime(matchDate: string) {
     })
 }
 
+function formatTournamentDates(startDate: string, endDate: string | null) {
+    const start = new Date(`${startDate}T00:00`)
+    const startLabel = start.toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric' })
+
+    if (endDate && endDate !== startDate) {
+        const end = new Date(`${endDate}T00:00`)
+        return `${startLabel} – ${end.toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric', year: 'numeric' })}`
+    }
+
+    return `${startLabel}, ${start.getFullYear()}`
+}
+
 export function TournamentDetailView({ tournament, teams, players, matches = [], matchStats = [], linkedAuction, allAuctions, allDbPlayers = [], isAdmin, isPlayer = false, isManager = false, hasJoined = false, currentUserId = null }: Props) {
     const router = useRouter()
     const toast = useToast()
@@ -428,20 +440,15 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-6 lg:gap-8">
             {/* Tournament Header Card */}
-            <Card>
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                            <h1 className="min-w-0 text-xl font-bold leading-tight text-text-primary sm:text-2xl">
-                                <span>
-                                    {tournament.name}
-                                </span>
-                                <span className="ml-2 inline-flex align-middle">
-                                    <TournamentStatusBadge status={tournament.status} />
-                                </span>
-                            </h1>
+            <Card className="relative overflow-hidden p-0">
+                <div className="absolute inset-0 bg-gradient-to-br from-accent/[0.18] via-accent/[0.03] to-transparent" />
+                <div className="relative p-5 sm:p-7">
+                    <div className="flex items-start justify-between gap-3 sm:gap-6">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+                            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Tournament overview</span>
+                            <TournamentStatusBadge status={tournament.status} />
                         </div>
 
                         {/* Desktop actions */}
@@ -472,30 +479,30 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                         {/* Mobile 3-dot menu */}
                         {((isPlayer && tournament.status !== 'completed') || isAdmin) && (
                             <div className="relative shrink-0 sm:hidden">
-                                <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="rounded-full border border-border bg-surface-2 p-2 text-text-muted shadow-sm transition-colors hover:bg-surface-3">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
+                                <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Open tournament actions" aria-expanded={mobileMenuOpen} className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface-2 text-text-muted shadow-sm transition-colors hover:border-accent/40 hover:bg-surface-3 hover:text-text-primary">
+                                    <svg aria-hidden="true" className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
                                 </button>
                                 {mobileMenuOpen && (
                                     <>
                                         <div className="fixed inset-0 z-40" onClick={() => setMobileMenuOpen(false)} />
-                                        <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border border-border bg-surface-2 shadow-xl py-1">
+                                        <div className="absolute right-0 top-full z-50 mt-2 w-48 origin-top-right rounded-xl border border-border bg-surface-2 p-1.5 shadow-xl shadow-black/20">
                                             {isPlayer && tournament.status !== 'completed' && (
                                                 hasJoined ? (
-                                                    <button onClick={async () => { setMobileMenuOpen(false); setIsProcessing(true); try { await leaveTournament(tournament.id); toast.warning('Left the tournament'); router.refresh() } catch { toast.error('Failed to leave tournament') } finally { setIsProcessing(false) } }} disabled={isProcessing} className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-surface-3 transition-colors">
+                                                    <button onClick={async () => { setMobileMenuOpen(false); setIsProcessing(true); try { await leaveTournament(tournament.id); toast.warning('Left the tournament'); router.refresh() } catch { toast.error('Failed to leave tournament') } finally { setIsProcessing(false) } }} disabled={isProcessing} className="w-full rounded-lg px-3 py-2.5 text-left text-sm text-red-400 transition-colors hover:bg-red-500/10">
                                                         Leave Tournament
                                                     </button>
                                                 ) : (
-                                                    <button onClick={async () => { setMobileMenuOpen(false); setIsProcessing(true); try { await joinTournament(tournament.id); toast.success('Joined tournament!'); router.refresh() } catch { toast.error('Failed to join tournament') } finally { setIsProcessing(false) } }} disabled={isProcessing} className="w-full text-left px-4 py-2.5 text-sm text-accent hover:bg-surface-3 transition-colors">
+                                                    <button onClick={async () => { setMobileMenuOpen(false); setIsProcessing(true); try { await joinTournament(tournament.id); toast.success('Joined tournament!'); router.refresh() } catch { toast.error('Failed to join tournament') } finally { setIsProcessing(false) } }} disabled={isProcessing} className="w-full rounded-lg px-3 py-2.5 text-left text-sm text-accent transition-colors hover:bg-surface-3">
                                                         Join Tournament
                                                     </button>
                                                 )
                                             )}
                                             {isAdmin && (
                                                 <>
-                                                    <button onClick={() => { setIsEditModalOpen(true); setMobileMenuOpen(false) }} className="w-full text-left px-4 py-2.5 text-sm text-text-primary hover:bg-surface-3 transition-colors">
+                                                    <button onClick={() => { setIsEditModalOpen(true); setMobileMenuOpen(false) }} className="w-full rounded-lg px-3 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-surface-3">
                                                         Edit Tournament
                                                     </button>
-                                                    <div className="border-t border-border my-1" />
+                                                    <div className="my-1 border-t border-border" />
                                                     <TournamentDetailActions tournamentId={tournament.id} variant="menu" />
                                                 </>
                                             )}
@@ -506,77 +513,90 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                         )}
                     </div>
 
-                    <div className="space-y-2 text-xs text-text-muted sm:flex sm:flex-wrap sm:gap-2 sm:space-y-0 sm:text-sm">
-                        <div className="flex min-w-0 items-center gap-2 sm:contents">
-                            {tournament.start_date && (
-                                <span className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded-xl border border-border/70 bg-surface-2/70 px-2 py-2 sm:flex-none sm:justify-start sm:gap-1.5 sm:px-3">
-                                    <span className="shrink-0">📅</span>
-                                    <span className="min-w-0 truncate">
-                                        {new Date(tournament.start_date + 'T00:00').toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric' })}
-                                        {tournament.end_date && tournament.end_date !== tournament.start_date
-                                            ? ` – ${new Date(tournament.end_date + 'T00:00').toLocaleDateString(DATE_TIME_LOCALE, { month: 'short', day: 'numeric', year: 'numeric' })}`
-                                            : `, ${new Date(tournament.start_date + 'T00:00').getFullYear()}`
-                                        }
-                                    </span>
-                                </span>
-                            )}
-                            <span className="flex shrink-0 items-center justify-center gap-1 rounded-xl border border-border/70 bg-surface-2/70 px-2 py-2 sm:justify-start sm:gap-1.5 sm:px-3">
-                                <span className="shrink-0">🏆</span>
-                                <span>{teams.length} teams</span>
-                            </span>
-                            <span className="flex shrink-0 items-center justify-center gap-1 rounded-xl border border-border/70 bg-surface-2/70 px-2 py-2 sm:justify-start sm:gap-1.5 sm:px-3">
-                                <span className="shrink-0">⚽</span>
-                                <span>{players.length} players</span>
-                            </span>
+                    <div className="mt-4 flex items-start gap-3.5 sm:mt-5 sm:items-center sm:gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent sm:h-14 sm:w-14">
+                            <svg aria-hidden="true" className="h-6 w-6 sm:h-7 sm:w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3h8v3a4 4 0 0 1-8 0V3Z" /><path d="M8 5H4v1a4 4 0 0 0 4 4M16 5h4v1a4 4 0 0 1-4 4M12 10v5M9 21h6M10 15h4v3h-4z" /></svg>
                         </div>
-                        {tournament.location && (
-                            <span className="flex min-w-0 items-center gap-1.5 rounded-xl border border-border/70 bg-surface-2/70 px-3 py-2 sm:max-w-xs">
-                                <span className="shrink-0">📍</span>
-                                <span className="min-w-0 truncate">{tournament.location}</span>
-                            </span>
-                        )}
-                        {linkedAuction && (
-                            <a href={`/auctions/${linkedAuction.id}`} className="flex min-w-0 items-center gap-1.5 rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-accent transition-colors hover:text-accent-hover sm:max-w-xs">
-                                <span className="shrink-0">🔨</span>
-                                <span className="min-w-0 truncate">{linkedAuction.title}</span>
+                        <div className="min-w-0">
+                            <h1 className="break-words text-balance text-xl font-semibold leading-tight tracking-[-0.035em] text-text-primary sm:text-3xl">{tournament.name}</h1>
+                            <p className="mt-1 text-xs text-text-muted sm:text-sm">Tournament standings, teams and fixtures at a glance.</p>
+                        </div>
+                    </div>
+
+                    <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div className="rounded-xl border border-border/70 bg-surface-1/45 p-3.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Teams</p>
+                            <p className="mt-1.5 text-xl font-semibold tracking-tight text-text-primary">{teams.length}</p>
+                        </div>
+                        <div className="rounded-xl border border-border/70 bg-surface-1/45 p-3.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Players</p>
+                            <p className="mt-1.5 text-xl font-semibold tracking-tight text-text-primary">{players.length}</p>
+                        </div>
+                        <div className="rounded-xl border border-border/70 bg-surface-1/45 p-3.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Matches</p>
+                            <p className="mt-1.5 text-xl font-semibold tracking-tight text-text-primary">{matches.length}</p>
+                        </div>
+                        <div className="rounded-xl border border-accent/20 bg-accent/[0.08] p-3.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-accent/80">Completed</p>
+                            <p className="mt-1.5 text-xl font-semibold tracking-tight text-accent">{completedMatches.length}</p>
+                        </div>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                        <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-surface-1/45 p-3.5">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4M16 2v4" /><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 10h18" /></svg></div>
+                            <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Schedule</p><p className="mt-1 truncate text-sm font-medium text-text-primary">{tournament.start_date ? formatTournamentDates(tournament.start_date, tournament.end_date) : 'Dates TBD'}</p></div>
+                        </div>
+                        <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-surface-1/45 p-3.5">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11Z" /><circle cx="12" cy="10" r="2.2" /></svg></div>
+                            <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Location</p><p className="mt-1 truncate text-sm font-medium text-text-primary">{tournament.location ?? 'Location TBD'}</p></div>
+                        </div>
+                        {linkedAuction ? (
+                            <a href={`/auctions/${linkedAuction.id}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-accent/20 bg-accent/[0.08] p-3.5 transition-colors hover:border-accent/40 hover:bg-accent/[0.12]">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m14 5 5 5M12.5 6.5l5 5M4 20l7-7M3 21h6M9 4l7 7-5 5-7-7 5-5Z" /></svg></div>
+                                <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-wider text-accent/80">Linked auction</p><p className="mt-1 truncate text-sm font-medium text-accent">{linkedAuction.title}</p></div>
                             </a>
+                        ) : (
+                            <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-surface-1/45 p-3.5">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-3 text-text-muted"><svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12h16M12 4v16" /></svg></div>
+                                <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Auction</p><p className="mt-1 truncate text-sm font-medium text-text-primary">Not linked</p></div>
+                            </div>
                         )}
                     </div>
+
+                    {tournament.description && (
+                        <div className="mt-3 rounded-xl border border-border/70 bg-surface-1/45 px-4 py-3 text-sm leading-6 text-text-muted">
+                            <span className="mr-2 font-semibold text-text-primary">About</span><span className="whitespace-pre-wrap">{tournament.description}</span>
+                        </div>
+                    )}
                 </div>
-
-                {/* Description */}
-                {tournament.description && (
-                    <div className="mt-4 rounded-xl border border-border/70 bg-surface-2/60 px-3 py-3 text-sm text-text-muted">
-                        <p className="whitespace-pre-wrap leading-relaxed"><span className="text-text-primary mr-1">📋</span>{tournament.description}</p>
-                    </div>
-                )}
-
-                {isEditModalOpen && (
-                    <EditTournamentModal
-                        tournament={{
-                            id: tournament.id,
-                            name: tournament.name,
-                            description: tournament.description || '',
-                            status: tournament.status,
-                            auction_id: tournament.auction_id,
-                            start_date: tournament.start_date,
-                            end_date: tournament.end_date,
-                            location: tournament.location,
-                        }}
-                        auctions={allAuctions}
-                        onClose={() => setIsEditModalOpen(false)}
-                    />
-                )}
             </Card>
 
-            <div className={`grid min-w-0 max-w-full gap-6 ${currentUserId ? 'lg:grid-cols-2 lg:items-start' : ''}`}>
+            {isEditModalOpen && (
+                <EditTournamentModal
+                    tournament={{
+                        id: tournament.id,
+                        name: tournament.name,
+                        description: tournament.description || '',
+                        status: tournament.status,
+                        auction_id: tournament.auction_id,
+                        start_date: tournament.start_date,
+                        end_date: tournament.end_date,
+                        location: tournament.location,
+                    }}
+                    auctions={allAuctions}
+                    onClose={() => setIsEditModalOpen(false)}
+                />
+            )}
+
+            <div className={`grid min-w-0 max-w-full gap-5 lg:gap-6 ${currentUserId ? 'lg:grid-cols-2 lg:items-start' : ''}`}>
                 {/* Teams Section */}
                 {currentUserId && (
                     <div ref={teamsPanelRef} className="min-w-0 max-w-full">
-                        <div className="min-w-0 max-w-full lg:rounded-xl lg:border lg:border-border lg:bg-surface-2 lg:p-5">
-                            <div className="mb-3 flex items-center justify-between gap-2 border-b border-border/70 pb-2">
-                                <h3 className="flex min-w-0 items-center gap-2 text-lg font-semibold text-accent">
-                                    <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                        <div className="min-w-0 max-w-full rounded-xl border border-border bg-surface-2 p-4 sm:p-5">
+                            <div className="mb-4 flex items-center justify-between gap-2 border-b border-border/70 pb-3">
+                                <h3 className="flex min-w-0 items-center gap-2 text-base font-semibold tracking-tight text-text-primary sm:text-lg">
+                                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg></span>
                                     <span className="truncate">Teams ({teams.length})</span>
                                 </h3>
                                 {(isAdmin || isManager) && (
@@ -697,12 +717,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
 
                 {/* Fixture Section */}
                 <div
-                    className="flex h-full min-w-0 max-w-full flex-col lg:rounded-xl lg:border lg:border-border lg:bg-surface-2 lg:p-5"
+                    className="flex h-full min-w-0 max-w-full flex-col rounded-xl border border-border bg-surface-2 p-4 sm:p-5"
                     style={fixturePanelHeight ? { height: fixturePanelHeight } : undefined}
                 >
-                    <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
-                        <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
-                            <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /></svg>
+                    <div className="mb-4 flex items-center justify-between border-b border-border/70 pb-3">
+                        <h3 className="flex items-center gap-2 text-base font-semibold tracking-tight text-text-primary sm:text-lg">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /></svg></span>
                             <span>Fixture</span>
                         </h3>
                     </div>
@@ -851,15 +871,12 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
             </div>
 
             {/* Leaderboard Section */}
-            <div className="relative mt-8">
-                {/* Full-width background bleed */}
-                <div className="absolute inset-y-0 left-[-100vw] right-[-100vw] border-y border-border/80 bg-white/15" />
-
-                <div className="relative py-8">
+            <div className="rounded-xl border border-border bg-surface-2 p-4 sm:p-6">
+                <div>
                     <div>
-                        <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
-                            <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
-                                <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
+                        <div className="mb-4 flex items-center justify-between gap-3 border-b border-border/70 pb-3">
+                            <h3 className="flex items-center gap-2 text-base font-semibold tracking-tight text-text-primary sm:text-lg">
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg></span>
                                 <span>Leaderboard</span>
                             </h3>
                             {isAdmin && leaderboardTab === 'players' && (
@@ -1105,7 +1122,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                             </div>
                         ) : leaderboardTab === 'players' ? (
                             players.length > 0 ? (
-                                <Card className="scrollbar-thin max-h-[22rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[26.5rem]">
+                                <Card className="scrollbar-thin max-h-[22rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[26.5rem]">
                                     <table className="w-auto min-w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
                                         <thead className="sticky top-0 z-20">
                                             <tr className="border-b border-emerald-600 bg-header-bg text-[10px] text-white shadow-sm shadow-accent/20 sm:text-xs">
@@ -1188,7 +1205,7 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
                             )
                         ) : (
                             teams.length > 0 ? (
-                                <Card className="scrollbar-thin max-h-[22rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[26.5rem]">
+                                <Card className="scrollbar-thin max-h-[22rem] overflow-auto p-0 [scrollbar-color:rgba(34,197,94,0.35)_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-500/30 [&::-webkit-scrollbar-thumb:hover]:bg-emerald-500/50 sm:max-h-[26.5rem]">
                                     <table className="w-full text-left text-[11px] sm:text-sm whitespace-nowrap">
                                         <thead className="sticky top-0 z-20">
                                             <tr className="border-b border-emerald-600 bg-header-bg text-[10px] text-white shadow-sm shadow-accent/20 sm:text-xs">
@@ -1250,10 +1267,10 @@ export function TournamentDetailView({ tournament, teams, players, matches = [],
             </div>
 
             {/* Matches Section */}
-            <div>
-                <div className="mb-3 flex items-center justify-between border-b border-border/70 pb-2">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold text-accent">
-                        <svg className="h-5 w-5 shrink-0 text-text-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m12 3 3.5 6.5L22 10" /><path d="m12 3-3.5 6.5L2 10" /><path d="m4.5 18 4-5.5L12 21" /><path d="m19.5 18-4-5.5L12 21" /><path d="m8.5 9.5 3.5 2.5 3.5-2.5" /></svg>
+            <div className="rounded-xl border border-border bg-surface-2 p-4 sm:p-6">
+                <div className="mb-4 flex items-center justify-between border-b border-border/70 pb-3">
+                    <h3 className="flex items-center gap-2 text-base font-semibold tracking-tight text-text-primary sm:text-lg">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent"><svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m12 3 3.5 6.5L22 10" /><path d="m12 3-3.5 6.5L2 10" /><path d="m4.5 18 4-5.5L12 21" /><path d="m19.5 18-4-5.5L12 21" /><path d="m8.5 9.5 3.5 2.5 3.5-2.5" /></svg></span>
                         <span>Matches ({matches.length})</span>
                     </h3>
                     {isAdmin && (
