@@ -25,8 +25,8 @@ export function PlayerDetailClient({ player, isAdmin }: PlayerDetailClientProps)
     return (
         <>
             {isAdmin && (
-                <Button onClick={() => setEditing(true)} variant="secondary" size="sm">
-                    ✏️ Edit Player
+                <Button onClick={() => setEditing(true)} variant="ghost" size="sm" className="border border-border bg-surface-2 text-accent shadow-sm hover:border-accent/30 hover:bg-accent/10">
+                    Edit player
                 </Button>
             )}
 

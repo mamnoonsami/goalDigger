@@ -20,23 +20,20 @@ export interface PeerRatingAnalytics {
 interface PeerRatingStatCardProps {
     peerScore: number | string
     analytics: PeerRatingAnalytics
-    valueGradient?: string
 }
 
-export function PeerRatingStatCard({ peerScore, analytics, valueGradient }: PeerRatingStatCardProps) {
+export function PeerRatingStatCard({ peerScore, analytics }: PeerRatingStatCardProps) {
     const [isModalOpen, setIsModalOpen] = useState(false)
 
     return (
         <>
             {/* The actual Card Replacement */}
             <Card
-                className="flex flex-col items-center text-center py-4 relative group cursor-pointer hover:border-accent/40 transition-all hover:bg-surface-2"
+                className="group relative flex min-h-24 cursor-pointer flex-col justify-center p-4 text-left transition-all hover:border-accent/40 hover:bg-accent/[0.04] sm:p-5"
                 onClick={() => setIsModalOpen(true)}
             >
-                <span className={valueGradient ? `text-2xl font-black font-mono tracking-tight text-transparent bg-clip-text bg-gradient-to-r ${valueGradient}` : "text-2xl font-black text-accent font-mono"}>
-                    {peerScore}
-                </span>
-                <span className="text-xs text-text-muted mt-1">Peer Rating</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Peer rating</span>
+                <span className="mt-2 font-mono text-2xl font-bold tracking-tight text-accent">{peerScore}</span>
 
                 {/* Info Icon Button Context */}
                 <button
@@ -70,8 +67,8 @@ export function PeerRatingStatCard({ peerScore, analytics, valueGradient }: Peer
 
                         <div className="p-5 flex flex-col gap-6 max-h-[80vh] overflow-y-auto">
                             {/* Explainer wrapper */}
-                            <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 text-xs text-accent">
-                                <p className="font-semibold text-center">🔐 All ratings are 100% anonymous.</p>
+                            <div className="rounded-lg border border-accent/20 bg-accent/10 p-3 text-xs text-accent">
+                                <p className="text-center font-semibold">All ratings are anonymous.</p>
                             </div>
 
                             {/* Global Highlights */}
