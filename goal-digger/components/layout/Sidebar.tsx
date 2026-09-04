@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createBrowserSupabaseClient } from '@goaldigger/core'
@@ -74,6 +75,15 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
     const router = useRouter()
     const unreadCount = useChatStore((s) => s.unreadCount)
 
+    const isSettingsActive = pathname.startsWith('/settings')
+    const [settingsOpen, setSettingsOpen] = useState(isSettingsActive)
+
+    useEffect(() => {
+        if (isSettingsActive) {
+            setSettingsOpen(true)
+        }
+    }, [isSettingsActive])
+
     async function handleLogout() {
         const supabase = createBrowserSupabaseClient()
         await supabase.auth.signOut()
@@ -92,12 +102,10 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
         ] : []),
         ...(isAdmin ? [
             { href: '/users', label: 'User Management', icon: 'users' as SidebarIconName },
-            { href: '/settings/group', label: 'Group Settings', icon: 'settings' as SidebarIconName }
-        ] : []),
-        ...(isKing ? [
-            { href: '/settings/king', label: 'King Settings', icon: 'king' as SidebarIconName }
         ] : []),
     ]
+
+    const hasSettings = isAdmin || isKing
 
     return (
         <>
@@ -204,6 +212,115 @@ export function Sidebar({ open = true, onClose, isMinimized = false, onToggleMin
                                     </li>
                                 )
                             })}
+
+                            {/* Parent Settings Menu */}
+                            {hasSettings && (
+                                <li key="settings-parent" className="flex flex-col">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSettingsOpen(!settingsOpen)}
+                                        title={isMinimized ? 'Settings' : undefined}
+                                        className={cn(
+                                            'group flex min-h-[44px] w-full items-center rounded-xl py-2.5 transition-all duration-150',
+                                            isMinimized ? 'justify-center px-0 mx-1' : 'gap-3 px-3',
+                                            'text-sm font-medium',
+                                            isSettingsActive
+                                                ? 'bg-accent/12 text-accent shadow-sm'
+                                                : 'text-text-muted hover:bg-surface-3/75 hover:text-text-primary'
+                                        )}
+                                    >
+                                        <span className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors', isSettingsActive ? 'bg-accent/15' : 'bg-transparent group-hover:bg-surface-3')}>
+                                            <SidebarIcon name="settings" />
+                                        </span>
+                                        {!isMinimized && (
+                                            <span className="flex flex-1 items-center justify-between whitespace-nowrap overflow-hidden">
+                                                <span>Settings</span>
+                                                <svg
+                                                    className={cn('h-4 w-4 transition-transform duration-200', settingsOpen && 'rotate-180')}
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </span>
+                                        )}
+                                    </button>
+
+                                    {/* Settings Sub-items */}
+                                    {settingsOpen && (
+                                        <ul className={cn('flex flex-col gap-1 mt-1', !isMinimized && 'pl-4 border-l border-border/60 ml-6')}>
+                                            {isAdmin && (
+                                                <li>
+                                                    <Link
+                                                        href="/settings/group"
+                                                        onClick={onClose}
+                                                        title={isMinimized ? 'Group Settings' : undefined}
+                                                        className={cn(
+                                                            'flex min-h-[38px] items-center rounded-lg py-2 text-xs font-medium transition-colors',
+                                                            isMinimized ? 'justify-center px-0 mx-1' : 'gap-2 px-3',
+                                                            pathname === '/settings/group'
+                                                                ? 'bg-accent/15 text-accent font-semibold'
+                                                                : 'text-text-muted hover:bg-surface-3/75 hover:text-text-primary'
+                                                        )}
+                                                    >
+                                                        {!isMinimized ? (
+                                                            <span>Group Settings</span>
+                                                        ) : (
+                                                            <span className="text-[10px] font-bold">GRP</span>
+                                                        )}
+                                                    </Link>
+                                                </li>
+                                            )}
+                                            {isKing && (
+                                                <li>
+                                                    <Link
+                                                        href="/settings/king"
+                                                        onClick={onClose}
+                                                        title={isMinimized ? 'King Settings' : undefined}
+                                                        className={cn(
+                                                            'flex min-h-[38px] items-center rounded-lg py-2 text-xs font-medium transition-colors',
+                                                            isMinimized ? 'justify-center px-0 mx-1' : 'gap-2 px-3',
+                                                            pathname === '/settings/king'
+                                                                ? 'bg-accent/15 text-accent font-semibold'
+                                                                : 'text-text-muted hover:bg-surface-3/75 hover:text-text-primary'
+                                                        )}
+                                                    >
+                                                        {!isMinimized ? (
+                                                            <span>King Settings</span>
+                                                        ) : (
+                                                            <span className="text-[10px] font-bold">KNG</span>
+                                                        )}
+                                                    </Link>
+                                                </li>
+                                            )}
+                                            {isAdmin && (
+                                                <li>
+                                                    <Link
+                                                        href="/settings/advanced"
+                                                        onClick={onClose}
+                                                        title={isMinimized ? 'Advanced Settings' : undefined}
+                                                        className={cn(
+                                                            'flex min-h-[38px] items-center rounded-lg py-2 text-xs font-medium transition-colors',
+                                                            isMinimized ? 'justify-center px-0 mx-1' : 'gap-2 px-3',
+                                                            pathname === '/settings/advanced'
+                                                                ? 'bg-accent/15 text-accent font-semibold'
+                                                                : 'text-text-muted hover:bg-surface-3/75 hover:text-text-primary'
+                                                        )}
+                                                    >
+                                                        {!isMinimized ? (
+                                                            <span>Advanced Settings</span>
+                                                        ) : (
+                                                            <span className="text-[10px] font-bold">ADV</span>
+                                                        )}
+                                                    </Link>
+                                                </li>
+                                            )}
+                                        </ul>
+                                    )}
+                                </li>
+                            )}
                         </ul>
                     </nav>
 
