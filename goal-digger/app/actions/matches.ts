@@ -389,8 +389,17 @@ export async function sendMatchCostEmail(matchId: string, playerId: string, loca
     if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
 
     // 2. Fetch match details
-    const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()
+    const { data: match } = await supabase.from('matches').select('title, scheduled_at, location, tenant_id').eq('id', matchId).single()
     if (!match) throw new Error('Match not found')
+
+    // Fetch tenant etransfer email
+    let etransferEmail = 'mamnoon909@gmail.com'
+    if (match.tenant_id) {
+        const { data: tenant } = await supabase.from('tenants').select('etransfer_email').eq('id', match.tenant_id).single()
+        if (tenant?.etransfer_email) {
+            etransferEmail = tenant.etransfer_email
+        }
+    }
 
     // 3. Fetch target player's email
     const { createClient: createPureClient } = await import('@supabase/supabase-js')
@@ -416,7 +425,7 @@ export async function sendMatchCostEmail(matchId: string, playerId: string, loca
     })
 
     const matchDate = localizedTime || formatDateTime12h(match.scheduled_at)
-    const html = generateCostEmailHtml(match, matchDate, costPerPerson)
+    const html = generateCostEmailHtml(match, matchDate, costPerPerson, etransferEmail)
 
     await transporter.sendMail({
         from: `"Goal Digger" <${process.env.SMTP_USER}>`,
@@ -535,7 +544,8 @@ function generateInvitationEmailHtml(match: { title: string, location?: string |
     `
 }
 
-function generateCostEmailHtml(match: { title: string, location?: string | null }, matchDate: string, costPerPerson: number) {
+function generateCostEmailHtml(match: { title: string, location?: string | null }, matchDate: string, costPerPerson: number, etransferEmail?: string) {
+    const emailToUse = etransferEmail || 'mamnoon909@gmail.com'
     return `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
             <div style="text-align: center; margin-bottom: 24px;">
@@ -553,7 +563,7 @@ function generateCostEmailHtml(match: { title: string, location?: string | null 
                 <div style="text-align: center;">
                     <p style="color: #64748b; font-size: 13px; margin-bottom: 8px;">Please send an Interac e-Transfer to:</p>
                     <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; display: inline-block;">
-                        <strong style="color: #0f172a; font-size: 18px; letter-spacing: 0.5px; user-select: all;">mamnoon909@gmail.com</strong>
+                        <strong style="color: #0f172a; font-size: 18px; letter-spacing: 0.5px; user-select: all;">${emailToUse}</strong>
                     </div>
                 </div>
                 </div>
@@ -672,8 +682,16 @@ export async function getEmailPreview(
     if (!profile?.is_admin && !profile?.is_king) throw new Error('Not authorized')
 
     // 2. Fetch match details
-    const { data: match } = await supabase.from('matches').select('title, scheduled_at, location').eq('id', matchId).single()
+    const { data: match } = await supabase.from('matches').select('title, scheduled_at, location, tenant_id').eq('id', matchId).single()
     if (!match) throw new Error('Match not found')
+
+    let etransferEmail = 'mamnoon909@gmail.com'
+    if (match.tenant_id) {
+        const { data: tenant } = await supabase.from('tenants').select('etransfer_email').eq('id', match.tenant_id).single()
+        if (tenant?.etransfer_email) {
+            etransferEmail = tenant.etransfer_email
+        }
+    }
     
     const matchDate = localizedTime || formatDateTime12h(match.scheduled_at)
 
@@ -710,7 +728,7 @@ export async function getEmailPreview(
         html = generateInvitationEmailHtml(match, matchDate, acceptLink, declineLink)
     } else if (type === 'cost') {
         subject = `Interac e-Transfer Request: ${match.title}`
-        html = generateCostEmailHtml(match, matchDate, costPerPerson || 0)
+        html = generateCostEmailHtml(match, matchDate, costPerPerson || 0, etransferEmail)
     } else if (type === 'roster') {
         subject = `Team Roster: ${match.title}`
         html = generateRosterEmailHtml(match, matchDate, team1List || [], team2List || [])
